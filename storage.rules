@@ -1,0 +1,107 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Auth Helpers
+    function signedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+    
+    function isWithinSizeLimit() {
+      return request.resource.size < 5 * 1024 * 1024; // 5MB limit
+    }
+    
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    // 1. Users & Avatars
+    match /uploads/users/{userId}/{allPaths=**} {
+      allow read: if signedIn();
+      allow write: if isOwner(userId) && isWithinSizeLimit() && isImage();
+    }
+    match /avatars/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(userId) && isWithinSizeLimit() && isImage();
+    }
+
+    // 2. Store Assets (Logo, Cover, etc.)
+    match /uploads/stores/{storeId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if signedIn() && isWithinSizeLimit() && isImage();
+    }
+    match /stores/{storeId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if signedIn() && isWithinSizeLimit() && isImage();
+    }
+
+    // 3. Product Catalog Images
+    match /uploads/products/{storeId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if signedIn() && isWithinSizeLimit() && isImage();
+    }
+    match /products/{storeId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if signedIn() && isWithinSizeLimit() && isImage();
+    }
+
+    // 4. Offers
+    match /offers/{allPaths=**} {
+      allow read: if true;
+      allow write: if signedIn() && isWithinSizeLimit() && isImage();
+    }
+
+    // 5. Payment Receipts
+    match /uploads/receipts/{orderId}/{allPaths=**} {
+      allow read: if signedIn();
+      allow write: if signedIn() && isWithinSizeLimit() && isImage();
+    }
+    match /receipts/{orderId}/{allPaths=**} {
+      allow read: if signedIn();
+      allow write: if signedIn() && isWithinSizeLimit() && isImage();
+    }
+
+    // 6. Invoices
+    match /invoices/{orderId}/{allPaths=**} {
+      allow read: if signedIn();
+      allow write: if signedIn();
+    }
+
+    // 7. Campaigns
+    match /campaigns/{campaignId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    // 8. Phase 12B Media Platform Paths
+    match /productTemplates/{allPaths=**} {
+      allow read: if true;
+      allow write: if signedIn() && isWithinSizeLimit() && isImage();
+    }
+    match /productImages/{allPaths=**} {
+      allow read: if true;
+      allow write: if signedIn() && isWithinSizeLimit() && isImage();
+    }
+    match /storeLogos/{allPaths=**} {
+      allow read: if true;
+      allow write: if signedIn() && isWithinSizeLimit() && isImage();
+    }
+    match /storeCovers/{allPaths=**} {
+      allow read: if true;
+      allow write: if signedIn() && isWithinSizeLimit() && isImage();
+    }
+    match /reviews/{allPaths=**} {
+      allow read: if true;
+      allow write: if signedIn() && isWithinSizeLimit() && isImage();
+    }
+    match /tempUploads/{allPaths=**} {
+      allow read: if true;
+      allow write: if signedIn() && isWithinSizeLimit() && isImage();
+    }
+  }
+}
+

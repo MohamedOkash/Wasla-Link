@@ -1,0 +1,207 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Auth & Role Helpers
+    function signedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function hasRole(role) {
+      return signedIn() && getUserData().role == role;
+    }
+    
+    function isAdmin() {
+      return hasRole('admin');
+    }
+    
+    function isVendor() {
+      return hasRole('vendor');
+    }
+    
+    function isDriver() {
+      return hasRole('driver');
+    }
+
+    // --- COLLECTION RULES ---
+
+    // 1. users Collection
+    match /users/{userId} {
+      allow create: if signedIn() && request.auth.uid == userId;
+      allow read: if isOwner(userId) || isAdmin() || (signedIn() && resource.data.role == 'vendor');
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // 2. stores Collection
+    match /stores/{storeId} {
+      allow read: if true; // Publicly readable for customers to browse stores
+      allow create: if isAdmin() || (isVendor() && request.resource.data.vendorId == request.auth.uid);
+      allow update: if isAdmin() || (isVendor() && resource.data.vendorId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    // 3. products Collection
+    match /products/{productId} {
+      allow read: if true; // Publicly readable for browsing catalog
+      allow create: if isAdmin() || (isVendor() && get(/databases/$(database)/documents/stores/$(request.resource.data.storeId)).data.vendorId == request.auth.uid);
+      allow update: if isAdmin() || (isVendor() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid && request.resource.data.storeId == resource.data.storeId);
+      allow delete: if isAdmin() || (isVendor() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
+    }
+
+    // 4. categories Collection
+    match /categories/{catId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 5. banners Collection
+    match /banners/{bannerId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 6. orders Collection
+    match /orders/{orderId} {
+      allow create: if signedIn() && request.resource.data.customerId == request.auth.uid;
+      allow read: if isAdmin() 
+                  || (signedIn() && resource.data.customerId == request.auth.uid)
+                  || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.shopId)).data.vendorId == request.auth.uid)
+                  || (isDriver() && (resource.data.status == 'new' || resource.data.driverId == request.auth.uid));
+      allow update: if isAdmin()
+                  || (signedIn() && resource.data.customerId == request.auth.uid && request.resource.data.status == 'cancelled')
+                  || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.shopId)).data.vendorId == request.auth.uid)
+                  || (isDriver() && (resource.data.status == 'new' || resource.data.driverId == request.auth.uid));
+      allow delete: if isAdmin();
+    }
+
+    // 7. notifications Collection
+    match /notifications/{notifId} {
+      allow create: if signedIn();
+      allow read, update, delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // 8. reviews Collection
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if signedIn() && request.resource.data.customerId == request.auth.uid;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // 9. drivers Collection
+    match /drivers/{driverId} {
+      allow read: if signedIn();
+      allow create: if isDriver() && request.resource.id == request.auth.uid;
+      allow update: if isAdmin() || (isDriver() && isOwner(driverId));
+      allow delete: if isAdmin();
+    }
+
+    // 10. driverMetrics Collection
+    match /driverMetrics/{metricId} {
+      allow read: if isAdmin() || isOwner(metricId);
+      allow write: if isAdmin();
+    }
+
+    // 11. walletTransactions Collection
+    match /walletTransactions/{transId} {
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+
+    // 12. walletSettlements Collection
+    match /walletSettlements/{settleId} {
+      allow read: if isAdmin() || (signedIn() && resource.data.storeId == getUserData().storeId);
+      allow create: if isVendor() && request.resource.data.storeId == getUserData().storeId;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // 13. returnRequests / refundRequests / replacementRequests Collections
+    match /returnRequests/{reqId} {
+      allow create: if signedIn() && request.resource.data.customerId == request.auth.uid;
+      allow read: if isAdmin() 
+                  || (signedIn() && resource.data.customerId == request.auth.uid)
+                  || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
+      allow update: if isAdmin() 
+                  || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+    match /refundRequests/{reqId} {
+      allow create: if signedIn() && request.resource.data.customerId == request.auth.uid;
+      allow read: if isAdmin() 
+                  || (signedIn() && resource.data.customerId == request.auth.uid)
+                  || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
+      allow update: if isAdmin() 
+                  || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+    match /replacementRequests/{reqId} {
+      allow create: if signedIn() && request.resource.data.customerId == request.auth.uid;
+      allow read: if isAdmin() 
+                  || (signedIn() && resource.data.customerId == request.auth.uid)
+                  || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
+      allow update: if isAdmin() 
+                  || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    // 14. coupons Collection
+    match /coupons/{couponId} {
+      allow read: if signedIn() && resource.data.isActive == true;
+      allow write: if isAdmin();
+    }
+
+    // 15. campaigns Collection
+    match /campaigns/{campaignId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 16. deliveryZones Collection
+    match /deliveryZones/{zoneId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 17. businessHours Collection
+    match /businessHours/{hoursId} {
+      allow read: if true;
+      allow write: if isAdmin() || (isVendor() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
+    }
+
+    // 18. invoices Collection
+    match /invoices/{invoiceId} {
+      allow read: if isAdmin() 
+                  || (signedIn() && resource.data.customerId == request.auth.uid)
+                  || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+
+    // 19. platformMetrics Collection
+    match /platformMetrics/{metricId} {
+      allow read, write: if isAdmin();
+    }
+
+    // 20. productTemplates Collection
+    match /productTemplates/{templateId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 21. assets Collection
+    match /assets/{assetId} {
+      allow read: if true;
+      allow create, update: if signedIn();
+      allow delete: if isAdmin();
+    }
+  }
+}

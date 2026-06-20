@@ -1,0 +1,162 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;900&family=Outfit:wght@400;500;600;700;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Central Design System 2.0 - Light Theme */
+  --font-family: 'Outfit', 'Cairo', system-ui, -apple-system, sans-serif;
+  
+  --color-primary: #FF7A00;
+  --color-primary-hover: #E06B00;
+  --color-primary-glow: rgba(255, 122, 0, 0.12);
+  --color-secondary: #4F46E5; /* Indigo accent */
+  --color-accent: #FF7A00;
+  --color-accent-text: #FF7A00;
+  
+  --color-bg: #F8FAFC;       /* Pure Slate off-white */
+  --color-bg-card: #FFFFFF;  /* Clean White cards */
+  --color-text: #0F172A;     /* Slate-900 */
+  --color-text-muted: #64748B; /* Slate-500 */
+  --color-border: #E2E8F0;    /* Slate-200 */
+  --color-border-hover: #CBD5E1; /* Slate-300 */
+  
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(226, 232, 240, 0.65);
+  --glass-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.04);
+}
+
+.theme-midnight {
+  /* Central Design System 2.0 - Dark Theme (Midnight) */
+  --color-primary: #FF7A00;
+  --color-primary-hover: #E06B00;
+  --color-primary-glow: rgba(255, 122, 0, 0.18);
+  --color-secondary: #818CF8;
+  --color-accent: #FF7A00;
+  --color-accent-text: #FF7A00;
+  
+  --color-bg: #060913;       /* Premium pitch dark backdrop */
+  --color-bg-card: #0D1220;  /* Solid dark slate cards */
+  --color-text: #F8FAFC;     /* Slate-50 */
+  --color-text-muted: #94A3B8; /* Slate-400 */
+  --color-border: #1E293B;    /* Slate-800 */
+  --color-border-hover: #334155; /* Slate-700 */
+  
+  --glass-bg: rgba(13, 18, 32, 0.82);
+  --glass-border: rgba(255, 255, 255, 0.05);
+  --glass-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.35);
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: #000000;
+  margin: 0;
+  padding: 0;
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Glassmorphism utility */
+.glass-effect {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.theme-transition {
+  transition: background-color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Animations system */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(28px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(32px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes popIn {
+  from { transform: scale(0.96); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes cardEntrance {
+  from { transform: translateY(20px) scale(0.98); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes cartBounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.36s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pop-in {
+  animation: popIn 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-card-entrance {
+  animation: cardEntrance 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-cart-bounce {
+  animation: cartBounce 0.28s ease-in-out;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-hover);
+}

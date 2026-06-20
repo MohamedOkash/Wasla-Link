@@ -1,0 +1,68 @@
+# Checklist - WaslaLink Rebranding & Recovery Refactor
+
+- [x] Backup current `App.jsx` to `App_backup_before_refactor.jsx`
+- [x] Recover all missing/truncated components
+- [x] Create folder structure under `src/`
+- [x] Extract and create data files (`src/data/`)
+  - [x] `translations.ts`
+  - [x] `banners.ts`
+  - [x] `categories.ts`
+  - [x] `stores.ts`
+  - [x] `products.ts`
+- [x] Create TypeScript type definitions (`src/types/`)
+  - [x] `user.types.ts`
+  - [x] `store.types.ts`
+  - [x] `product.types.ts`
+  - [x] `order.types.ts`
+  - [x] `banner.types.ts`
+- [x] Create Services (`src/services/`)
+  - [x] `search.service.ts`
+- [x] Create Context (`src/contexts/`)
+  - [x] `AppContext.tsx`
+- [x] Create Routes (`src/routes/`)
+  - [x] `AppRoutes.tsx`
+  - [x] `CustomerRoutes.tsx`
+  - [x] `VendorRoutes.tsx`
+  - [x] `AdminRoutes.tsx`
+- [x] Create Features (`src/features/`)
+  - [x] Customer Features
+    - [x] `HomeScreen.tsx`
+    - [x] `CategoryScreen.tsx`
+    - [x] `CustomerShop.tsx`
+    - [x] `ProductModal.tsx`
+    - [x] `CustomerCart.tsx`
+    - [x] `CustomerCheckout.tsx`
+    - [x] `CustomerOrders.tsx`
+    - [x] `CustomerProfile.tsx`
+    - [x] `GlobalSearch.tsx`
+    - [x] `LocationPicker.tsx`
+  - [x] Vendor Features
+    - [x] `VendorDashboard.tsx`
+    - [x] `VendorOrders.tsx`
+    - [x] `VendorProducts.tsx`
+    - [x] `VendorOffers.tsx`
+    - [x] `VendorSettings.tsx`
+  - [x] Admin Features
+    - [x] `AdminDashboard.tsx`
+    - [x] `StoreApprovals.tsx`
+    - [x] `UserManagement.tsx`
+    - [x] `BannerManagement.tsx`
+    - [x] `Analytics.tsx`
+- [x] Create Shared UI components (`src/components/`)
+  - [x] `common/Toast.tsx`
+- [x] Create Build Configurations
+  - [x] `package.json`
+  - [x] `vite.config.js`
+  - [x] `tailwind.config.js`
+  - [x] `postcss.config.js`
+  - [x] `tsconfig.json`
+  - [x] `index.html`
+  - [x] `public/manifest.json`
+- [x] Build & Verify Compilation
+  - [x] Install dependencies (`npm install`)
+  - [x] Run typescript compile checks
+  - [x] Run production build (`npm run build`)
+
+## Next Phase / Remaining Tasks
+- [x] Runtime validation of user flows (Splash -> Login -> Customer/Vendor/Admin dashboards)
+- [ ] Database integration phase (Firebase Auth, Firestore, Storage) when approved by user
