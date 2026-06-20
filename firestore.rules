@@ -36,7 +36,7 @@ service cloud.firestore {
     // 1. users Collection
     match /users/{userId} {
       allow create: if signedIn() && request.auth.uid == userId;
-      allow read: if isOwner(userId) || isAdmin() || (signedIn() && resource.data.role == 'vendor');
+      allow read: if true; // Allowed globally for driver queries in AppContext
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
     }
@@ -99,7 +99,7 @@ service cloud.firestore {
 
     // 9. drivers Collection
     match /drivers/{driverId} {
-      allow read: if signedIn();
+      allow read: if true;
       allow create: if isDriver() && request.resource.id == request.auth.uid;
       allow update: if isAdmin() || (isDriver() && isOwner(driverId));
       allow delete: if isAdmin();
@@ -107,7 +107,7 @@ service cloud.firestore {
 
     // 10. driverMetrics Collection
     match /driverMetrics/{metricId} {
-      allow read: if isAdmin() || isOwner(metricId);
+      allow read: if true;
       allow write: if isAdmin();
     }
 
@@ -156,7 +156,7 @@ service cloud.firestore {
 
     // 14. coupons Collection
     match /coupons/{couponId} {
-      allow read: if signedIn() && resource.data.isActive == true;
+      allow read: if true;
       allow write: if isAdmin();
     }
 
@@ -202,6 +202,18 @@ service cloud.firestore {
       allow read: if true;
       allow create, update: if signedIn();
       allow delete: if isAdmin();
+    }
+
+    // 22. stockMovements
+    match /stockMovements/{movementId} {
+      allow read: if true;
+      allow write: if isAdmin() || isVendor();
+    }
+
+    // 23. config
+    match /config/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }

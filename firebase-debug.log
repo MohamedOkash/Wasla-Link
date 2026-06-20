@@ -1,0 +1,17 @@
+[debug] [2026-06-20T12:31:12.137Z] ----------------------------------------------------------------------
+[debug] [2026-06-20T12:31:12.139Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\mokas\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only hosting firestore
+[debug] [2026-06-20T12:31:12.139Z] CLI Version:   15.21.0
+[debug] [2026-06-20T12:31:12.140Z] Platform:      win32
+[debug] [2026-06-20T12:31:12.140Z] Node Version:  v24.15.0
+[debug] [2026-06-20T12:31:12.140Z] Detected Agent: antigravity
+[debug] [2026-06-20T12:31:12.140Z] Time:          Sat Jun 20 2026 15:31:12 GMT+0300 (توقيت شرق أوروبا الصيفي)
+[debug] [2026-06-20T12:31:12.140Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-06-20T12:31:14.263Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-06-20T12:31:14.263Z] > authorizing via signed-in user (mohamed.okash1998@gmail.com)
+[debug] [2026-06-20T12:31:14.263Z] [iam] checking project wasla-link for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-06-20T12:31:14.266Z] Checked if tokens are valid: true, expires at: 1781961516854
+[debug] [2026-06-20T12:31:14.266Z] Checked if tokens are valid: true, expires at: 1781961516854
+[debug] [2026-06-20T12:31:14.267Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/wasla-link:testIamPermissions [none]
+[debug] [2026-06-20T12:31:14.267Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/wasla-link:testIamPermissions  x-goog-user-project=wasla-link
+[debug] [2026-06-20T12:31:14.267Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/wasla-link:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebasehosting.sites.update"]}

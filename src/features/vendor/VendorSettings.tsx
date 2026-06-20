@@ -4,7 +4,7 @@ import { useApp } from '../../contexts/AppContext';
 import { mediaService } from '../../services/media.service';
 
 export const VendorSettings: React.FC = () => {
-  const { stores, setStores, showToast } = useApp();
+  const { stores, setStores, showToast, isRTL } = useApp();
 
   // Find store g_1 (أسواق الخير)
   const store = stores.find(s => s.id === 'g_1');
