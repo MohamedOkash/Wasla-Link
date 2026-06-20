@@ -29,9 +29,7 @@ class FCMService {
     try {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
-        const token = await getToken(this.messaging, {
-          vapidKey: 'BM3F1tW4U6tQeO5Hh486b1Q0Z8b5gC6z2yO9g5_D78z2V0b7W8N7t-x9Q8t8n6W8d9Z8N7t-x9Q8t'
-        });
+        const token = await getToken(this.messaging);
         if (token) {
           await updateDoc(doc(db, 'users', userId), {
             fcmToken: token

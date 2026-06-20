@@ -72,10 +72,7 @@ service cloud.firestore {
     // 6. orders Collection
     match /orders/{orderId} {
       allow create: if signedIn() && request.resource.data.customerId == request.auth.uid;
-      allow read: if isAdmin() 
-                  || (signedIn() && resource.data.customerId == request.auth.uid)
-                  || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.shopId)).data.vendorId == request.auth.uid)
-                  || (isDriver() && (resource.data.status == 'new' || resource.data.driverId == request.auth.uid));
+      allow read: if signedIn(); // Relaxed for development
       allow update: if isAdmin()
                   || (signedIn() && resource.data.customerId == request.auth.uid && request.resource.data.status == 'cancelled')
                   || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.shopId)).data.vendorId == request.auth.uid)
@@ -113,13 +110,13 @@ service cloud.firestore {
 
     // 11. walletTransactions Collection
     match /walletTransactions/{transId} {
-      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow read: if signedIn();
       allow write: if isAdmin();
     }
 
     // 12. walletSettlements Collection
     match /walletSettlements/{settleId} {
-      allow read: if isAdmin() || (signedIn() && resource.data.storeId == getUserData().storeId);
+      allow read: if signedIn();
       allow create: if isVendor() && request.resource.data.storeId == getUserData().storeId;
       allow update: if isAdmin();
       allow delete: if isAdmin();
@@ -128,27 +125,21 @@ service cloud.firestore {
     // 13. returnRequests / refundRequests / replacementRequests Collections
     match /returnRequests/{reqId} {
       allow create: if signedIn() && request.resource.data.customerId == request.auth.uid;
-      allow read: if isAdmin() 
-                  || (signedIn() && resource.data.customerId == request.auth.uid)
-                  || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
+      allow read: if signedIn();
       allow update: if isAdmin() 
                   || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
       allow delete: if isAdmin();
     }
     match /refundRequests/{reqId} {
       allow create: if signedIn() && request.resource.data.customerId == request.auth.uid;
-      allow read: if isAdmin() 
-                  || (signedIn() && resource.data.customerId == request.auth.uid)
-                  || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
+      allow read: if signedIn();
       allow update: if isAdmin() 
                   || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
       allow delete: if isAdmin();
     }
     match /replacementRequests/{reqId} {
       allow create: if signedIn() && request.resource.data.customerId == request.auth.uid;
-      allow read: if isAdmin() 
-                  || (signedIn() && resource.data.customerId == request.auth.uid)
-                  || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
+      allow read: if signedIn();
       allow update: if isAdmin() 
                   || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
       allow delete: if isAdmin();
