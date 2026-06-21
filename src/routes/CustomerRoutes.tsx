@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, ShoppingBag, User, Heart } from 'lucide-react';
+import { Home, ShoppingBag, User, Heart, ClipboardList } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 
 // Customer screens
@@ -94,17 +94,17 @@ export const CustomerRoutes: React.FC = () => {
       </div>
 
       {/* Bottom Navigation Tab Bar (Fixed & Always Visible) */}
-      {!showSearch && !showMap && (
+      {!showSearch && !showMap && !['cart', 'checkout'].includes(route.name) && (
         <div className="fixed bottom-0 left-0 right-0 max-w-[400px] mx-auto w-full glass-effect border-t border-theme-border/60 px-4 pt-4 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] flex justify-between items-center z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] rounded-t-[28px] theme-transition">
           {[
             { id: 'home', icon: Home, label: t('home') },
             { id: 'favorites', icon: Heart, label: isRTL ? 'المفضلة' : 'Favorites' },
-            { id: 'orders', icon: ShoppingBag, label: t('orders') },
+            { id: 'orders', icon: ClipboardList, label: t('orders') },
             { id: 'profile', icon: User, label: t('profile') },
           ].map((item) => {
             // Home is highlighted for categories, store details (shop) and products too
             const isActive = route.name === item.id || 
-              (item.id === 'home' && ['category', 'shop', 'product', 'cart', 'checkout'].includes(route.name));
+              (item.id === 'home' && ['category', 'shop', 'product'].includes(route.name));
             
             return (
               <div 
@@ -114,17 +114,12 @@ export const CustomerRoutes: React.FC = () => {
                   isActive ? 'text-primary' : 'text-theme-muted hover:text-theme-text'
                 }`}
               >
-                <div className="relative">
+                <div className={`p-2 rounded-2xl transition-all duration-300 relative ${isActive ? 'bg-primary/10' : ''}`}>
                   <item.icon 
                     size={24} 
                     strokeWidth={isActive ? 2.5 : 2} 
                     className={isActive ? 'fill-primary/10' : ''} 
                   />
-                  {item.id === 'orders' && cartCount > 0 && (
-                    <span className={`absolute -top-1.5 ${isRTL ? '-right-2.5' : '-left-2.5'} bg-red-500 text-white text-[10px] font-black min-w-[24px] h-[24px] px-1 rounded-full flex items-center justify-center border-2 border-theme-card animate-pulse shadow-md`}>
-                      {cartCount > 99 ? '99+' : cartCount}
-                    </span>
-                  )}
                 </div>
                 <span className="text-[10px] mt-1 font-black">{item.label}</span>
               </div>

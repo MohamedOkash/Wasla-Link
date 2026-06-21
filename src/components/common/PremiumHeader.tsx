@@ -1,11 +1,12 @@
 import React from 'react';
-import { MapPin, Bell, Heart, ChevronLeft, Sparkles } from 'lucide-react';
+import { MapPin, Bell, Heart, ChevronLeft, Sparkles, ShoppingCart } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 
 interface PremiumHeaderProps {
   openMap: () => void;
   openNotifications: () => void;
   openFavorites: () => void;
+  openCart?: () => void;
   onLogoClick?: () => void;
 }
 
@@ -13,11 +14,13 @@ export const PremiumHeader: React.FC<PremiumHeaderProps> = ({
   openMap,
   openNotifications,
   openFavorites,
+  openCart,
   onLogoClick
 }) => {
-  const { location, t, notifications, isRTL, currentUser } = useApp();
+  const { location, t, notifications, isRTL, currentUser, cart } = useApp();
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
+  const cartCount = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
 
   // Smart Greeting logic based on time of day
   const getGreeting = () => {
@@ -83,6 +86,21 @@ export const PremiumHeader: React.FC<PremiumHeaderProps> = ({
             <Heart size={18} className="text-theme-text hover:text-red-500 hover:fill-red-500/20 transition-colors" strokeWidth={2.2} />
           </button>
 
+          {/* Cart Button */}
+          {openCart && (
+            <button 
+              onClick={openCart}
+              className="p-3 bg-theme-bg/60 border border-theme-border/60 hover:border-primary/20 text-theme-text rounded-2xl relative transition hover:scale-105 active:scale-95 shadow-sm theme-transition"
+            >
+              <ShoppingCart size={18} className={`text-theme-text ${cartCount > 0 ? 'text-primary' : ''}`} strokeWidth={2.2} />
+              {cartCount > 0 && (
+                <span className={`absolute -top-1.5 ${isRTL ? '-right-1.5' : '-left-1.5'} bg-red-500 text-white text-[10px] font-black min-w-[24px] h-[24px] px-1 rounded-full flex items-center justify-center border-2 border-theme-card animate-pulse shadow-md font-sans`}>
+                  {cartCount > 99 ? '99+' : cartCount}
+                </span>
+              )}
+            </button>
+          )}
+
           {/* Notifications Bell */}
           <button 
             onClick={openNotifications}
@@ -90,8 +108,8 @@ export const PremiumHeader: React.FC<PremiumHeaderProps> = ({
           >
             <Bell size={18} className={`text-theme-text ${unreadCount > 0 ? 'animate-bounce-slight' : ''}`} strokeWidth={2.2} />
             {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 bg-primary text-white text-[8px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-theme-card animate-pulse shadow-sm font-sans">
-                {unreadCount}
+              <span className={`absolute -top-1.5 ${isRTL ? '-right-1.5' : '-left-1.5'} bg-primary text-white text-[10px] font-black min-w-[24px] h-[24px] px-1 rounded-full flex items-center justify-center border-2 border-theme-card animate-pulse shadow-md font-sans`}>
+                {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
           </button>

@@ -178,6 +178,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigate, openSearch, op
         openMap={openMap}
         openNotifications={() => setShowNotifications(true)}
         openFavorites={() => navigate('favorites')}
+        openCart={() => navigate('cart')}
         onLogoClick={() => {
           scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
         }}
