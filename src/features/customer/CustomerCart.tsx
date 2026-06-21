@@ -151,7 +151,7 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
       </div>
 
       {/* Cart Items List */}
-      <div className="flex-1 overflow-y-auto p-5 pb-[160px] pb-[calc(env(safe-area-inset-bottom)+160px)] space-y-4 bg-theme-bg/30 no-scrollbar">
+      <div className="flex-1 overflow-y-auto p-5 pb-[120px] space-y-4 bg-theme-bg/30 no-scrollbar">
         {cart.items.map(item => {
           const prod = (products.find(p => p.id === item.id) || { ...item, price: item.price }) as Product;
           const discountedUnit = calculateDiscountedPrice(prod, 1);
@@ -285,7 +285,13 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
         </div>
 
         <PremiumButton
-          onClick={goToCheckout}
+          onClick={() => {
+            if (!currentUser) {
+              showToast(isRTL ? 'يجب تسجيل الدخول لإتمام الطلب' : 'You must login to place an order', 'error');
+              return;
+            }
+            goToCheckout();
+          }}
           variant="primary"
           size="lg"
           className="w-full shadow-lg shadow-primary/20 rounded-2xl flex items-center justify-center gap-2 font-black text-xs h-12"

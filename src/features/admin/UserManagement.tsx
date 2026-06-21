@@ -6,18 +6,19 @@ import { auth, db } from '../../services/firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
 
 export const UserManagement: React.FC = () => {
-  const { showToast } = useApp();
+  const { showToast, currentUser } = useApp();
   const [activeTab, setActiveTab] = useState<'customer' | 'vendor' | 'admin'>('customer');
 
   const [usersList, setUsersList] = useState<any[]>([]);
 
   useEffect(() => {
+    if (!currentUser || currentUser.role !== 'admin') return;
     const q = query(collection(db, 'users'));
     const unsub = onSnapshot(q, snap => {
       setUsersList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     }, err => console.error('Users listener error:', err));
     return () => unsub();
-  }, []);
+  }, [currentUser]);
 
   const filteredUsers = usersList.filter(u => (u.role || 'customer') === activeTab);
 

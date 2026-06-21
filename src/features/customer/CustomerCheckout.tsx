@@ -6,8 +6,8 @@ import { Product } from '../../types/product.types';
 import { couponService } from '../../services/coupon.service';
 import { mediaService } from '../../services/media.service';
 import { deliveryFeeService } from '../../services/deliveryFee.service';
-import { doc, writeBatch, increment } from 'firebase/firestore';
-import { db } from '../../services/firebase';
+import { doc, writeBatch, increment, setDoc } from 'firebase/firestore';
+import { db, auth } from '../../services/firebase';
 
 // Premium Rebuild Imports
 import { PremiumButton } from '../../components/premium/PremiumButton';
@@ -201,40 +201,50 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
         createdAt: new Date().toISOString()
       };
 
-      const batch = writeBatch(db);
-      batch.set(doc(db, 'orders', orderId), newOrder);
+      console.log("ORDER_PAYLOAD", newOrder);
+      console.log("AUTH_UID", auth.currentUser?.uid);
+      console.log("CUSTOMER_ID", newOrder.customerId);
 
-      if (pointsToRedeem > 0 && currentUser) {
-        batch.update(doc(db, 'users', currentUser.uid), {
-          points: increment(-pointsToRedeem)
-        });
+      try {
+        // TEMPORARY: Try setDoc directly to catch exact error instead of batch
+        await setDoc(doc(db, 'orders', orderId), newOrder);
 
-        const pointsHistoryId = `${orderId}_${currentUser.uid}_redeem`;
-        batch.set(doc(db, 'pointsHistory', pointsHistoryId), {
-          id: pointsHistoryId,
-          userId: currentUser.uid,
-          orderId: orderId,
-          points: pointsToRedeem,
-          type: 'redeem',
-          createdAt: new Date().toISOString()
-        });
+        const batch = writeBatch(db);
+        if (pointsToRedeem > 0 && currentUser) {
+          batch.update(doc(db, 'users', currentUser.uid), {
+            points: increment(-pointsToRedeem)
+          });
+
+          const pointsHistoryId = `${orderId}_${currentUser.uid}_redeem`;
+          batch.set(doc(db, 'pointsHistory', pointsHistoryId), {
+            id: pointsHistoryId,
+            userId: currentUser.uid,
+            orderId: orderId,
+            points: pointsToRedeem,
+            type: 'redeem',
+            createdAt: new Date().toISOString()
+          });
+        }
+
+        if (activeCoupon) {
+          batch.update(doc(db, 'coupons', activeCoupon.id), {
+            usedCount: increment(1)
+          });
+        }
+
+        await batch.commit();
+      } catch (err: any) {
+        console.error("EXACT_FIRESTORE_ERROR", err.code, err.message, err);
+        throw err; // throw to be caught by outer catch block
       }
-
-      if (activeCoupon) {
-        batch.update(doc(db, 'coupons', activeCoupon.id), {
-          usedCount: increment(1)
-        });
-      }
-
-      await batch.commit();
 
       setCart({ shopId: null, shopName: '', items: [] });
       setActiveCoupon(null);
       showToast(paymentMethod === 'cash' ? 'تم تأكيد طلبك بنجاح وجاري التحضير' : 'تم إرسال إيصال الدفع وجاري تأكيده');
       placeOrder();
-    } catch (err) {
-      console.error('Error placing order:', err);
-      showToast(isRTL ? 'حدث خطأ أثناء إتمام الطلب' : 'Error occurred while finalizing order');
+    } catch (err: any) {
+      console.error("ORDER_CREATE_ERROR", err);
+      showToast(err instanceof Error ? err.message : JSON.stringify(err));
     } finally {
       setLoading(false);
     }
@@ -265,7 +275,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
             <Info size={20} className="text-amber-500 flex-shrink-0 mt-0.5" />
             <div>
               <h3 className="font-bold text-amber-500 text-sm mb-1">{isRTL ? 'المتجر مغلق حالياً' : 'Store is Closed'}</h3>
-              <p className="text-xs text-theme-muted">{isRTL ? 'سيتم حفظ طلبك وإرساله للمتجر فور افتتاحه ليتم تنفيذه.' : 'Your order will be saved and processed as soon as the store opens.'}</p>
+              <p className="text-xs text-theme-muted">{isRTL ? 'سيتم إرسال الطلب عند موعد فتح المتجر' : 'Your order will be sent when the store opens.'}</p>
             </div>
           </div>
         )}
@@ -681,6 +691,29 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
       <div className="fixed bottom-0 left-0 right-0 max-w-[400px] mx-auto w-full bg-theme-card border-t border-theme-border p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] rounded-t-[32px] shadow-[0_-12px_28px_rgba(0,0,0,0.06)] z-30 theme-transition space-y-4">
         <h3 className="font-black text-sm text-theme-text">{isRTL ? 'ملخص الطلب' : 'Order Summary'}</h3>
         <div className="space-y-2.5 text-xs bg-theme-bg/50 p-3.5 rounded-2xl border border-theme-border/50">
+          
+          {/* Customer Delivery Info Card */}
+          <div className="bg-theme-card border border-theme-border/50 rounded-xl p-3 mb-3 space-y-1.5">
+            <div className="flex justify-between items-center text-theme-muted font-semibold">
+              <span>{isRTL ? 'الاسم:' : 'Name:'}</span>
+              <span className="font-black text-theme-text">{currentUser?.name || ''}</span>
+            </div>
+            <div className="flex justify-between items-center text-theme-muted font-semibold">
+              <span>{isRTL ? 'الهاتف:' : 'Phone:'}</span>
+              <span className="font-sans font-black text-theme-text">{currentUser?.phone || ''}</span>
+            </div>
+            <div className="flex justify-between items-start text-theme-muted font-semibold gap-2">
+              <span className="whitespace-nowrap">{isRTL ? 'العنوان:' : 'Address:'}</span>
+              <span className="font-bold text-theme-text text-left max-w-[200px] leading-relaxed line-clamp-2">
+                {activeAddress ? `${activeAddress.street}، عمارة ${activeAddress.building}` : ''}
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-theme-muted font-semibold">
+              <span>{isRTL ? 'المنطقة:' : 'Area:'}</span>
+              <span className="font-bold text-theme-text">{activeAddress?.village || ''}</span>
+            </div>
+          </div>
+
           <div className="flex justify-between text-theme-muted font-semibold">
             <span>{isRTL ? 'عدد المنتجات' : 'Product Count'}</span>
             <span className="font-sans">{cart.items.reduce((sum, item) => sum + item.quantity, 0)}</span>

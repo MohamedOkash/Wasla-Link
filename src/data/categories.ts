@@ -45,24 +45,7 @@ export const initialCategories: Category[] = [
     image: 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48?auto=format&fit=crop&w=600&q=80',
     icon: 'Lightbulb'
   },
-  {
-    id: 'mobile',
-    name: { ar: 'الموبايل وإكسسواراته', en: 'Mobile Store' },
-    imgUrl: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=600&q=80',
-    nameAr: 'الموبايل وإكسسواراته',
-    nameEn: 'Mobile Store',
-    image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=600&q=80',
-    icon: 'Smartphone'
-  },
-  {
-    id: 'computer',
-    name: { ar: 'الكمبيوتر والإلكترونيات', en: 'Computer Store' },
-    imgUrl: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=600&q=80',
-    nameAr: 'الكمبيوتر والإلكترونيات',
-    nameEn: 'Computer Store',
-    image: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=600&q=80',
-    icon: 'Laptop'
-  },
+
   {
     id: 'pharmacy',
     name: { ar: 'الصيدلية ومستحضرات التجميل', en: 'Pharmacy' },
@@ -135,42 +118,7 @@ export const initialCategories: Category[] = [
     image: 'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=600&q=80',
     icon: 'Tv'
   },
-  {
-    id: 'clothing',
-    name: { ar: 'الملابس والأزياء والشنط', en: 'Clothing & Fashion' },
-    imgUrl: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=600&q=80',
-    nameAr: 'الملابس والأزياء والشنط',
-    nameEn: 'Clothing & Fashion',
-    image: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=600&q=80',
-    icon: 'Shirt'
-  },
-  {
-    id: 'perfumes_cosmetics',
-    name: { ar: 'العطور ومستحضرات التجميل', en: 'Perfumes & Cosmetics' },
-    imgUrl: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=600&q=80',
-    nameAr: 'العطور ومستحضرات التجميل',
-    nameEn: 'Perfumes & Cosmetics',
-    image: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=600&q=80',
-    icon: 'Sparkles'
-  },
-  {
-    id: 'flowers',
-    name: { ar: 'محل هدايا وأزهار', en: 'Flower & Gift Shop' },
-    imgUrl: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=600&q=80',
-    nameAr: 'محل هدايا وأزهار',
-    nameEn: 'Flower & Gift Shop',
-    image: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=600&q=80',
-    icon: 'Heart'
-  },
-  {
-    id: 'toys',
-    name: { ar: 'متجر ألعاب الأطفال', en: 'Toy Store' },
-    imgUrl: 'https://images.unsplash.com/photo-1539627831859-a911cf04b3cd?auto=format&fit=crop&w=600&q=80',
-    nameAr: 'متجر ألعاب الأطفال',
-    nameEn: 'Toy Store',
-    image: 'https://images.unsplash.com/photo-1539627831859-a911cf04b3cd?auto=format&fit=crop&w=600&q=80',
-    icon: 'Gift'
-  },
+
   {
     id: 'cafe',
     name: { ar: 'مقهى ومشروبات باردة وساخنة', en: 'Café & Coffee Shop' },

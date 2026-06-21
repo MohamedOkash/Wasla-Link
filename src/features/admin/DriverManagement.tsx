@@ -5,17 +5,18 @@ import { collection, query, where, onSnapshot, doc, updateDoc, writeBatch } from
 import { db } from '../../services/firebase';
 
 export const DriverManagement: React.FC = () => {
-  const { drivers, setDrivers, updateDriverStatus, isRTL, showToast } = useApp();
+  const { drivers, setDrivers, updateDriverStatus, isRTL, showToast, currentUser } = useApp();
   const [activeFilter, setActiveFilter] = useState<'approved' | 'pending' | 'suspended'>('approved');
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
 
   useEffect(() => {
+    if (!currentUser || currentUser.role !== 'admin') return;
     const q = query(collection(db, 'driverRequests'), where('status', '==', 'pending'));
     const unsub = onSnapshot(q, snap => {
       setPendingRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     }, err => console.error('Driver requests error:', err));
     return () => unsub();
-  }, []);
+  }, [currentUser]);
 
   const handleApproveRequest = async (request: any) => {
     try {
