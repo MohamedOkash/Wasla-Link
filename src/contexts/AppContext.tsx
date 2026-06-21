@@ -236,7 +236,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [followedStores, setFollowedStores] = useState<string[]>([]);
   const [savedAddresses, setSavedAddresses] = useState<EgyptianAddress[]>([]);
 
-  const [cart, setCart] = useState<Cart>({ shopId: null, shopName: '', items: [] });
+  const [cart, setCart] = useState<Cart>(() => {
+    try {
+      const saved = localStorage.getItem('waslalink_cart');
+      return saved ? JSON.parse(saved) : { shopId: null, shopName: '', items: [] };
+    } catch {
+      return { shopId: null, shopName: '', items: [] };
+    }
+  });
   const [location, setLocation] = useState<LocationState>(() => {
     const saved = localStorage.getItem('waslalink_loc');
     return saved ? JSON.parse(saved) : { name: '', coords: null, isVerified: false };
@@ -263,6 +270,58 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('waslalink_recent_searches', JSON.stringify(recentSearches));
   }, [recentSearches]);
+
+  // Sync Cart to LocalStorage
+  useEffect(() => {
+    localStorage.setItem('waslalink_cart', JSON.stringify(cart));
+  }, [cart]);
+
+  // Sync Cart to Firestore on Login/Logout
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+    
+    const syncCartWithFirestore = async () => {
+      try {
+        const cartRef = doc(db, 'carts', currentUser.uid);
+        const cartSnap = await getDoc(cartRef);
+        
+        if (cartSnap.exists()) {
+          const remoteCart = cartSnap.data() as Cart;
+          if (cart.items.length === 0 && remoteCart.items && remoteCart.items.length > 0) {
+            setCart(remoteCart);
+          } else if (cart.items.length > 0) {
+            await setDoc(cartRef, { ...cart, userId: currentUser.uid, updatedAt: new Date().toISOString() }, { merge: true });
+          }
+        } else if (cart.items.length > 0) {
+          await setDoc(cartRef, { ...cart, userId: currentUser.uid, updatedAt: new Date().toISOString() });
+        }
+      } catch (err) {
+        console.error("Cart sync error", err);
+      }
+    };
+    syncCartWithFirestore();
+  }, [currentUser?.uid]);
+
+  // Push Cart Updates to Firestore when logged in
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+    const timeout = setTimeout(async () => {
+      try {
+        if (cart.items.length === 0) {
+          await deleteDoc(doc(db, 'carts', currentUser.uid));
+        } else {
+          await setDoc(doc(db, 'carts', currentUser.uid), {
+            ...cart,
+            userId: currentUser.uid,
+            updatedAt: new Date().toISOString()
+          });
+        }
+      } catch (err) {
+        console.error("Error updating cart", err);
+      }
+    }, 1000);
+    return () => clearTimeout(timeout);
+  }, [cart, currentUser?.uid]);
 
   const addRecentSearch = (queryStr: string) => {
     if (!queryStr.trim()) return;
