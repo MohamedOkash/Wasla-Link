@@ -42,4 +42,18 @@ export interface Store {
   fridaySchedule?: { isOpen: boolean; openTime: string; closeTime: string };
   holidayMode?: boolean;
   village?: string;
+
+  // Phase 12C: Unified Offers Engine
+  offers?: Array<{
+    id: string;
+    title: string;
+    discountPercent: number;
+    expiresAt: string;
+  }>;
+  campaigns?: Array<{
+    id: string;
+    bannerUrl: string;
+    linkUrl?: string;
+  }>;
+  featuredProducts?: string[]; // Array of product IDs
 }

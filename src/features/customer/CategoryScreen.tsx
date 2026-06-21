@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronRight, Search, Filter, Star, Clock, Heart } from 'lucide-react';
+import { getStoreStatus } from '../../utils/storeUtils';
 import { useApp } from '../../contexts/AppContext';
 
 interface CategoryScreenProps {
@@ -25,8 +26,8 @@ export const CategoryScreen: React.FC<CategoryScreenProps> = ({ catId, navigate,
     const currentMin = now.getMinutes();
     const currentTimeVal = currentHour * 60 + currentMin;
 
-    const [opHour, opMin] = store.openingHours.split(':').map(Number);
-    const [clHour, clMin] = store.closingHours.split(':').map(Number);
+    const [opHour, opMin] = (store.openingHours || '00:00').split(':').map(Number);
+    const [clHour, clMin] = (store.closingHours || '23:59').split(':').map(Number);
 
     const openTimeVal = opHour * 60 + opMin;
     let closeTimeVal = clHour * 60 + clMin;
@@ -116,54 +117,7 @@ export const CategoryScreen: React.FC<CategoryScreenProps> = ({ catId, navigate,
             </div>
           ) : (
             catShops.map(shop => {
-              const openStatus = (() => {
-                if (shop.isTemporarilyClosed) {
-                  return { label: isRTL ? 'مغلق مؤقتاً' : 'Temporarily Closed', color: 'bg-red-500/15 text-red-500 border border-red-500/20' };
-                }
-                if (!shop.openingHours || !shop.closingHours) {
-                  return shop.isOpen 
-                    ? { label: isRTL ? 'مفتوح الآن' : 'Open Now', color: 'bg-green-500/15 text-green-500 border border-green-500/20' }
-                    : { label: isRTL ? 'مغلق' : 'Closed', color: 'bg-red-500/15 text-red-500 border border-red-500/20' };
-                }
-                const now = new Date();
-                const currentDay = now.getDay();
-                if (shop.workingDays && !shop.workingDays.includes(currentDay)) {
-                  return { label: isRTL ? 'مغلق (عطلة)' : 'Closed (Holiday)', color: 'bg-red-500/15 text-red-500 border border-red-500/20' };
-                }
-                const currentHour = now.getHours();
-                const currentMin = now.getMinutes();
-                const currentTimeVal = currentHour * 60 + currentMin;
-
-                const [opHour, opMin] = shop.openingHours.split(':').map(Number);
-                const [clHour, clMin] = shop.closingHours.split(':').map(Number);
-
-                const openTimeVal = opHour * 60 + opMin;
-                let closeTimeVal = clHour * 60 + clMin;
-
-                let isStoreOpen = false;
-                if (closeTimeVal < openTimeVal) {
-                  isStoreOpen = currentTimeVal >= openTimeVal || currentTimeVal < closeTimeVal;
-                } else {
-                  isStoreOpen = currentTimeVal >= openTimeVal && currentTimeVal < closeTimeVal;
-                }
-
-                if (!isStoreOpen) {
-                  return { label: isRTL ? 'مغلق' : 'Closed', color: 'bg-red-500/15 text-red-500 border border-red-500/20' };
-                }
-
-                let minsToClose = 0;
-                if (closeTimeVal < openTimeVal) {
-                  minsToClose = currentTimeVal >= openTimeVal ? (1440 - currentTimeVal) + closeTimeVal : closeTimeVal - currentTimeVal;
-                } else {
-                  minsToClose = closeTimeVal - currentTimeVal;
-                }
-
-                if (minsToClose > 0 && minsToClose <= 60) {
-                  return { label: isRTL ? 'يغلق خلال ساعة' : 'Closes in an hour', color: 'bg-amber-500/15 text-amber-500 border border-amber-500/20' };
-                }
-
-                return { label: isRTL ? 'مفتوح الآن' : 'Open Now', color: 'bg-green-500/15 text-green-500 border border-green-500/20' };
-              })();
+              const openStatus = getStoreStatus(shop, isRTL);
 
               return (
                 <div 

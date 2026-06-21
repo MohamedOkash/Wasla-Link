@@ -14,6 +14,7 @@ import { PremiumButton } from '../../components/premium/PremiumButton';
 import { PremiumInput } from '../../components/premium/PremiumInput';
 import { PremiumCard } from '../../components/premium/PremiumCard';
 import { PremiumBadge } from '../../components/premium/PremiumBadge';
+import { getStoreStatus } from '../../utils/storeUtils';
 
 interface CustomerCheckoutProps {
   goBack: () => void;
@@ -62,6 +63,8 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
 
   // Find store to check coverage
   const store = stores.find(s => s.id === cart.shopId);
+  const storeStatusObj = store ? getStoreStatus(store, isRTL) : { status: 'open' };
+  const isStoreClosed = storeStatusObj.status === 'closed';
 
   // Resolve current address object being used
   const activeAddress = selectedAddressId === 'new' 
@@ -170,6 +173,8 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
         id: orderId,
         shopId: cart.shopId || '',
         shopName: cart.shopName,
+        scheduledOrder: isStoreClosed,
+        scheduledFor: isStoreClosed ? 'next_open' : undefined,
         customerId: currentUser?.uid || 'guest',
         customerName: currentUser?.name || 'عميل تجريبي',
         items: cart.items.map(item => ({
@@ -248,20 +253,43 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
           onClick={goBack} 
           className="p-2.5 text-theme-text bg-theme-bg hover:bg-theme-border/50 rounded-full transition flex items-center justify-center border border-theme-border/30"
         >
-          <ChevronRight size={18} className={isRTL ? '' : 'rotate-180'} />
+          <ChevronRight size={20} className={isRTL ? '' : 'rotate-180'} />
         </button>
-        <h1 className="text-sm font-black text-theme-text">{t('checkout')}</h1>
+        <h2 className="text-xl font-black text-theme-text">{isRTL ? 'إتمام الطلب' : 'Checkout'}</h2>
       </div>
 
-      {/* Main Form Body */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-5 bg-theme-bg/30 no-scrollbar">
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
+        {/* Scheduled Order Warning */}
+        {isStoreClosed && (
+          <div className="mx-5 mt-5 bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex items-start gap-3">
+            <Info size={20} className="text-amber-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-bold text-amber-500 text-sm mb-1">{isRTL ? 'المتجر مغلق حالياً' : 'Store is Closed'}</h3>
+              <p className="text-xs text-theme-muted">{isRTL ? 'سيتم حفظ طلبك وإرساله للمتجر فور افتتاحه ليتم تنفيذه.' : 'Your order will be saved and processed as soon as the store opens.'}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Main Form Body */}
+        <div className="p-5 space-y-5 bg-theme-bg/30 no-scrollbar">
         
-        {/* Address Selection Section */}
+        {/* Delivery Information Section */}
         <PremiumCard hoverable={false} className="space-y-4">
           <h3 className="font-black text-theme-text text-xs flex items-center gap-1.5 border-b border-theme-border pb-2.5 uppercase tracking-wide">
             <MapPin size={15} className="text-primary" />
-            {isRTL ? 'عنوان شحن التوصيل' : 'Delivery Shipping Address'}
+            {isRTL ? 'معلومات التوصيل والشحن' : 'Delivery Information'}
           </h3>
+
+          <div className="bg-theme-bg/50 p-3 rounded-xl border border-theme-border/50 space-y-2 mb-4">
+            <div className="flex justify-between text-[11px] font-bold">
+              <span className="text-theme-muted">{isRTL ? 'الاسم:' : 'Name:'}</span>
+              <span className="text-theme-text">{currentUser?.name || ''}</span>
+            </div>
+            <div className="flex justify-between text-[11px] font-bold">
+              <span className="text-theme-muted">{isRTL ? 'رقم الهاتف:' : 'Phone:'}</span>
+              <span className="text-theme-text" dir="ltr">{currentUser?.phone || ''}</span>
+            </div>
+          </div>
 
           {savedAddresses.length > 0 && (
             <div className="space-y-3">
@@ -607,33 +635,39 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
           </PremiumCard>
         )}
       </div>
+      </div>
 
       {/* Checkout Totals & Place Order Panel */}
       <div className="fixed bottom-0 left-0 right-0 max-w-[400px] mx-auto w-full bg-theme-card border-t border-theme-border p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] rounded-t-[32px] shadow-[0_-12px_28px_rgba(0,0,0,0.06)] z-30 theme-transition space-y-4">
-        <div className="space-y-2 text-xs">
+        <h3 className="font-black text-sm text-theme-text">{isRTL ? 'ملخص الطلب' : 'Order Summary'}</h3>
+        <div className="space-y-2.5 text-xs bg-theme-bg/50 p-3.5 rounded-2xl border border-theme-border/50">
+          <div className="flex justify-between text-theme-muted font-semibold">
+            <span>{isRTL ? 'عدد المنتجات' : 'Product Count'}</span>
+            <span className="font-sans">{cart.items.reduce((sum, item) => sum + item.quantity, 0)}</span>
+          </div>
           <div className="flex justify-between text-theme-muted font-semibold">
             <span>{isRTL ? 'المجموع الفرعي:' : 'Subtotal:'}</span>
-            <span className="font-sans">{subtotal} ج.م</span>
+            <span className="font-sans font-bold text-theme-text">{subtotal} ج.م</span>
           </div>
           {discountAmount > 0 && (
-            <div className="flex justify-between text-green-500 font-bold animate-fade-in">
+            <div className="flex justify-between text-green-500 font-bold animate-fade-in bg-green-500/10 p-2 rounded-lg mt-1">
               <span>{isRTL ? 'خصم الكوبون:' : 'Coupon Discount:'}</span>
               <span className="font-sans">-{discountAmount} ج.م</span>
             </div>
           )}
           {pointsDiscount > 0 && (
-            <div className="flex justify-between text-green-500 font-bold animate-fade-in">
+            <div className="flex justify-between text-green-500 font-bold animate-fade-in bg-green-500/10 p-2 rounded-lg mt-1">
               <span>{isRTL ? 'خصم نقاط الولاء:' : 'Loyalty Points Discount:'}</span>
               <span className="font-sans">-{pointsDiscount} ج.م</span>
             </div>
           )}
           <div className="flex justify-between text-theme-muted font-semibold">
             <span>{isRTL ? 'رسوم التوصيل:' : 'Delivery fee:'}</span>
-            <span className="font-sans">{deliveryFee === 0 ? (isRTL ? 'مجاني' : 'Free') : `${deliveryFee} ج.م`}</span>
+            <span className="font-sans font-bold text-theme-text">{deliveryFee === 0 ? (isRTL ? 'مجاني' : 'Free') : `${deliveryFee} ج.م`}</span>
           </div>
-          <div className="border-t border-theme-border/60 my-2 pt-2.5 flex justify-between text-theme-text font-black text-sm">
-            <span>{t('total')}</span>
-            <span className="text-primary font-sans font-black text-base">{total} ج.م</span>
+          <div className="border-t border-theme-border/80 my-2 pt-3 flex justify-between items-center text-theme-text font-black">
+            <span className="text-sm">{t('total')}</span>
+            <span className="text-primary font-sans font-black text-lg">{total} ج.م</span>
           </div>
         </div>
 

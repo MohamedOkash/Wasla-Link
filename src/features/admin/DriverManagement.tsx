@@ -1,12 +1,53 @@
-import React, { useState } from 'react';
-import { Bike, Check, X, Ban, RefreshCw, Phone, Star, ShieldAlert, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Bike, Check, X, Ban, RefreshCw, Phone, Star, ShieldAlert, Trash2, Eye } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
+import { collection, query, where, onSnapshot, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { db } from '../../services/firebase';
 
 export const DriverManagement: React.FC = () => {
   const { drivers, setDrivers, updateDriverStatus, isRTL, showToast } = useApp();
   const [activeFilter, setActiveFilter] = useState<'approved' | 'pending' | 'suspended'>('approved');
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
 
-  const filteredDrivers = drivers.filter(d => d.status === activeFilter);
+  useEffect(() => {
+    const q = query(collection(db, 'driverRequests'), where('status', '==', 'pending'));
+    const unsub = onSnapshot(q, snap => {
+      setPendingRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, err => console.error('Driver requests error:', err));
+    return () => unsub();
+  }, []);
+
+  const handleApproveRequest = async (request: any) => {
+    try {
+      const batch = writeBatch(db);
+      // 1. Update user role
+      batch.update(doc(db, 'users', request.userId), {
+        role: 'driver',
+        vehicleType: request.vehicleType,
+        isOnline: true,
+        status: 'approved'
+      });
+      // 2. Mark request as approved
+      batch.update(doc(db, 'driverRequests', request.id), {
+        status: 'approved'
+      });
+      await batch.commit();
+      showToast(isRTL ? 'تم تفعيل حساب المندوب بنجاح' : 'Driver account activated successfully');
+    } catch (error) {
+      console.error(error);
+      showToast(isRTL ? 'حدث خطأ أثناء التفعيل' : 'Error activating driver', 'error');
+    }
+  };
+
+  const handleRejectRequest = async (requestId: string) => {
+    try {
+      await updateDoc(doc(db, 'driverRequests', requestId), { status: 'rejected' });
+      showToast(isRTL ? 'تم رفض الطلب' : 'Request rejected');
+    } catch (error) {
+      console.error(error);
+      showToast(isRTL ? 'حدث خطأ' : 'Error', 'error');
+    }
+  };
 
   const handleDeleteDriver = (id: string) => {
     if (confirm(isRTL ? 'هل أنت متأكد من حذف هذا السائق نهائياً من النظام؟' : 'Are you sure you want to delete this driver permanently?')) {
@@ -45,14 +86,14 @@ export const DriverManagement: React.FC = () => {
           {isRTL ? 'إدارة مناديب التوصيل' : 'Delivery Drivers Management'}
         </h3>
 
-        {filteredDrivers.length === 0 ? (
+        {(activeFilter === 'pending' ? pendingRequests.length === 0 : filteredDrivers.length === 0) ? (
           <div className="bg-theme-bg p-6 rounded-2xl border border-theme-border text-center text-theme-muted font-bold theme-transition">
             <ShieldAlert size={20} className="mx-auto mb-2 text-theme-muted" />
             <p className="text-xs">{isRTL ? 'لا يوجد مناديب في هذا القسم حالياً' : 'No drivers registered under this section.'}</p>
           </div>
         ) : (
           <div className="divide-y divide-theme-border/60">
-            {filteredDrivers.map(driver => (
+            {(activeFilter === 'pending' ? pendingRequests : filteredDrivers).map(driver => (
               <div key={driver.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary font-black text-xs flex-shrink-0">
@@ -74,15 +115,24 @@ export const DriverManagement: React.FC = () => {
                 <div className="flex items-center gap-2 self-end sm:self-auto">
                   {driver.status === 'pending' && (
                     <div className="flex gap-1.5">
+                      {activeFilter === 'pending' && driver.documents && (
+                        <button
+                          onClick={() => window.open(driver.documents.idCardUrl, '_blank')}
+                          className="bg-blue-500/10 text-blue-500 p-2 rounded-xl border border-blue-500/20 hover:bg-blue-500/20 transition"
+                          title={isRTL ? 'عرض المستندات' : 'View Docs'}
+                        >
+                          <Eye size={14} strokeWidth={3} />
+                        </button>
+                      )}
                       <button
-                        onClick={() => updateDriverStatus(driver.id, 'approved')}
+                        onClick={() => handleApproveRequest(driver)}
                         className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-xl shadow-md transition"
                         title={isRTL ? 'قبول وتفعيل' : 'Approve'}
                       >
                         <Check size={14} strokeWidth={3} />
                       </button>
                       <button
-                        onClick={() => updateDriverStatus(driver.id, 'suspended')}
+                        onClick={() => handleRejectRequest(driver.id)}
                         className="bg-red-500/10 text-red-500 border border-red-500/20 p-2 rounded-xl hover:bg-red-500/20 transition"
                         title={isRTL ? 'رفض الطلب' : 'Reject'}
                       >

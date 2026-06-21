@@ -1,37 +1,69 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, Shield, UserCheck, Key, Ban, ShieldAlert, Check, Trash2, ShieldCheck, UserX } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
+import { collection, query, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { auth, db } from '../../services/firebase';
+import { sendPasswordResetEmail } from 'firebase/auth';
 
 export const UserManagement: React.FC = () => {
   const { showToast } = useApp();
   const [activeTab, setActiveTab] = useState<'customer' | 'vendor' | 'admin'>('customer');
 
-  const [usersList, setUsersList] = useState([
-    { id: 'u1', name: 'أحمد محمود', email: 'ahmed@demo.com', role: 'customer', status: 'active', createdAt: '2026-06-10' },
-    { id: 'u2', name: 'علي حسن', email: 'ali@demo.com', role: 'customer', status: 'active', createdAt: '2026-06-12' },
-    { id: 'u3', name: 'محمد مصطفى (تاجر الخير)', email: 'alkhair@demo.com', role: 'vendor', status: 'active', createdAt: '2026-06-11' },
-    { id: 'u4', name: 'عمر ياسين (حلويات الجمل)', email: 'elgamal@demo.com', role: 'vendor', status: 'active', createdAt: '2026-06-14' },
-    { id: 'u5', name: 'مدير النظام الرئيس', email: 'admin@demo.com', role: 'admin', status: 'active', createdAt: '2026-06-01' },
-    { id: 'u6', name: 'عادل عبدالرحمن (مساعد مشرف)', email: 'assistant@demo.com', role: 'admin', status: 'active', createdAt: '2026-06-15' }
-  ]);
+  const [usersList, setUsersList] = useState<any[]>([]);
 
-  const filteredUsers = usersList.filter(u => u.role === activeTab);
+  useEffect(() => {
+    const q = query(collection(db, 'users'));
+    const unsub = onSnapshot(q, snap => {
+      setUsersList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, err => console.error('Users listener error:', err));
+    return () => unsub();
+  }, []);
 
-  const handleToggleStatus = (id: string, currentStatus: string) => {
+  const filteredUsers = usersList.filter(u => (u.role || 'customer') === activeTab);
+
+  const handleToggleStatus = async (id: string, currentStatus: string) => {
     const nextStatus = currentStatus === 'active' ? 'suspended' : 'active';
-    setUsersList(prev => prev.map(u => {
-      if (u.id === id) {
-        return { ...u, status: nextStatus };
-      }
-      return u;
-    }));
-    showToast(nextStatus === 'suspended' ? 'تم حظر وإيقاف حساب العضو' : 'تم إلغاء حظر العضو وتنشيط حسابه');
+    try {
+      await updateDoc(doc(db, 'users', id), { status: nextStatus });
+      showToast(nextStatus === 'suspended' ? 'تم حظر وإيقاف حساب العضو' : 'تم إلغاء حظر العضو وتنشيط حسابه', 'success');
+    } catch (err) {
+      console.error(err);
+      showToast('خطأ أثناء تحديث الحالة', 'error');
+    }
   };
 
-  const handleDeleteUser = (id: string) => {
-    if (confirm('هل أنت متأكد من حذف حساب هذا العضو نهائياً؟')) {
-      setUsersList(prev => prev.filter(u => u.id !== id));
-      showToast('تم حذف حساب العضو بنجاح');
+  const handleRoleChange = async (id: string, newRole: string) => {
+    try {
+      await updateDoc(doc(db, 'users', id), { role: newRole });
+      showToast(`تم تغيير دور العضو إلى ${newRole} بنجاح`, 'success');
+    } catch (err) {
+      console.error(err);
+      showToast('خطأ أثناء تغيير الدور', 'error');
+    }
+  };
+
+  const handleResetPassword = async (email: string) => {
+    if (!email) return;
+    if (confirm(`هل تريد إرسال رابط إعادة تعيين كلمة المرور إلى ${email}؟`)) {
+      try {
+        await sendPasswordResetEmail(auth, email);
+        showToast('تم إرسال رابط إعادة التعيين إلى بريد العضو بنجاح', 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('حدث خطأ أثناء إرسال الرابط', 'error');
+      }
+    }
+  };
+
+  const handleDeleteUser = async (id: string) => {
+    if (confirm('هل أنت متأكد من حذف بيانات هذا العضو نهائياً؟ لا يمكن التراجع عن هذا الإجراء.')) {
+      try {
+        await deleteDoc(doc(db, 'users', id));
+        showToast('تم حذف بيانات العضو بنجاح', 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('حدث خطأ أثناء الحذف', 'error');
+      }
     }
   };
 
@@ -86,7 +118,26 @@ export const UserManagement: React.FC = () => {
                   )}
                   
                   {/* Actions */}
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 items-center">
+                    <select
+                      value={user.role || 'customer'}
+                      onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                      className="bg-theme-bg border border-theme-border/50 rounded-lg text-[9px] font-bold px-1.5 py-1"
+                    >
+                      <option value="customer">عميل</option>
+                      <option value="vendor">بائع</option>
+                      <option value="driver">مندوب</option>
+                      <option value="admin">مدير</option>
+                    </select>
+
+                    <button
+                      onClick={() => handleResetPassword(user.email)}
+                      className="p-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg text-blue-500 hover:bg-blue-500/20 transition"
+                      title="إرسال رابط إعادة كلمة المرور"
+                    >
+                      <Key size={12} />
+                    </button>
+
                     <button
                       onClick={() => handleToggleStatus(user.id, user.status)}
                       className={`p-1.5 rounded-lg border transition ${
@@ -98,6 +149,7 @@ export const UserManagement: React.FC = () => {
                     >
                       <UserX size={12} />
                     </button>
+                    
                     <button
                       onClick={() => handleDeleteUser(user.id)}
                       className="p-1.5 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 hover:bg-red-500/20 transition"

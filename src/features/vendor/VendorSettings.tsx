@@ -9,7 +9,7 @@ export const VendorSettings: React.FC = () => {
   // Find store g_1 (أسواق الخير)
   const store = stores.find(s => s.id === 'g_1');
 
-  const [isOpen, setIsOpen] = useState(store ? store.isOpen : true);
+  const [isOpen, setIsOpen] = useState(store && store.isOpen !== undefined ? store.isOpen : true);
   const [isTemporarilyClosed, setIsTemporarilyClosed] = useState(store ? !!store.isTemporarilyClosed : false);
   const [vodafone, setVodafone] = useState(store?.paymentInfo?.vodafone || '');
   const [instapay, setInstapay] = useState(store?.paymentInfo?.instapay || '');

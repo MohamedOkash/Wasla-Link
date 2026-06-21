@@ -1,7 +1,8 @@
 import React from 'react';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { AppRoutes } from './routes/AppRoutes';
-import { Toast } from './components/common/Toast';
+import { ToastManager } from './components/premium/toast/ToastManager';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 function AppContent() {
   const { isRTL, role, theme } = useApp();
@@ -15,8 +16,10 @@ function AppContent() {
       <div 
         className={`${isDesktop ? 'max-w-[1200px] min-h-screen' : 'max-w-[400px] h-screen'} mx-auto bg-theme-bg theme-transition relative shadow-[0_0_50px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col`}
       >
-        <AppRoutes />
-        <Toast />
+        <ErrorBoundary>
+          <AppRoutes />
+          <ToastManager />
+        </ErrorBoundary>
       </div>
     </div>
   );

@@ -58,8 +58,8 @@ class DeliveryService {
       closeTimeStr = hours.fridaySchedule.closeTime;
     }
 
-    const [openH, openM] = openTimeStr.split(':').map(Number);
-    const [closeH, closeM] = closeTimeStr.split(':').map(Number);
+    const [openH, openM] = (openTimeStr || '00:00').split(':').map(Number);
+    const [closeH, closeM] = (closeTimeStr || '23:59').split(':').map(Number);
 
     const openMin = openH * 60 + openM;
     let closeMin = closeH * 60 + closeM;
@@ -85,8 +85,8 @@ class DeliveryService {
     // Check break times
     if (hours.breakTimes && hours.breakTimes.length > 0) {
       for (const brk of hours.breakTimes) {
-        const [startH, startM] = brk.start.split(':').map(Number);
-        const [endH, endM] = brk.end.split(':').map(Number);
+        const [startH, startM] = (brk.start || '00:00').split(':').map(Number);
+        const [endH, endM] = (brk.end || '00:00').split(':').map(Number);
         const startMin = startH * 60 + startM;
         const endMin = endH * 60 + endM;
 

@@ -3,6 +3,7 @@ import { Search, LayoutGrid, Flame, Clock, Heart, Tag, TrendingUp, Sparkles, Nav
 import { useApp } from '../../contexts/AppContext';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { deliveryService } from '../../services/delivery.service';
+import { getStoreStatus } from '../../utils/storeUtils';
 import { recommendationService } from '../../services/recommendation.service';
 
 // Premium Rebuild Imports
@@ -51,7 +52,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigate, openSearch, op
   useEffect(() => {
     if (banners.length === 0) return;
     const timer = setInterval(() => setCurrentBanner((prev) => (prev + 1) % banners.length), 4000);
-    return () => clearInterval(timer);
+    return () => clearTimeout(timer);
   }, [banners.length]);
 
   // Recommendation & Segment lists
@@ -83,8 +84,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigate, openSearch, op
     };
     const check = deliveryService.checkStoreOpenStatus(businessHours);
     if (check.status === 'closed') {
-      showToast(isRTL ? 'هذا المتجر مغلق حالياً' : 'This store is closed now');
-      return;
+      showToast(isRTL ? 'المتجر مغلق: سيتم وضع طلبك كطلب مجدول' : 'Store closed: your order will be scheduled', 'info');
     }
 
     setCart(prev => {
@@ -270,57 +270,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigate, openSearch, op
           ) : (
             <div className="flex flex-col gap-4">
               {approvedStores.slice(0, 8).map(shop => {
-                const openStatus = (() => {
-                  if (shop.isTemporarilyClosed) {
-                    return { label: isRTL ? 'مغلق مؤقتاً' : 'Temporarily Closed', color: 'bg-red-500/15 text-red-500 border border-red-500/20', status: 'closed' };
-                  }
-                  if (!shop.openingHours || !shop.closingHours) {
-                    return shop.isOpen 
-                      ? { label: isRTL ? 'مفتوح الآن' : 'Open Now', color: 'bg-green-500/15 text-green-500 border border-green-500/20', status: 'open' }
-                      : { label: isRTL ? 'مغلق' : 'Closed', color: 'bg-red-500/15 text-red-500 border border-red-500/20', status: 'closed' };
-                  }
-                  
-                  const now = new Date();
-                  const currentDay = now.getDay();
-                  if (shop.workingDays && !shop.workingDays.includes(currentDay)) {
-                    return { label: isRTL ? 'مغلق (عطلة)' : 'Closed (Holiday)', color: 'bg-red-500/15 text-red-500 border border-red-500/20', status: 'closed' };
-                  }
-                  
-                  const currentHour = now.getHours();
-                  const currentMin = now.getMinutes();
-                  const currentTimeVal = currentHour * 60 + currentMin;
-
-                  const [opHour, opMin] = shop.openingHours.split(':').map(Number);
-                  const [clHour, clMin] = shop.closingHours.split(':').map(Number);
-
-                  const openTimeVal = opHour * 60 + opMin;
-                  let closeTimeVal = clHour * 60 + clMin;
-
-                  let isStoreOpen = false;
-                  if (closeTimeVal < openTimeVal) {
-                    isStoreOpen = currentTimeVal >= openTimeVal || currentTimeVal < closeTimeVal;
-                  } else {
-                    isStoreOpen = currentTimeVal >= openTimeVal && currentTimeVal < closeTimeVal;
-                  }
-
-                  if (!isStoreOpen) {
-                    return { label: isRTL ? 'مغلق' : 'Closed', color: 'bg-red-500/15 text-red-500 border border-red-500/20', status: 'closed' };
-                  }
-
-                  let minsToClose = 0;
-                  if (closeTimeVal < openTimeVal) {
-                    minsToClose = currentTimeVal >= openTimeVal ? (1440 - currentTimeVal) + closeTimeVal : closeTimeVal - currentTimeVal;
-                  } else {
-                    minsToClose = closeTimeVal - currentTimeVal;
-                  }
-
-                  if (minsToClose > 0 && minsToClose <= 60) {
-                    return { label: isRTL ? 'يغلق خلال ساعة' : 'Closes in an hour', color: 'bg-amber-500/15 text-amber-500 border border-amber-500/20', status: 'closing_soon' };
-                  }
-
-                  return { label: isRTL ? 'مفتوح الآن' : 'Open Now', color: 'bg-green-500/15 text-green-500 border border-green-500/20', status: 'open' };
-                })();
-
+                const openStatus = getStoreStatus(shop, isRTL);
                 const storeReviews = orders.filter(o => o.shopId === shop.id && o.status === 'delivered');
                 const avgRating = storeReviews.length > 0 ? (shop.rating || 4.5) : 4.5;
 

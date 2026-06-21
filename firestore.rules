@@ -36,7 +36,7 @@ service cloud.firestore {
     // 1. users Collection
     match /users/{userId} {
       allow create: if signedIn() && request.auth.uid == userId;
-      allow read: if true; // Allowed globally for driver queries in AppContext
+      allow read: if isOwner(userId) || isAdmin();
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
     }
@@ -72,7 +72,17 @@ service cloud.firestore {
     // 6. orders Collection
     match /orders/{orderId} {
       allow create: if signedIn() && request.resource.data.customerId == request.auth.uid;
-      allow read: if signedIn(); // Relaxed for development
+      allow read: if isAdmin()
+  || (signedIn() && resource.data.customerId == request.auth.uid)
+  || (
+    signedIn() &&
+    get(/databases/$(database)/documents/stores/$(resource.data.shopId))
+      .data.vendorId == request.auth.uid
+  )
+  || (
+    isDriver() &&
+    resource.data.driverId == request.auth.uid
+  );
       allow update: if isAdmin()
                   || (signedIn() && resource.data.customerId == request.auth.uid && request.resource.data.status == 'cancelled')
                   || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.shopId)).data.vendorId == request.auth.uid)
@@ -110,7 +120,8 @@ service cloud.firestore {
 
     // 11. walletTransactions Collection
     match /walletTransactions/{transId} {
-      allow read: if signedIn();
+      allow read: if isAdmin()
+  || resource.data.userId == request.auth.uid;
       allow write: if isAdmin();
     }
 
@@ -125,21 +136,33 @@ service cloud.firestore {
     // 13. returnRequests / refundRequests / replacementRequests Collections
     match /returnRequests/{reqId} {
       allow create: if signedIn() && request.resource.data.customerId == request.auth.uid;
-      allow read: if signedIn();
+      allow read: if isAdmin()
+  || resource.data.customerId == request.auth.uid
+  || get(
+       /databases/$(database)/documents/stores/$(resource.data.storeId)
+     ).data.vendorId == request.auth.uid;
       allow update: if isAdmin() 
                   || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
       allow delete: if isAdmin();
     }
     match /refundRequests/{reqId} {
       allow create: if signedIn() && request.resource.data.customerId == request.auth.uid;
-      allow read: if signedIn();
+      allow read: if isAdmin()
+  || resource.data.customerId == request.auth.uid
+  || get(
+       /databases/$(database)/documents/stores/$(resource.data.storeId)
+     ).data.vendorId == request.auth.uid;
       allow update: if isAdmin() 
                   || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
       allow delete: if isAdmin();
     }
     match /replacementRequests/{reqId} {
       allow create: if signedIn() && request.resource.data.customerId == request.auth.uid;
-      allow read: if signedIn();
+      allow read: if isAdmin()
+  || resource.data.customerId == request.auth.uid
+  || get(
+       /databases/$(database)/documents/stores/$(resource.data.storeId)
+     ).data.vendorId == request.auth.uid;
       allow update: if isAdmin() 
                   || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
       allow delete: if isAdmin();
@@ -166,7 +189,23 @@ service cloud.firestore {
     // 17. businessHours Collection
     match /businessHours/{hoursId} {
       allow read: if true;
-      allow write: if isAdmin() || (isVendor() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
+      allow create: if isAdmin()
+  || (
+    isVendor()
+    && get(
+         /databases/$(database)/documents/stores/$(request.resource.data.storeId)
+       ).data.vendorId == request.auth.uid
+  );
+
+      allow update: if isAdmin()
+  || (
+    isVendor()
+    && get(
+         /databases/$(database)/documents/stores/$(resource.data.storeId)
+       ).data.vendorId == request.auth.uid
+  );
+
+      allow delete: if isAdmin();
     }
 
     // 18. invoices Collection
@@ -191,7 +230,11 @@ service cloud.firestore {
     // 21. assets Collection
     match /assets/{assetId} {
       allow read: if true;
-      allow create, update: if signedIn();
+      allow create: if signedIn();
+
+      allow update: if isAdmin()
+  || resource.data.ownerId == request.auth.uid;
+
       allow delete: if isAdmin();
     }
 
@@ -201,10 +244,73 @@ service cloud.firestore {
       allow write: if isAdmin() || isVendor();
     }
 
-    // 23. config
+    // 23. config & adminSettings
     match /config/{document=**} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+    match /adminSettings/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // 24. analytics & brands (global)
+    match /analytics/{docId} {
+      allow read, write: if isAdmin();
+    }
+    match /brands/{brandId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 25. Vendor specific catalog
+    match /vendorCategories/{categoryId} {
+      allow read: if true;
+
+      allow create, update, delete:
+        if isVendor()
+        && request.resource.data.storeId == getUserData().storeId;
+    }
+    match /vendorSubCategories/{subCatId} {
+      allow read: if true;
+      allow write: if isAdmin() || (isVendor() && request.resource.data.storeId == getUserData().storeId);
+    }
+    match /vendorBrands/{brandId} {
+      allow read: if true;
+      allow write: if isAdmin() || (isVendor() && request.resource.data.storeId == getUserData().storeId);
+    }
+    
+    match /offers/{offerId} {
+      allow read: if true;
+
+      allow create, update, delete:
+        if isAdmin()
+        || (
+          isVendor()
+          && request.resource.data.storeId == getUserData().storeId
+        );
+    }
+    
+    // 26. driverRequests Collection
+    match /driverRequests/{requestId} {
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // 27. referrals Collection
+    match /referrals/{referralId} {
+      allow read: if isAdmin() || (signedIn() && (resource.data.referrerId == request.auth.uid || resource.data.referredId == request.auth.uid));
+      allow create: if signedIn();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // 28. pointsHistory Collection
+    match /pointsHistory/{historyId} {
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isAdmin() || signedIn();
+      allow update, delete: if isAdmin();
     }
   }
 }

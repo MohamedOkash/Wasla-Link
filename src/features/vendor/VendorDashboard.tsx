@@ -7,6 +7,7 @@ import { VendorOffers } from './VendorOffers';
 import { VendorSettings } from './VendorSettings';
 import { VendorReports } from './VendorReports';
 import { VendorCampaigns } from './VendorCampaigns';
+import { VendorCatalogBuilder } from './VendorCatalogBuilder';
 import { onSnapshot, collection, query, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 
@@ -19,7 +20,7 @@ import { PremiumInput } from '../../components/premium/PremiumInput';
 
 export const VendorDashboard: React.FC = () => {
   const { goHome, t, orders, products, theme, isRTL, walletTransactions, walletSettlements, addSettlement, returnRequests, updateReturnStatus, showToast } = useApp();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'products' | 'offers' | 'campaigns' | 'reports' | 'wallet' | 'settings' | 'returns' | 'reviews'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'catalog_builder' | 'orders' | 'products' | 'offers' | 'campaigns' | 'reports' | 'wallet' | 'settings' | 'returns' | 'reviews'>('dashboard');
 
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawMethod, setWithdrawMethod] = useState<'vodafone' | 'instapay' | 'bank'>('vodafone');
@@ -115,6 +116,7 @@ export const VendorDashboard: React.FC = () => {
       <div className="bg-[#111827] px-4 py-2.5 border-b border-[#1F2937] flex overflow-x-auto no-scrollbar gap-2 z-20 theme-transition">
         {[
           { id: 'dashboard', label: isRTL ? 'الرئيسية' : 'Summary', icon: BarChart3 },
+          { id: 'catalog_builder', label: isRTL ? 'منشئ الكتالوج' : 'Catalog Builder', icon: StoreIcon },
           { id: 'orders', label: isRTL ? 'الطلبات' : 'Orders', icon: ClipboardList },
           { id: 'products', label: isRTL ? 'المخزون' : 'Catalog', icon: ShoppingBag },
           { id: 'offers', label: isRTL ? 'العروض' : 'Discounts', icon: Tag },
@@ -260,13 +262,12 @@ export const VendorDashboard: React.FC = () => {
           </div>
         )}
 
+        {activeTab === 'catalog_builder' && <VendorCatalogBuilder />}
         {activeTab === 'orders' && <VendorOrders />}
         {activeTab === 'products' && <VendorProducts />}
         {activeTab === 'offers' && <VendorOffers />}
         {activeTab === 'campaigns' && <VendorCampaigns />}
         {activeTab === 'reports' && <VendorReports />}
-        
-        {/* Wallet Overview Tab */}
         {activeTab === 'wallet' && (
           <div className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

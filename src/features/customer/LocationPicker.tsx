@@ -41,7 +41,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({ closeMap }) => {
   };
 
   const parseAddressText = (text: string) => {
-    const parts = text.split(/[،,]/).map(p => p.trim());
+    const parts = (text || '').split(/[،,]/).map(p => p.trim());
     return {
       governorate: parts[0] || 'الدقهلية',
       center: parts[1] || 'السنبلاوين',

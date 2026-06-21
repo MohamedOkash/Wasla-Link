@@ -329,11 +329,11 @@ export const AuthScreen: React.FC = () => {
     }
   };
 
-  const handleDemoLogin = async (roleType: 'customer' | 'vendor' | 'driver' | 'admin') => {
+  const handleDemoLogin = async (roleType: 'customer' | 'vendor' | 'driver') => {
     setLoading(true);
     try {
       const demoEmail = `${roleType}@demo.com`;
-      const demoPass = roleType === 'admin' ? 'admin123' : 'password123';
+      const demoPass = 'password123';
       await signInWithEmailAndPassword(auth, demoEmail, demoPass);
     } catch (err: any) {
       console.error(err);
@@ -399,7 +399,7 @@ export const AuthScreen: React.FC = () => {
             <span className="text-[10px] font-black text-theme-muted uppercase tracking-wider">{lang === 'ar' ? 'دخول تجريبي سريع' : 'Quick Demo Access'}</span>
           </div>
           
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <button 
               type="button"
               onClick={() => handleDemoLogin('vendor')} 
@@ -413,13 +413,6 @@ export const AuthScreen: React.FC = () => {
               className="bg-primary/10 text-primary font-black py-3 rounded-xl border border-primary/20 hover:bg-primary/15 transition text-[10px] truncate"
             >
               {lang === 'ar' ? 'دخول مندوب' : 'Driver'}
-            </button>
-            <button 
-              type="button"
-              onClick={() => handleDemoLogin('admin')} 
-              className="bg-secondary/10 text-secondary font-black py-3 rounded-xl border border-secondary/20 hover:bg-secondary/15 transition text-[10px] truncate"
-            >
-              {lang === 'ar' ? 'دخول مدير' : 'Admin'}
             </button>
           </div>
 

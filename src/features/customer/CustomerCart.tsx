@@ -258,24 +258,29 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
 
       {/* Sticky Bottom Order Summary Panel */}
       <div className="fixed bottom-0 left-0 right-0 max-w-[400px] mx-auto w-full bg-theme-card border-t border-theme-border p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] rounded-t-[32px] shadow-[0_-12px_28px_rgba(0,0,0,0.06)] z-30 theme-transition space-y-4">
-        <div className="space-y-2 text-xs">
+        <h3 className="font-black text-sm text-theme-text">{isRTL ? 'ملخص الطلب' : 'Order Summary'}</h3>
+        <div className="space-y-2.5 text-xs bg-theme-bg/50 p-3.5 rounded-2xl border border-theme-border/50">
+          <div className="flex justify-between text-theme-muted font-semibold">
+            <span>{isRTL ? 'عدد المنتجات' : 'Product Count'}</span>
+            <span className="font-sans">{cart.items.reduce((sum, item) => sum + item.quantity, 0)}</span>
+          </div>
           <div className="flex justify-between text-theme-muted font-semibold">
             <span>{t('subtotal')}</span>
-            <span className="font-sans">{subtotal} ج.م</span>
+            <span className="font-sans font-bold text-theme-text">{subtotal} ج.م</span>
           </div>
           {discountAmount > 0 && (
-            <div className="flex justify-between text-green-500 font-bold animate-fade-in">
+            <div className="flex justify-between text-green-500 font-bold animate-fade-in bg-green-500/10 p-2 rounded-lg mt-1">
               <span>{isRTL ? 'خصم الكوبون:' : 'Coupon Discount:'}</span>
               <span className="font-sans">-{discountAmount} ج.م</span>
             </div>
           )}
           <div className="flex justify-between text-theme-muted font-semibold">
             <span>{t('deliveryFee')}</span>
-            <span className="font-sans">{deliveryFee} ج.م</span>
+            <span className="font-sans font-bold text-theme-text">{deliveryFee} ج.م</span>
           </div>
-          <div className="border-t border-theme-border/60 my-2 pt-2.5 flex justify-between text-theme-text font-black text-sm">
-            <span>{t('total')}</span>
-            <span className="text-primary font-sans font-black text-base">{total} ج.م</span>
+          <div className="border-t border-theme-border/80 my-2 pt-3 flex justify-between items-center text-theme-text font-black">
+            <span className="text-sm">{t('total')}</span>
+            <span className="text-primary font-sans font-black text-lg">{total} ج.م</span>
           </div>
         </div>
 

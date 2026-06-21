@@ -7,6 +7,7 @@ import {
 import { useApp } from '../../contexts/AppContext';
 import { LoyaltyWallet } from '../../components/loyalty/LoyaltyWallet';
 import { ReferralCenter } from '../../components/referral/ReferralCenter';
+import { DriverRegistration } from '../driver/DriverRegistration';
 
 // Premium Rebuild Imports
 import { PremiumButton } from '../../components/premium/PremiumButton';
@@ -130,7 +131,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
   };
 
   const parseAddressText = (text: string) => {
-    const parts = text.split(/[،,]/).map(p => p.trim());
+    const parts = (text || '').split(/[،,]/).map(p => p.trim());
     return {
       governorate: parts[0] || 'الدقهلية',
       center: parts[1] || 'السنبلاوين',
@@ -237,6 +238,11 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
         </form>
       </div>
     );
+  }
+
+  // 1.5 Driver Registration Section
+  if (activeSection === 'driver_registration') {
+    return <DriverRegistration onBack={() => setActiveSection('root')} />;
   }
 
   // 2. Saved Addresses Section

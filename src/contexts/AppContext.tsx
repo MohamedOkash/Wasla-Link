@@ -13,7 +13,7 @@ import { DriverMetrics } from '../types/analytics.types';
 import { PointsHistoryEntry, Referral } from '../types/loyalty.types';
 import { DeliveryFeeConfig, DEFAULT_DELIVERY_FEE_CONFIG } from '../services/deliveryFee.service';
 import { fcmService } from '../services/fcm.service';
-
+import { ToastItem, ToastType } from '../components/premium/toast/PremiumToast';
 
 // Firebase Imports
 import { 
@@ -121,8 +121,9 @@ interface AppContextType {
   setCart: React.Dispatch<React.SetStateAction<Cart>>;
   location: LocationState;
   setLocation: (loc: LocationState) => void;
-  toast: string | null;
-  showToast: (msg: string) => void;
+  toasts: ToastItem[];
+  showToast: (msg: string, type?: ToastType) => void;
+  removeToast: (id: string) => void;
   goHome: () => void;
   favoriteStores: string[];
   toggleFavoriteStore: (id: string) => void;
@@ -241,7 +242,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : { name: '', coords: null, isVerified: false };
   });
   
-  const [toast, setToast] = useState<string | null>(null);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [theme, setThemeState] = useState<'orange' | 'midnight'>(() => {
     return (localStorage.getItem('waslalink_theme') as 'orange' | 'midnight') || 'orange';
   });
@@ -461,80 +462,69 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // --- Real-time Listeners for public marketplace collections ---
   useEffect(() => {
-    const unsubCat = onSnapshot(collection(db, 'categories'), snap => {
-      setCategoriesState(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
-    const unsubBanners = onSnapshot(collection(db, 'banners'), snap => {
-      setBannersState(snap.docs.map(d => ({ id: isNaN(Number(d.id)) ? d.id : Number(d.id), ...d.data() } as any)));
-    });
-    const unsubStores = onSnapshot(collection(db, 'stores'), snap => {
-      setStoresState(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
-    });
-    const unsubProducts = onSnapshot(collection(db, 'products'), snap => {
-      setProductsState(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
-    });
-    const unsubCoupons = onSnapshot(collection(db, 'coupons'), snap => {
-      setCouponsState(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
-    });
-    const unsubReviews = onSnapshot(collection(db, 'reviews'), snap => {
-      setReviewsState(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
-    });
-    const unsubCampaigns = onSnapshot(collection(db, 'campaigns'), snap => {
-      setCampaignsState(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
-    const unsubMetrics = onSnapshot(collection(db, 'driverMetrics'), snap => {
-      const record: Record<string, DriverMetrics> = {};
-      snap.docs.forEach(d => { record[d.id] = d.data() as DriverMetrics; });
-      setDriverMetricsState(record);
-    });
-    const unsubMovements = onSnapshot(collection(db, 'stockMovements'), snap => {
-      const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
-      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setStockMovements(list);
-    });
+    try {
+      const unsubCat = onSnapshot(collection(db, 'categories'), snap => {
+        setCategoriesState(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      }, err => console.error('Categories listener error:', err));
+      const unsubBanners = onSnapshot(collection(db, 'banners'), snap => {
+        setBannersState(snap.docs.map(d => ({ id: isNaN(Number(d.id)) ? d.id : Number(d.id), ...d.data() } as any)));
+      }, err => console.error('Banners listener error:', err));
+      const unsubStores = onSnapshot(collection(db, 'stores'), snap => {
+        setStoresState(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
+      }, err => console.error('Stores listener error:', err));
+      const unsubProducts = onSnapshot(collection(db, 'products'), snap => {
+        setProductsState(snap.docs.map(d => {
+          const data = d.data();
+          return {
+            id: d.id,
+            ...data,
+            name: data.name || '',
+            description: data.description || '',
+            imageUrl: data.imageUrl || '',
+            galleryImages: data.galleryImages || [],
+            category: data.category || '',
+            price: data.price || 0,
+            stock: data.stock || 0,
+            tags: data.tags || ''
+          } as any;
+        }));
+      }, err => console.error('Products listener error:', err));
+      const unsubCoupons = onSnapshot(collection(db, 'coupons'), snap => {
+        setCouponsState(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
+      }, err => console.error('Coupons listener error:', err));
+      const unsubReviews = onSnapshot(collection(db, 'reviews'), snap => {
+        setReviewsState(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
+      }, err => console.error('Reviews listener error:', err));
+      const unsubCampaigns = onSnapshot(collection(db, 'campaigns'), snap => {
+        setCampaignsState(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      }, err => console.error('Campaigns listener error:', err));
+      const unsubFees = onSnapshot(doc(db, 'config', 'deliveryFees'), snap => {
+        if (snap.exists()) {
+          setDeliveryFeeConfig(snap.data() as DeliveryFeeConfig);
+        } else {
+          setDeliveryFeeConfig(DEFAULT_DELIVERY_FEE_CONFIG);
+        }
+      }, err => console.error('DeliveryFees listener error:', err));
 
-    const qDrivers = query(collection(db, 'users'), where('role', '==', 'driver'));
-    const unsubDrivers = onSnapshot(qDrivers, snap => {
-      setDriversState(snap.docs.map(d => {
-        const data = d.data();
-        return {
-          id: d.id,
-          name: data.name,
-          phone: data.phone || '',
-          vehicleType: data.vehicleType || 'سكوتر',
-          rating: data.rating || 5.0,
-          isOnline: data.isOnline !== undefined ? data.isOnline : true,
-          status: data.status || 'approved'
-        };
-      }));
-    });
-
-    const unsubFees = onSnapshot(doc(db, 'config', 'deliveryFees'), snap => {
-      if (snap.exists()) {
-        setDeliveryFeeConfig(snap.data() as DeliveryFeeConfig);
-      } else {
-        setDeliveryFeeConfig(DEFAULT_DELIVERY_FEE_CONFIG);
-      }
-    });
-
-    return () => {
-      unsubCat();
-      unsubBanners();
-      unsubStores();
-      unsubProducts();
-      unsubCoupons();
-      unsubReviews();
-      unsubCampaigns();
-      unsubDrivers();
-      unsubMetrics();
-      unsubMovements();
-      unsubFees();
-    };
+      return () => {
+        unsubCat();
+        unsubBanners();
+        unsubStores();
+        unsubProducts();
+        unsubCoupons();
+        unsubReviews();
+        unsubCampaigns();
+        unsubFees();
+      };
+    } catch (err) {
+      console.error('Error setting up public listeners:', err);
+      return () => {};
+    }
   }, []);
 
   // --- Real-time Listeners for role-dependent collections ---
   useEffect(() => {
-    if (!currentUser) {
+    if (!auth.currentUser || !currentUser) {
       setOrdersState([]);
       setNotificationsState([]);
       setWalletTransactionsState([]);
@@ -545,91 +535,140 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
 
-    // Dynamic orders query based on role rules
-    let qOrders;
-    if (currentUser.role === 'customer') {
-      qOrders = query(collection(db, 'orders'), where('customerId', '==', currentUser.uid));
-    } else if (currentUser.role === 'vendor' && currentUser.storeId) {
-      qOrders = query(collection(db, 'orders'), where('shopId', '==', currentUser.storeId));
-    } else {
-      qOrders = query(collection(db, 'orders'));
-    }
+    try {
+      // Dynamic orders query based on role rules
+      let qOrders;
+      if (currentUser.role === 'customer') {
+        qOrders = query(collection(db, 'orders'), where('customerId', '==', currentUser.uid));
+      } else if (currentUser.role === 'vendor' && currentUser.storeId) {
+        qOrders = query(collection(db, 'orders'), where('shopId', '==', currentUser.storeId));
+      } else {
+        qOrders = query(collection(db, 'orders'));
+      }
 
-    const unsubOrders = onSnapshot(qOrders, snap => {
-      const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
-      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setOrdersState(list);
-    });
-
-    // Notifications specific to active user
-    const qNotifs = query(collection(db, 'notifications'), where('userId', '==', currentUser.uid));
-    const unsubNotifs = onSnapshot(qNotifs, snap => {
-      const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
-      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setNotificationsState(list);
-    });
-
-    // Return requests specific to user/vendor
-    let qReturns;
-    if (currentUser.role === 'customer') {
-      qReturns = query(collection(db, 'returnRequests'), where('customerId', '==', currentUser.uid));
-    } else if (currentUser.role === 'vendor' && currentUser.storeId) {
-      qReturns = query(collection(db, 'returnRequests'), where('storeId', '==', currentUser.storeId));
-    } else {
-      qReturns = query(collection(db, 'returnRequests'));
-    }
-
-    const unsubReturns = onSnapshot(qReturns, snap => {
-      const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
-      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setReturnRequestsState(list);
-    });
-
-    // Vendor specific financial collections
-    let unsubTx = () => {};
-    let unsubSet = () => {};
-    if (currentUser.storeId) {
-      const qTx = query(collection(db, 'walletTransactions'), where('storeId', '==', currentUser.storeId));
-      unsubTx = onSnapshot(qTx, snap => {
+      const unsubOrders = onSnapshot(qOrders, snap => {
         const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
         list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setWalletTransactionsState(list);
-      });
+        setOrdersState(list);
+      }, err => console.error('Orders listener error:', err));
 
-      const qSet = query(collection(db, 'walletSettlements'), where('storeId', '==', currentUser.storeId));
-      unsubSet = onSnapshot(qSet, snap => {
+      // Notifications specific to active user
+      const qNotifs = query(collection(db, 'notifications'), where('userId', '==', currentUser.uid));
+      const unsubNotifs = onSnapshot(qNotifs, snap => {
         const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
         list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setWalletSettlementsState(list);
-      });
+        setNotificationsState(list);
+      }, err => console.error('Notifications listener error:', err));
+
+      // Return requests specific to user/vendor
+      let qReturns;
+      if (currentUser.role === 'customer') {
+        qReturns = query(collection(db, 'returnRequests'), where('customerId', '==', currentUser.uid));
+      } else if (currentUser.role === 'vendor' && currentUser.storeId) {
+        qReturns = query(collection(db, 'returnRequests'), where('storeId', '==', currentUser.storeId));
+      } else {
+        qReturns = query(collection(db, 'returnRequests'));
+      }
+
+      const unsubReturns = onSnapshot(qReturns, snap => {
+        const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+        list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setReturnRequestsState(list);
+      }, err => console.error('ReturnRequests listener error:', err));
+
+      // Vendor specific financial collections
+      let unsubTx = () => {};
+      let unsubSet = () => {};
+      if (currentUser.storeId) {
+        const qTx = query(collection(db, 'walletTransactions'), where('storeId', '==', currentUser.storeId));
+        unsubTx = onSnapshot(qTx, snap => {
+          const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+          list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setWalletTransactionsState(list);
+        }, err => console.error('WalletTransactions listener error:', err));
+
+        const qSet = query(collection(db, 'walletSettlements'), where('storeId', '==', currentUser.storeId));
+        unsubSet = onSnapshot(qSet, snap => {
+          const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+          list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setWalletSettlementsState(list);
+        }, err => console.error('WalletSettlements listener error:', err));
+      }
+
+      // Points history specific to user
+      const qPoints = query(collection(db, 'pointsHistory'), where('userId', '==', currentUser.uid));
+      const unsubPoints = onSnapshot(qPoints, snap => {
+        const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+        list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setPointsHistory(list);
+      }, err => console.error('PointsHistory listener error:', err));
+
+      // Referrals where user is inviter
+      const qReferrals = query(collection(db, 'referrals'), where('referrerId', '==', currentUser.uid));
+      const unsubReferrals = onSnapshot(qReferrals, snap => {
+        setReferrals(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
+      }, err => console.error('Referrals listener error:', err));
+
+      // Admin or specific role restricted listeners
+      let unsubMetrics = () => {};
+      let unsubMovements = () => {};
+      let unsubDrivers = () => {};
+
+      if (currentUser.role === 'admin' || currentUser.role === 'driver') {
+        const qMetrics = query(collection(db, 'driverMetrics'));
+        unsubMetrics = onSnapshot(qMetrics, snap => {
+          const record: Record<string, DriverMetrics> = {};
+          snap.docs.forEach(d => { record[d.id] = d.data() as DriverMetrics; });
+          setDriverMetricsState(record);
+        }, err => console.error('DriverMetrics listener error:', err));
+      }
+
+      if (currentUser.role === 'admin' || currentUser.role === 'vendor') {
+        const qMovements = currentUser.role === 'admin' 
+          ? query(collection(db, 'stockMovements'))
+          : query(collection(db, 'stockMovements'), where('storeId', '==', currentUser.storeId));
+        unsubMovements = onSnapshot(qMovements, snap => {
+          const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+          list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setStockMovements(list);
+        }, err => console.error('StockMovements listener error:', err));
+      }
+
+      if (currentUser.role === 'admin') {
+        const qDrivers = query(collection(db, 'users'), where('role', '==', 'driver'));
+        unsubDrivers = onSnapshot(qDrivers, snap => {
+          setDriversState(snap.docs.map(d => {
+            const data = d.data();
+            return {
+              id: d.id,
+              name: data.name,
+              phone: data.phone || '',
+              vehicleType: data.vehicleType || 'سكوتر',
+              rating: data.rating || 5.0,
+              isOnline: data.isOnline !== undefined ? data.isOnline : true,
+              status: data.status || 'approved'
+            };
+          }));
+        }, err => console.error('Drivers listener error:', err));
+      }
+
+      return () => {
+        unsubOrders();
+        unsubNotifs();
+        unsubReturns();
+        unsubTx();
+        unsubSet();
+        unsubPoints();
+        unsubReferrals();
+        unsubMetrics();
+        unsubMovements();
+        unsubDrivers();
+      };
+    } catch (err) {
+      console.error('Error setting up protected listeners:', err);
+      return () => {};
     }
-
-    // Points history specific to user
-    const qPoints = query(collection(db, 'pointsHistory'), where('userId', '==', currentUser.uid));
-    const unsubPoints = onSnapshot(qPoints, snap => {
-      const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
-      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setPointsHistory(list);
-    });
-
-    // Referrals where user is inviter
-    const qReferrals = query(collection(db, 'referrals'), where('inviterId', '==', currentUser.uid));
-    const unsubReferrals = onSnapshot(qReferrals, snap => {
-      const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
-      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setReferrals(list);
-    });
-
-    return () => {
-      unsubOrders();
-      unsubNotifs();
-      unsubReturns();
-      unsubTx();
-      unsubSet();
-      unsubPoints();
-      unsubReferrals();
-    };
-  }, [currentUser]);
+  }, [auth.currentUser, currentUser]);
 
   // --- ACTIONS & MUTATORS ---
 
@@ -643,8 +682,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCurrentUser(null);
   };
 
-  const showToast = (msg: string) => {
-    setToast(msg);
+  const showToast = (msg: string, type: ToastType = 'info') => {
+    const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+    setToasts(prev => {
+      const updated = [...prev, { id, message: msg, type }];
+      if (updated.length > 3) return updated.slice(updated.length - 3);
+      return updated;
+    });
+  };
+
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
   };
 
   const t = (key: string): string => {
@@ -1258,8 +1306,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCart,
         location,
         setLocation: updateLocationPersistent,
-        toast,
+        toasts,
         showToast,
+        removeToast,
         goHome,
         favoriteStores,
         toggleFavoriteStore,

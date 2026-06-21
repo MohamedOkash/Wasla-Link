@@ -10,7 +10,9 @@ import {
   Activity, 
   Tag, 
   Truck, 
-  BarChart3 
+  BarChart3,
+  Image as ImageIcon,
+  Shield
 } from 'lucide-react';
 
 import PremiumButton from '../../components/premium/PremiumButton';
@@ -22,17 +24,31 @@ import MarketplaceMonitor from './MarketplaceMonitor';
 import BannerManagement from './BannerManagement';
 import { DeliveryConfig } from './DeliveryConfig';
 import Analytics from './Analytics';
+import { AssetCoverageCenter } from './AssetCoverageCenter';
+import { SecurityCenter } from './SecurityCenter';
 
 export const AdminDashboard = () => {
   const { t, isRTL, goHome } = useApp();
   
-  const [activeTab, setActiveTab] = useState<'stores' | 'categories' | 'users' | 'drivers' | 'monitor' | 'banners' | 'delivery' | 'analytics'>('stores');
+  const [activeTab, setActiveTab] = useState<'home' | 'stores' | 'categories' | 'users' | 'drivers' | 'monitor' | 'banners' | 'delivery' | 'analytics' | 'assets' | 'security'>('home');
 
+  const adminModules = [
+    { id: 'stores', label: isRTL ? 'المتاجر' : 'Stores', icon: StoreIcon, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+    { id: 'categories', label: isRTL ? 'الكتالوج والأقسام' : 'Catalog Center', icon: FolderOpen, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
+    { id: 'users', label: isRTL ? 'الأعضاء' : 'Users', icon: Users, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+    { id: 'drivers', label: isRTL ? 'السائقين' : 'Drivers', icon: Bike, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+    { id: 'monitor', label: isRTL ? 'مراقبة السوق' : 'Market Monitor', icon: Activity, color: 'text-red-500', bg: 'bg-red-500/10' },
+    { id: 'banners', label: isRTL ? 'الإعلانات' : 'Banners', icon: Tag, color: 'text-pink-500', bg: 'bg-pink-500/10' },
+    { id: 'assets', label: isRTL ? 'تغطية الأصول' : 'Asset Coverage', icon: ImageIcon, color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
+    { id: 'delivery', label: isRTL ? 'إعدادات التوصيل' : 'Delivery Rates', icon: Truck, color: 'text-orange-500', bg: 'bg-orange-500/10' },
+    { id: 'analytics', label: isRTL ? 'التحليلات' : 'Analytics', icon: BarChart3, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+    { id: 'security', label: isRTL ? 'مركز الأمان' : 'Security', icon: Shield, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+  ];
 
   return (
     <div className="flex flex-col min-h-screen bg-theme-bg theme-transition pb-24 text-theme-text font-sans">
       {/* Top Header */}
-      <header className="sticky top-0 z-40 bg-theme-card/85 backdrop-blur-md border-b border-theme-border/60 px-5 pt-12 pb-4 shadow-sm theme-transition">
+      <header className="sticky top-0 z-40 bg-theme-card/85 backdrop-blur-md border-b border-theme-border/60 px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-4 shadow-sm theme-transition">
         <div className="max-w-[1200px] w-full mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="bg-gradient-to-br from-primary to-primary-hover text-white p-2.5 rounded-2xl shadow-lg shadow-primary/25">
@@ -58,52 +74,78 @@ export const AdminDashboard = () => {
         </div>
       </header>
 
-      {/* Tabs Menu Navigation */}
-      <nav className="bg-theme-card/50 backdrop-blur-sm border-b border-theme-border/40 py-2 sticky top-[73px] z-30 theme-transition overflow-hidden">
-        <div className="max-w-[1200px] w-full mx-auto px-4 flex overflow-x-auto no-scrollbar gap-2">
-          {[
-            { id: 'stores', label: isRTL ? 'المتاجر' : 'Stores', icon: StoreIcon },
-            { id: 'categories', label: isRTL ? 'الكتالوج والأقسام' : 'Catalog Center', icon: FolderOpen },
-            { id: 'users', label: isRTL ? 'الأعضاء' : 'Users', icon: Users },
-            { id: 'drivers', label: isRTL ? 'السائقين' : 'Drivers', icon: Bike },
-            { id: 'monitor', label: isRTL ? 'مراقبة السوق' : 'Market Monitor', icon: Activity },
-            { id: 'banners', label: isRTL ? 'الإعلانات' : 'Banners', icon: Tag },
-            { id: 'delivery', label: isRTL ? 'إعدادات التوصيل' : 'Delivery Rates', icon: Truck },
-            { id: 'analytics', label: isRTL ? 'التحليلات' : 'Analytics', icon: BarChart3 },
-          ].map(tab => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`px-4.5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 flex-shrink-0 text-xs font-black select-none ${
-                  isActive 
-                    ? 'bg-primary text-white shadow-md shadow-primary/20 scale-102' 
-                    : 'text-theme-muted hover:text-theme-text hover:bg-theme-card border border-transparent hover:border-theme-border/40'
-                }`}
-              >
-                <Icon size={14} className={isActive ? 'animate-pulse' : ''} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </nav>
-
       {/* Sub components content */}
-      <main className="p-5 flex-grow max-w-[1200px] w-full mx-auto">
-        <div className="animate-fade-in duration-300">
-          {activeTab === 'stores' && <StoreApprovals />}
-          {activeTab === 'categories' && <CatalogManagement />}
-          {activeTab === 'users' && <UserManagement />}
-          {activeTab === 'drivers' && <DriverManagement />}
-          {activeTab === 'monitor' && <MarketplaceMonitor />}
-          {activeTab === 'banners' && <BannerManagement />}
-          {activeTab === 'delivery' && <DeliveryConfig />}
-          {activeTab === 'analytics' && <Analytics />}
-        </div>
+      <main className="p-4 md:p-5 flex-grow max-w-[1200px] w-full mx-auto pb-24">
+        {activeTab === 'home' ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 animate-fade-in">
+            {adminModules.map(mod => {
+              const Icon = mod.icon;
+              return (
+                <button
+                  key={mod.id}
+                  onClick={() => setActiveTab(mod.id as any)}
+                  className="bg-theme-card border border-theme-border/60 hover:border-primary/50 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 transition-all hover:shadow-lg active:scale-95 group"
+                >
+                  <div className={`p-4 rounded-2xl ${mod.bg} ${mod.color} group-hover:scale-110 transition-transform`}>
+                    <Icon size={28} />
+                  </div>
+                  <span className="text-xs font-black text-center text-theme-text">{mod.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="animate-fade-in duration-300">
+            {activeTab === 'stores' && <StoreApprovals />}
+            {activeTab === 'categories' && <CatalogManagement />}
+            {activeTab === 'users' && <UserManagement />}
+            {activeTab === 'drivers' && <DriverManagement />}
+            {activeTab === 'monitor' && <MarketplaceMonitor />}
+            {activeTab === 'banners' && <BannerManagement />}
+            {activeTab === 'assets' && <AssetCoverageCenter />}
+            {activeTab === 'delivery' && <DeliveryConfig />}
+            {activeTab === 'analytics' && <Analytics />}
+            {activeTab === 'security' && <SecurityCenter />}
+          </div>
+        )}
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 bg-theme-card/90 backdrop-blur-md border-t border-theme-border/60 pb-[env(safe-area-inset-bottom)] z-50">
+        <div className="flex justify-around items-center h-16 max-w-[1200px] mx-auto px-2">
+          <button 
+            onClick={() => setActiveTab('home')}
+            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${activeTab === 'home' ? 'text-primary' : 'text-theme-muted'}`}
+          >
+            <LayoutGrid size={20} className={activeTab === 'home' ? 'animate-bounce-slight' : ''} />
+            <span className="text-[10px] font-black">{isRTL ? 'الرئيسية' : 'Home'}</span>
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab('monitor')}
+            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${activeTab === 'monitor' ? 'text-primary' : 'text-theme-muted'}`}
+          >
+            <Activity size={20} className={activeTab === 'monitor' ? 'animate-bounce-slight' : ''} />
+            <span className="text-[10px] font-black">{isRTL ? 'المراقبة' : 'Monitor'}</span>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('stores')}
+            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${activeTab === 'stores' ? 'text-primary' : 'text-theme-muted'}`}
+          >
+            <StoreIcon size={20} className={activeTab === 'stores' ? 'animate-bounce-slight' : ''} />
+            <span className="text-[10px] font-black">{isRTL ? 'المتاجر' : 'Stores'}</span>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('users')}
+            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${activeTab === 'users' ? 'text-primary' : 'text-theme-muted'}`}
+          >
+            <Users size={20} className={activeTab === 'users' ? 'animate-bounce-slight' : ''} />
+            <span className="text-[10px] font-black">{isRTL ? 'الأعضاء' : 'Users'}</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

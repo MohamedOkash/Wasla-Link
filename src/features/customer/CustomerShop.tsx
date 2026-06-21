@@ -13,6 +13,8 @@ import { PremiumButton } from '../../components/premium/PremiumButton';
 import { PremiumBadge } from '../../components/premium/PremiumBadge';
 import { PremiumInput } from '../../components/premium/PremiumInput';
 
+import { getStoreStatus } from '../../utils/storeUtils';
+
 interface CustomerShopProps {
   shop: Store;
   navigate: (name: string, params?: any) => void;
@@ -53,7 +55,11 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
 
   // Filter lists for sections
   const bestSellers = storeProducts.filter(p => p.isBestSeller).slice(0, 8);
+  const discountProducts = storeProducts.filter(p => p.discountPrice).slice(0, 8);
   const offersList = storeProducts.filter(p => p.isOffer).slice(0, 8);
+  const storeFeatured = shop.featuredProducts 
+    ? storeProducts.filter(p => shop.featuredProducts?.includes(p.id)) 
+    : [];
 
   // Get unique sub-categories in this store's products
   const subCategories = ['all', ...Array.from(new Set(storeProducts.map(p => p.cat)))];
@@ -75,51 +81,7 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
   );
   const isDeliverable = !location.isVerified || !shop.deliveryZones || activeZone !== undefined;
 
-  const getOpenStatus = () => {
-    const businessHours = {
-      openingHours: shop.openingHours || '08:00',
-      closingHours: shop.closingHours || '23:00',
-      breakTimes: shop.breakTimes || [],
-      fridaySchedule: shop.fridaySchedule || { isOpen: true, openTime: '13:00', closeTime: '23:00' },
-      holidayMode: !!shop.holidayMode,
-      temporaryClosure: !!shop.isTemporarilyClosed
-    };
-    const check = deliveryService.checkStoreOpenStatus(businessHours);
-    
-    let color = 'bg-green-500/15 text-green-500 border border-green-500/20';
-    if (check.status === 'closed') {
-      color = 'bg-red-500/15 text-red-500 border border-red-500/20';
-    } else if (check.status === 'closing_soon') {
-      color = 'bg-amber-500/15 text-amber-500 border border-amber-500/20 animate-pulse';
-    }
-    
-    let label = check.label;
-    if (isRTL) {
-      if (check.status === 'closed') {
-        if (shop.isTemporarilyClosed) label = 'مغلق مؤقتاً';
-        else if (shop.holidayMode) label = 'مغلق (عطلة رسمية)';
-        else label = check.label;
-      } else if (check.status === 'closing_soon') {
-        label = 'يغلق قريباً';
-      } else {
-        label = 'مفتوح الآن';
-      }
-    } else {
-      if (check.status === 'closed') {
-        if (shop.isTemporarilyClosed) label = 'Temporarily Closed';
-        else if (shop.holidayMode) label = 'Closed (Holiday)';
-        else label = 'Closed';
-      } else if (check.status === 'closing_soon') {
-        label = 'Closing Soon';
-      } else {
-        label = 'Open Now';
-      }
-    }
-    
-    return { status: check.status, label, color };
-  };
-
-  const openStatus = getOpenStatus();
+  const openStatus = getStoreStatus(shop, isRTL);
 
   const storeReviews = reviews.filter(r => r.storeId === shop.id);
   const avgRating = storeReviews.length > 0
@@ -133,8 +95,7 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
       return;
     }
     if (openStatus.status === 'closed') {
-      showToast(isRTL ? 'هذا المتجر مغلق حالياً ولا يستقبل طلبات' : 'This store is closed and cannot accept orders now');
-      return;
+      showToast(isRTL ? 'المتجر مغلق: سيتم وضع طلبك كطلب مجدول' : 'Store closed: your order will be scheduled', 'info');
     }
     setCart(prev => {
       const isDifferentStore = prev.shopId !== null && prev.shopId !== shop.id;
@@ -234,89 +195,109 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
       </div>
 
       {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto pb-[calc(env(safe-area-inset-bottom)+9rem)] no-scrollbar">
-        {/* Cover Header */}
-        <div className="relative h-48 bg-theme-bg flex-shrink-0">
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-[calc(env(safe-area-inset-bottom)+9rem)]">
+        
+        {/* Banner Hero (No absolute content inside) */}
+        <div className="relative h-40 bg-theme-bg w-full shrink-0">
           <img src={shop.coverUrl} className="w-full h-full object-cover" alt={shop.name} />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/20"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-theme-bg via-transparent to-black/20"></div>
+        </div>
 
-          {/* Store Profile Info */}
-          <div className="absolute bottom-4.5 left-5 right-5 flex items-end gap-3.5 text-white">
-            <div className="relative">
+        {/* Store Info Container (Overlaps Banner Slightly) */}
+        <div className="px-5 relative -mt-8 z-10 shrink-0">
+          <div className="flex items-end gap-3.5 mb-3">
+            <div className="relative shrink-0">
               <img 
                 src={shop.logoUrl} 
-                className="w-16 h-16 rounded-[20px] object-cover border-2 border-white/90 shadow-md bg-white flex-shrink-0" 
+                className="w-20 h-20 rounded-[20px] object-cover border-4 border-theme-bg shadow-md bg-white" 
                 alt={shop.name} 
               />
-              <span className={`absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded-lg text-[8px] font-black shadow ${openStatus.color}`}>
+              <span className={`absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded-lg text-[9px] font-black shadow-sm ${openStatus.color}`}>
                 {openStatus.label}
               </span>
             </div>
-            <div className="flex-1 pb-1">
-              <div className="flex items-center gap-2">
-                <h1 className="text-base font-black truncate drop-shadow">{shop.name}</h1>
-              </div>
-              
+            <div className="pb-1 w-full">
+              <h1 className="text-lg font-black truncate text-theme-text">{shop.name}</h1>
               {shop.promoBanner && (
-                <p className="bg-primary text-[8px] font-black px-2 py-0.5 rounded-md w-max mt-1 animate-pulse shadow">
+                <p className="bg-primary/10 text-primary text-[10px] font-black px-2 py-0.5 rounded-md w-max mt-1">
                   {shop.promoBanner}
                 </p>
               )}
-              
-              <div className="flex items-center gap-2.5 mt-1.5 text-[9px] opacity-90 font-bold flex-wrap">
-                <span className="flex items-center gap-0.5"><Star size={11} className="text-yellow-400 fill-current" /> {avgRating}</span>
-                <span>•</span>
-                <span>{shop.followersCount || 0} {isRTL ? 'متابع' : 'followers'}</span>
-                <span>•</span>
-                <span>{activeZone ? activeZone.eta : `${shop.time} دقيقة`}</span>
-                <span>•</span>
-                <span>{activeZone ? `${activeZone.fee} ج.م` : (isRTL ? 'التوصيل غير مدعوم' : 'Delivery unsupported')}</span>
-              </div>
-
-              {/* Social Media Link Badges */}
-              <div className="flex gap-2 mt-2.5 flex-wrap">
-                {shop.facebook && (
-                  <a href={shop.facebook} target="_blank" rel="noreferrer" className="bg-white/15 hover:bg-white/25 p-1.5 rounded-lg transition" title="Facebook">
-                    <Facebook size={12} className="text-white" />
-                  </a>
-                )}
-                {shop.instagram && (
-                  <a href={shop.instagram} target="_blank" rel="noreferrer" className="bg-white/15 hover:bg-white/25 p-1.5 rounded-lg transition" title="Instagram">
-                    <Instagram size={12} className="text-white" />
-                  </a>
-                )}
-                {shop.whatsapp && (
-                  <a href={`https://wa.me/${shop.whatsapp}`} target="_blank" rel="noreferrer" className="bg-white/15 hover:bg-white/25 p-1.5 rounded-lg transition" title="WhatsApp">
-                    <Phone size={12} className="text-white" />
-                  </a>
-                )}
-                {shop.website && (
-                  <a href={shop.website} target="_blank" rel="noreferrer" className="bg-white/15 hover:bg-white/25 p-1.5 rounded-lg transition" title="Website">
-                    <Link size={12} className="text-white" />
-                  </a>
-                )}
-              </div>
             </div>
           </div>
+
+          {/* Social Media Link Badges */}
+          <div className="flex gap-2 mb-4 flex-wrap">
+            {shop.facebook && (
+              <a href={shop.facebook} target="_blank" rel="noreferrer" className="bg-theme-card border border-theme-border/60 hover:bg-theme-border/30 p-2 rounded-xl transition" title="Facebook">
+                <Facebook size={14} className="text-theme-text" />
+              </a>
+            )}
+            {shop.instagram && (
+              <a href={shop.instagram} target="_blank" rel="noreferrer" className="bg-theme-card border border-theme-border/60 hover:bg-theme-border/30 p-2 rounded-xl transition" title="Instagram">
+                <Instagram size={14} className="text-theme-text" />
+              </a>
+            )}
+            {shop.whatsapp && (
+              <a href={`https://wa.me/${shop.whatsapp}`} target="_blank" rel="noreferrer" className="bg-theme-card border border-theme-border/60 hover:bg-theme-border/30 p-2 rounded-xl transition" title="WhatsApp">
+                <Phone size={14} className="text-theme-text" />
+              </a>
+            )}
+            {shop.website && (
+              <a href={shop.website} target="_blank" rel="noreferrer" className="bg-theme-card border border-theme-border/60 hover:bg-theme-border/30 p-2 rounded-xl transition" title="Website">
+                <Link size={14} className="text-theme-text" />
+              </a>
+            )}
+          </div>
+
+          {/* Store Statistics Premium Grid */}
+          <div className="grid grid-cols-3 gap-2.5 mb-5">
+            <div className="bg-theme-card border border-theme-border/60 rounded-2xl p-3 flex flex-col items-center justify-center shadow-sm">
+              <Star size={18} className="text-yellow-400 fill-current mb-1" />
+              <span className="text-[10px] text-theme-muted font-bold">{isRTL ? 'التقييم' : 'Rating'}</span>
+              <span className="text-xs font-black text-theme-text">{avgRating}</span>
+            </div>
+            <div className="bg-theme-card border border-theme-border/60 rounded-2xl p-3 flex flex-col items-center justify-center shadow-sm">
+              <ShoppingBag size={18} className="text-primary mb-1" />
+              <span className="text-[10px] text-theme-muted font-bold">{isRTL ? 'المنتجات' : 'Products'}</span>
+              <span className="text-xs font-black text-theme-text">{storeProducts.length}</span>
+            </div>
+            <div className="bg-theme-card border border-theme-border/60 rounded-2xl p-3 flex flex-col items-center justify-center shadow-sm">
+              <Heart size={18} className="text-red-500 mb-1" />
+              <span className="text-[10px] text-theme-muted font-bold">{isRTL ? 'متابع' : 'Followers'}</span>
+              <span className="text-xs font-black text-theme-text">{shop.followersCount || 0}</span>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2 mb-4 bg-theme-card border border-theme-border/60 p-3 rounded-2xl">
+             <div className="flex-1 flex flex-col items-center border-r border-theme-border/50">
+               <span className="text-[10px] text-theme-muted font-bold">{isRTL ? 'وقت التوصيل' : 'Delivery Time'}</span>
+               <span className="text-xs font-black text-theme-text">{activeZone ? activeZone.eta : `${shop.time} دقيقة`}</span>
+             </div>
+             <div className="flex-1 flex flex-col items-center">
+               <span className="text-[10px] text-theme-muted font-bold">{isRTL ? 'رسوم التوصيل' : 'Delivery Fee'}</span>
+               <span className="text-xs font-black text-theme-text">{activeZone ? `${activeZone.fee} ج.م` : (isRTL ? 'غير مدعوم' : 'N/A')}</span>
+             </div>
+          </div>
+
+          {!isDeliverable && (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl text-xs py-3 px-4 flex items-center justify-center gap-2 font-black mb-4 text-center">
+              <ShieldAlert size={16} />
+              <span>{isRTL ? 'عذراً، هذا المتجر لا يوصل إلى منطقتك حالياً 📍' : 'Sorry, this store does not deliver to your region currently 📍'}</span>
+            </div>
+          )}
+
+          {/* Min Order warning */}
+          {totalPrice > 0 && totalPrice < (shop.minOrder || 0) && (
+            <div className="bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-2xl text-[10px] py-3 px-4 flex items-center justify-center gap-2 font-bold mb-4">
+              <ShieldAlert size={14} />
+              <span>{isRTL ? `الحد الأدنى للطلب ${shop.minOrder} ج.م (متبقي ${shop.minOrder - totalPrice} ج.م)` : `Min order is EGP ${shop.minOrder} (Add EGP ${shop.minOrder - totalPrice} more)`}</span>
+            </div>
+          )}
         </div>
 
-        {!isDeliverable && (
-          <div className="bg-red-500/10 border-b border-red-500/20 text-red-500 text-xs py-3 px-4 flex items-center justify-center gap-2 font-black animate-fade-in text-center">
-            <ShieldAlert size={16} />
-            <span>{isRTL ? 'عذراً، هذا المتجر لا يوصل إلى منطقتك حالياً 📍' : 'Sorry, this store does not deliver to your region currently 📍'}</span>
-          </div>
-        )}
-
-        {/* Min Order warning */}
-        {totalPrice > 0 && totalPrice < (shop.minOrder || 0) && (
-          <div className="bg-amber-500/10 border-b border-amber-500/20 text-amber-500 text-[10px] py-2 px-4 flex items-center justify-center gap-2 font-bold animate-fade-in">
-            <ShieldAlert size={14} />
-            <span>{isRTL ? `الحد الأدنى للطلب ${shop.minOrder} ج.م (متبقي ${shop.minOrder - totalPrice} ج.م)` : `Min order is EGP ${shop.minOrder} (Add EGP ${shop.minOrder - totalPrice} more)`}</span>
-          </div>
-        )}
-
-        {/* Search inside shop */}
-        <div className="px-5 mt-4.5">
+        {/* Sticky Search Bar */}
+        <div className="px-5 sticky top-0 z-10 bg-theme-bg/95 backdrop-blur-md pt-2 pb-3">
           <PremiumInput 
             type="text" 
             value={searchQuery}
@@ -325,6 +306,91 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
             placeholder={isRTL ? 'البحث داخل المتجر...' : 'Search inside store products...'}
           />
         </div>
+
+        {/* Unified Offers Engine (Campaigns) */}
+        {shop.campaigns && shop.campaigns.length > 0 && !searchQuery && selectedSubCat === 'all' && (
+          <div className="px-5 mb-6">
+            <div className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-3 rounded-2xl">
+              {shop.campaigns.map(camp => (
+                <div key={camp.id} className="snap-center shrink-0 w-[90%] first:ml-0 h-32 relative rounded-2xl overflow-hidden border border-theme-border/50">
+                  <img src={camp.bannerUrl} className="w-full h-full object-cover" alt="Campaign" />
+                  <div className="absolute inset-0 bg-black/10"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Unified Offers Engine (Special Offers) */}
+        {shop.offers && shop.offers.length > 0 && !searchQuery && selectedSubCat === 'all' && (
+          <div className="px-5 mb-6">
+            <div className="bg-gradient-to-r from-red-500/10 to-primary/10 rounded-2xl p-4 border border-red-500/20">
+               <h3 className="text-xs font-black text-red-500 flex items-center gap-2 mb-3">
+                 <Tag size={16}/> {isRTL ? 'عروض حصرية' : 'Exclusive Offers'}
+               </h3>
+               <div className="grid grid-cols-2 gap-2">
+                 {shop.offers.map(offer => (
+                   <div key={offer.id} className="bg-theme-card rounded-xl p-3 border border-red-500/20 shadow-sm relative overflow-hidden">
+                     <span className="text-lg font-black text-red-500">{offer.discountPercent}%</span>
+                     <p className="text-[10px] font-bold text-theme-text mt-1">{offer.title}</p>
+                   </div>
+                 ))}
+               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Featured Products from Offers Engine */}
+        {storeFeatured.length > 0 && !searchQuery && selectedSubCat === 'all' && (
+          <PremiumSection title={isRTL ? 'منتجات مميزة' : 'Featured Products'} icon={<Sparkles size={15} />}>
+            <div className="flex gap-3.5 overflow-x-auto no-scrollbar pb-2 pt-1 px-0.5">
+              {storeFeatured.map(product => (
+                <ProductCard 
+                  key={product.id}
+                  product={product}
+                  shop={shop}
+                  onProductClick={(p) => navigate('product', { product: p, shop })}
+                  onAddToCart={handleAddToCart}
+                  onRemoveFromCart={handleRemoveFromCart}
+                  quantityInCart={getProductQuantity(product.id)}
+                  isFavorite={favoriteProducts.includes(product.id)}
+                  onToggleFavorite={(id, e) => {
+                    e.stopPropagation();
+                    toggleFavoriteProduct(id);
+                  }}
+                  isRTL={isRTL}
+                  t={t}
+                />
+              ))}
+            </div>
+          </PremiumSection>
+        )}
+
+        {/* Discount Products Section */}
+        {discountProducts.length > 0 && !searchQuery && selectedSubCat === 'all' && (
+          <PremiumSection title={isRTL ? 'تخفيضات كبرى' : 'Mega Discounts'} icon={<Tag size={15} className="text-red-500"/>}>
+            <div className="flex gap-3.5 overflow-x-auto no-scrollbar pb-2 pt-1 px-0.5">
+              {discountProducts.map(product => (
+                <ProductCard 
+                  key={product.id}
+                  product={product}
+                  shop={shop}
+                  onProductClick={(p) => navigate('product', { product: p, shop })}
+                  onAddToCart={handleAddToCart}
+                  onRemoveFromCart={handleRemoveFromCart}
+                  quantityInCart={getProductQuantity(product.id)}
+                  isFavorite={favoriteProducts.includes(product.id)}
+                  onToggleFavorite={(id, e) => {
+                    e.stopPropagation();
+                    toggleFavoriteProduct(id);
+                  }}
+                  isRTL={isRTL}
+                  t={t}
+                />
+              ))}
+            </div>
+          </PremiumSection>
+        )}
 
         {/* Recommended for You Section slider */}
         {storeRecommendations.length > 0 && !searchQuery && selectedSubCat === 'all' && (
