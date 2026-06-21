@@ -175,7 +175,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
         shopName: cart.shopName,
         scheduledOrder: isStoreClosed,
         scheduledFor: isStoreClosed ? 'next_open' : undefined,
-        customerId: currentUser?.uid || 'guest',
+        customerId: auth.currentUser?.uid || currentUser?.uid || 'guest',
         customerName: currentUser?.name || 'عميل تجريبي',
         items: cart.items.map(item => ({
           id: item.id,
