@@ -523,8 +523,8 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
           <div className="flex items-center gap-3">
             <div className="bg-primary p-2.5 rounded-xl relative">
               <ShoppingCart size={18} />
-              <span className="absolute -top-1.5 -right-1.5 bg-white text-primary text-[8px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-gray-900 leading-none">
-                {totalQuantity}
+              <span className="absolute -top-1.5 -right-1.5 bg-white text-primary text-[10px] font-black min-w-[24px] h-[24px] px-1 rounded-full flex items-center justify-center border-2 border-gray-900 leading-none shadow-sm animate-pulse">
+                {totalQuantity > 99 ? '99+' : totalQuantity}
               </span>
             </div>
             <div>

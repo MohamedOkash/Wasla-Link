@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, MapPin, Wallet, Check, AlertCircle, Camera, Upload, Plus, Info, Coins, Minus } from 'lucide-react';
+import { ChevronRight, MapPin, Wallet, Check, AlertCircle, Camera, Upload, Plus, Info, Coins, Minus, ClipboardList } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { calculateDiscountedPrice } from '../../utils/promo';
 import { Product } from '../../types/product.types';
@@ -245,7 +245,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
   };
 
   return (
-    <div className="bg-theme-bg h-full flex flex-col overflow-hidden animate-slide-in-right theme-transition pb-[calc(env(safe-area-inset-bottom)+12.5rem)]">
+    <div className="bg-theme-bg h-full flex flex-col overflow-hidden animate-slide-in-right theme-transition pb-0">
       
       {/* Header */}
       <div className="bg-theme-card px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-4 shadow-sm border-b border-theme-border/60 flex items-center gap-3.5 z-20 theme-transition">
@@ -258,7 +258,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
         <h2 className="text-xl font-black text-theme-text">{isRTL ? 'إتمام الطلب' : 'Checkout'}</h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-[180px] pb-[calc(env(safe-area-inset-bottom)+180px)]">
         {/* Scheduled Order Warning */}
         {isStoreClosed && (
           <div className="mx-5 mt-5 bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex items-start gap-3">
@@ -635,6 +635,46 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
           </PremiumCard>
         )}
       </div>
+        {/* Order Information Block */}
+        <PremiumCard hoverable={false} className="space-y-3">
+          <h3 className="font-black text-theme-text text-xs flex items-center gap-1.5 border-b border-theme-border pb-2.5 uppercase tracking-wide">
+            <ClipboardList size={15} className="text-primary" />
+            {isRTL ? 'معلومات الطلب' : 'Order Information'}
+          </h3>
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between">
+              <span className="text-theme-muted">{isRTL ? 'اسم العميل:' : 'Customer Name:'}</span>
+              <span className="font-black text-theme-text">{currentUser?.name || ''}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-theme-muted">{isRTL ? 'رقم الهاتف:' : 'Phone Number:'}</span>
+              <span className="font-black text-theme-text" dir="ltr">{currentUser?.phone || ''}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-theme-muted">{isRTL ? 'عنوان التوصيل:' : 'Delivery Address:'}</span>
+              <span className="font-black text-theme-text text-left" style={{maxWidth: '60%'}}>
+                {activeAddress ? getAddressTextStr(activeAddress) : ''}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-theme-muted">{isRTL ? 'المنطقة:' : 'Area:'}</span>
+              <span className="font-black text-theme-text">{activeAddress?.village || ''}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-theme-muted">{isRTL ? 'وقت التوصيل:' : 'Delivery Time:'}</span>
+              <span className="font-black text-theme-text">
+                {isStoreClosed ? (isRTL ? 'عند افتتاح المتجر' : 'When store opens') : (isRTL ? 'في أسرع وقت' : 'ASAP')}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-theme-muted">{isRTL ? 'طريقة الدفع:' : 'Payment Method:'}</span>
+              <span className="font-black text-theme-text">
+                {paymentMethod === 'cash' ? (isRTL ? 'الدفع عند الاستلام' : 'Cash on Delivery') : paymentMethod === 'vodafone' ? (isRTL ? 'فودافون كاش' : 'Vodafone Cash') : (isRTL ? 'إنستاباي' : 'InstaPay')}
+              </span>
+            </div>
+          </div>
+        </PremiumCard>
+
       </div>
 
       {/* Checkout Totals & Place Order Panel */}

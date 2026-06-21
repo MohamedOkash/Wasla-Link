@@ -132,7 +132,7 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
   }
 
   return (
-    <div className="bg-theme-bg h-full flex flex-col overflow-hidden animate-slide-in-right theme-transition pb-[calc(env(safe-area-inset-bottom)+12rem)]">
+    <div className="bg-theme-bg h-full flex flex-col overflow-hidden animate-slide-in-right theme-transition pb-0">
       
       {/* Header Panel */}
       <div className="bg-theme-card px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-4 shadow-sm border-b border-theme-border/60 flex items-center gap-3.5 z-20 theme-transition">
@@ -151,7 +151,7 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
       </div>
 
       {/* Cart Items List */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-theme-bg/30 no-scrollbar">
+      <div className="flex-1 overflow-y-auto p-5 pb-[160px] pb-[calc(env(safe-area-inset-bottom)+160px)] space-y-4 bg-theme-bg/30 no-scrollbar">
         {cart.items.map(item => {
           const prod = (products.find(p => p.id === item.id) || { ...item, price: item.price }) as Product;
           const discountedUnit = calculateDiscountedPrice(prod, 1);

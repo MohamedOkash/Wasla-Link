@@ -27,28 +27,38 @@ export const getStoreStatus = (shop: Store, isRTL: boolean): StoreStatus => {
   if (!shop.openingHours || !shop.closingHours) {
     // If no schedule exists, default to OPEN unless explicitly closed above
     return { 
-      label: isRTL ? 'مفتوح الآن' : 'Open Now', 
+      label: isRTL ? 'متاح للطلبات' : 'Available for Orders', 
       color: 'bg-green-500/15 text-green-500 border border-green-500/20', 
       status: 'open' 
     };
   }
 
-  // Get current time in Cairo timezone
-  const cairoTimeStr = new Intl.DateTimeFormat('en-US', {
+  // Get current time in Cairo timezone safely using formatToParts
+  const now = new Date();
+  const cairoTimeParts = new Intl.DateTimeFormat('en-US', {
     timeZone: 'Africa/Cairo',
     hour12: false,
     hour: 'numeric',
     minute: 'numeric',
     weekday: 'short'
-  }).format(new Date());
+  }).formatToParts(now);
 
-  // cairoTimeStr looks like: "Mon, 14:30"
-  const [weekdayStr, timeStr] = cairoTimeStr.split(', ');
-  const [currentHour, currentMin] = timeStr.split(':').map(Number);
+  let currentHour = 0;
+  let currentMin = 0;
+  let weekdayStr = 'Sun';
+
+  cairoTimeParts.forEach(part => {
+    if (part.type === 'hour') {
+      currentHour = Number(part.value);
+      if (currentHour === 24) currentHour = 0;
+    }
+    if (part.type === 'minute') currentMin = Number(part.value);
+    if (part.type === 'weekday') weekdayStr = part.value;
+  });
   
   // Map weekday string to JS Date getDay() index (0=Sun, 1=Mon...)
   const daysMap: Record<string, number> = { 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6 };
-  const currentDay = daysMap[weekdayStr] ?? new Date().getDay();
+  const currentDay = daysMap[weekdayStr] ?? now.getDay();
 
   if (shop.workingDays && shop.workingDays.length > 0 && !shop.workingDays.includes(currentDay)) {
     return { 

@@ -121,8 +121,8 @@ export const CustomerRoutes: React.FC = () => {
                     className={isActive ? 'fill-primary/10' : ''} 
                   />
                   {item.id === 'orders' && cartCount > 0 && (
-                    <span className={`absolute -top-1.5 ${isRTL ? '-right-2.5' : '-left-2.5'} bg-red-500 text-white text-[9px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-theme-card animate-pulse`}>
-                      {cartCount}
+                    <span className={`absolute -top-1.5 ${isRTL ? '-right-2.5' : '-left-2.5'} bg-red-500 text-white text-[10px] font-black min-w-[24px] h-[24px] px-1 rounded-full flex items-center justify-center border-2 border-theme-card animate-pulse shadow-md`}>
+                      {cartCount > 99 ? '99+' : cartCount}
                     </span>
                   )}
                 </div>

@@ -105,7 +105,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
   const promoLabel = getPromoLabel(product, isRTL);
 
   return (
-    <div className="bg-theme-bg min-h-screen flex flex-col justify-between animate-fade-in relative z-40 theme-transition pb-[calc(env(safe-area-inset-bottom)+5.5rem)]">
+    <div className="bg-theme-bg min-h-screen flex flex-col justify-between animate-fade-in relative z-40 theme-transition pb-[calc(env(safe-area-inset-bottom)+120px)]">
       
       {/* Product Image Panel */}
       <div className="relative bg-theme-bg px-4 pt-16 pb-4">
