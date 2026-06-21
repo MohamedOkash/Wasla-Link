@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, MapPin, Wallet, Check, AlertCircle, Camera, Upload, Plus, Info, Coins, Minus, ClipboardList } from 'lucide-react';
+import { ChevronRight, MapPin, Wallet, Check, AlertCircle, Camera, Upload, Plus, Info, Coins, Minus, ClipboardList, ArrowRight, Store, ShoppingBag } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { calculateDiscountedPrice } from '../../utils/promo';
 import { Product } from '../../types/product.types';
@@ -7,7 +7,7 @@ import { couponService } from '../../services/coupon.service';
 import { mediaService } from '../../services/media.service';
 import { deliveryFeeService } from '../../services/deliveryFee.service';
 import { doc, writeBatch, increment, setDoc } from 'firebase/firestore';
-import { db, auth } from '../../services/firebase';
+import { db, auth, sanitizeFirestoreData } from '../../services/firebase';
 
 // Premium Rebuild Imports
 import { PremiumButton } from '../../components/premium/PremiumButton';
@@ -169,6 +169,27 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
         ? `${activeAddress.governorate}، ${activeAddress.center}، ${activeAddress.village}، ${activeAddress.street}، عمارة ${activeAddress.building}${activeAddress.floor ? `، دور ${activeAddress.floor}` : ''}${activeAddress.apartment ? `، شقة ${activeAddress.apartment}` : ''}`
         : 'العنوان المحدد';
 
+      const customerId = auth.currentUser?.uid || currentUser?.uid;
+      
+      // Checkout Validation (Task 3)
+      if (!customerId) {
+        showToast(isRTL ? 'خطأ في المصادقة: يرجى تسجيل الدخول مجدداً' : 'Auth Error: Please login again');
+        setLoading(false);
+        return;
+      }
+      
+      if (!cart.shopId || cart.items.length === 0) {
+        showToast(isRTL ? 'السلة فارغة' : 'Cart is empty');
+        setLoading(false);
+        return;
+      }
+
+      if (!activeAddress && selectedAddressId !== 'new') {
+        showToast(isRTL ? 'يرجى اختيار عنوان التوصيل' : 'Please select delivery address');
+        setLoading(false);
+        return;
+      }
+
       const newOrder: any = {
         id: orderId,
         shopId: cart.shopId || '',
@@ -191,7 +212,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
         pointsDiscount: pointsDiscount,
         total,
         paymentMethod,
-        paymentReceipt: paymentReceiptUrl || undefined,
+        paymentReceipt: paymentReceiptUrl ?? null,
         location: {
           name: addressDetails,
           coords: location.coords,
@@ -201,13 +222,15 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
         createdAt: new Date().toISOString()
       };
 
-      console.log("ORDER_PAYLOAD", newOrder);
+      const cleanedOrder = sanitizeFirestoreData(newOrder);
+
+      console.log("ORDER_PAYLOAD", cleanedOrder);
       console.log("AUTH_UID", auth.currentUser?.uid);
-      console.log("CUSTOMER_ID", newOrder.customerId);
+      console.log("CUSTOMER_ID", cleanedOrder.customerId);
 
       try {
         // TEMPORARY: Try setDoc directly to catch exact error instead of batch
-        await setDoc(doc(db, 'orders', orderId), newOrder);
+        await setDoc(doc(db, 'orders', orderId), cleanedOrder);
 
         const batch = writeBatch(db);
         if (pointsToRedeem > 0 && currentUser) {

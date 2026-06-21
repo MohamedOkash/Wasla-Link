@@ -17,3 +17,30 @@ export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+
+export const sanitizeFirestoreData = (data: any): any => {
+  if (Array.isArray(data)) {
+    return data.map(item => sanitizeFirestoreData(item)).filter(val => val !== undefined);
+  } else if (data !== null && typeof data === 'object' && !(data instanceof Date)) {
+    return Object.fromEntries(
+      Object.entries(data)
+        .filter(([_, value]) => value !== undefined)
+        .map(([key, value]) => [key, sanitizeFirestoreData(value)])
+    );
+  }
+  return data;
+};
+
+import { setDoc, addDoc, updateDoc, DocumentReference, CollectionReference } from 'firebase/firestore';
+
+export const safeSetDoc = (ref: DocumentReference<any>, data: any, options?: any) => {
+  return options ? setDoc(ref, sanitizeFirestoreData(data), options) : setDoc(ref, sanitizeFirestoreData(data));
+};
+
+export const safeAddDoc = (ref: CollectionReference<any>, data: any) => {
+  return addDoc(ref, sanitizeFirestoreData(data));
+};
+
+export const safeUpdateDoc = (ref: DocumentReference<any>, data: any) => {
+  return updateDoc(ref, sanitizeFirestoreData(data));
+};
