@@ -8,6 +8,8 @@ import { useApp } from '../../contexts/AppContext';
 import { LoyaltyWallet } from '../../components/loyalty/LoyaltyWallet';
 import { ReferralCenter } from '../../components/referral/ReferralCenter';
 import { DriverRegistration } from '../driver/DriverRegistration';
+import { auth } from '../../services/firebase';
+import { updatePassword, EmailAuthProvider, reauthenticateWithCredential, sendPasswordResetEmail } from 'firebase/auth';
 
 // Premium Rebuild Imports
 import { PremiumButton } from '../../components/premium/PremiumButton';
@@ -82,17 +84,27 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
     setLang(lang === 'ar' ? 'en' : 'ar');
   };
 
-  const handleSendResetEmail = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!forgotEmail.trim()) {
-      showToast(isRTL ? 'الرجاء إدخال البريد الإلكتروني' : 'Please enter email address');
+  const handleForgotPassword = async () => {
+    const emailToReset = forgotEmail.trim() || currentUser?.email || '';
+    if (!emailToReset) {
+      showToast(isRTL ? 'يرجى إدخال البريد الإلكتروني' : 'Please enter email');
       return;
     }
-    setForgotStep(2);
-    showToast(isRTL 
-      ? `تم إرسال رابط إعادة التعيين التجريبي إلى ${forgotEmail}` 
-      : `Simulated reset link sent to ${forgotEmail}`
-    );
+    if (!emailToReset.includes('@')) {
+      showToast(isRTL ? 'يرجى إدخال بريد إلكتروني صحيح' : 'Please enter a valid email');
+      return;
+    }
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, emailToReset);
+      showToast(isRTL ? `تم إرسال رابط إعادة تعيين كلمة المرور إلى ${emailToReset}` : `Password reset link sent to ${emailToReset}`);
+      setShowForgotModal(false);
+    } catch (err: any) {
+      console.error(err);
+      showToast(isRTL ? 'فشل إرسال البريد الإلكتروني. يرجى المحاولة لاحقاً.' : 'Failed to send reset email. Try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSaveInfo = (e: React.FormEvent) => {
@@ -113,7 +125,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
     setActiveSection('root');
   };
 
-  const handleSavePassword = (e: React.FormEvent) => {
+  const handleSavePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!oldPass || !newPass || !confirmPass) {
       showToast(isRTL ? 'الرجاء ملء جميع حقول كلمات المرور' : 'Please fill all password fields');
@@ -123,11 +135,34 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
       showToast(isRTL ? 'كلمة المرور الجديدة غير متطابقة' : 'Passwords do not match');
       return;
     }
-    showToast(isRTL ? 'تم تغيير كلمة المرور بأمان' : 'Password changed securely');
-    setOldPass('');
-    setNewPass('');
-    setConfirmPass('');
-    setActiveSection('root');
+
+    const user = auth.currentUser;
+    if (!user || !user.email) {
+      showToast(isRTL ? 'يجب تسجيل الدخول أولاً' : 'Must be logged in');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const credential = EmailAuthProvider.credential(user.email, oldPass);
+      await reauthenticateWithCredential(user, credential);
+      await updatePassword(user, newPass);
+      
+      showToast(isRTL ? 'تم تغيير كلمة المرور بأمان' : 'Password changed securely');
+      setOldPass('');
+      setNewPass('');
+      setConfirmPass('');
+      setActiveSection('root');
+    } catch (error: any) {
+      console.error('Password change error:', error);
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+        showToast(isRTL ? 'كلمة المرور الحالية غير صحيحة' : 'Current password incorrect');
+      } else {
+        showToast(isRTL ? 'حدث خطأ أثناء تغيير كلمة المرور' : 'Error changing password');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const parseAddressText = (text: string) => {
@@ -406,7 +441,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
             size="md"
             className="w-full rounded-2xl h-11 text-xs font-black border-theme-border"
           >
-            {isRTL ? 'نسيت كلمة المرور؟ (محاكاة إرسال بريد)' : 'Forgot Password? (Simulate reset email)'}
+            {isRTL ? 'نسيت كلمة المرور؟' : 'Forgot Password?'}
           </PremiumButton>
 
           <PremiumButton type="submit" variant="primary" size="lg" className="w-full shadow-md rounded-2xl h-12 text-xs font-black">
@@ -793,7 +828,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
                 <p className="text-[11px] text-theme-muted font-bold leading-relaxed">
                   {isRTL 
                     ? 'أدخل بريدك الإلكتروني المسجل وسنقوم بإرسال رابط إعادة تعيين كلمة المرور التجريبي.' 
-                    : 'Enter your registered email address and we will send a simulated password reset link.'}
+                    : 'Enter your registered email address and we will send a password reset link.'}
                 </p>
                 <PremiumInput 
                   type="email" 

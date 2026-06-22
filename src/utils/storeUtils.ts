@@ -7,6 +7,14 @@ export interface StoreStatus {
 }
 
 export const getStoreStatus = (shop: Store, isRTL: boolean): StoreStatus => {
+  if (shop.vacationMode) {
+    return { 
+      label: isRTL ? 'المتجر في عطلة' : 'On Vacation', 
+      color: 'bg-red-500/15 text-red-500 border border-red-500/20', 
+      status: 'closed' 
+    };
+  }
+
   if (shop.isTemporarilyClosed) {
     return { 
       label: isRTL ? 'مغلق مؤقتاً' : 'Temporarily Closed', 

@@ -41,6 +41,7 @@ export interface Store {
   breakTimes?: Array<{ start: string; end: string }>;
   fridaySchedule?: { isOpen: boolean; openTime: string; closeTime: string };
   holidayMode?: boolean;
+  vacationMode?: boolean;
   village?: string;
 
   // Phase 12C: Unified Offers Engine

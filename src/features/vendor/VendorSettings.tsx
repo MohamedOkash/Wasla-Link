@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Settings, Save, Wallet, Bike, Clock, ToggleLeft, ToggleRight, AlertTriangle, Upload, Globe, Facebook, Instagram, PhoneCall, Link } from 'lucide-react';
+import { VendorSettings as VendorSettingsIcon, Save, Wallet, Bike, Clock, ToggleLeft, ToggleRight, AlertTriangle, Upload, Globe, Facebook, Instagram, PhoneCall, Link, ShieldCheck } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { mediaService } from '../../services/media.service';
+import { auth } from '../../services/firebase';
+import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 
 export const VendorSettings: React.FC = () => {
   const { stores, setStores, showToast, isRTL } = useApp();
@@ -11,6 +13,7 @@ export const VendorSettings: React.FC = () => {
 
   const [isOpen, setIsOpen] = useState(store && store.isOpen !== undefined ? store.isOpen : true);
   const [isTemporarilyClosed, setIsTemporarilyClosed] = useState(store ? !!store.isTemporarilyClosed : false);
+  const [vacationMode, setVacationMode] = useState(store ? !!store.vacationMode : false);
   const [vodafone, setVodafone] = useState(store?.paymentInfo?.vodafone || '');
   const [instapay, setInstapay] = useState(store?.paymentInfo?.instapay || '');
   
@@ -26,6 +29,30 @@ export const VendorSettings: React.FC = () => {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+
+  const [vendorOldPass, setVendorOldPass] = useState('');
+  const [vendorNewPass, setVendorNewPass] = useState('');
+
+  const handleUpdatePassword = async () => {
+    if (!vendorOldPass || !vendorNewPass) {
+      showToast(isRTL ? 'الرجاء إدخال كلمة المرور الحالية والجديدة' : 'Enter current and new passwords');
+      return;
+    }
+    const user = auth.currentUser;
+    if (!user || !user.email) return;
+
+    try {
+      const credential = EmailAuthProvider.credential(user.email, vendorOldPass);
+      await reauthenticateWithCredential(user, credential);
+      await updatePassword(user, vendorNewPass);
+      showToast(isRTL ? 'تم تغيير كلمة المرور بنجاح' : 'Password updated successfully');
+      setVendorOldPass('');
+      setVendorNewPass('');
+    } catch (error) {
+      console.error(error);
+      showToast(isRTL ? 'كلمة المرور الحالية غير صحيحة' : 'Current password incorrect');
+    }
+  };
 
   const [minOrder, setMinOrder] = useState(store ? store.minOrder.toString() : '50');
   const [deliveryFee, setDeliveryFee] = useState(store ? store.fee.toString() : '0');
@@ -123,6 +150,7 @@ export const VendorSettings: React.FC = () => {
           ...s,
           isOpen,
           isTemporarilyClosed,
+          vacationMode,
           minOrder: parseInt(minOrder) || 0,
           fee: parseInt(deliveryFee) || 0,
           time: parseInt(deliveryTime) || 15,
@@ -378,6 +406,25 @@ export const VendorSettings: React.FC = () => {
             className={`p-1 transition-colors rounded-xl ${isTemporarilyClosed ? 'text-red-500' : 'text-theme-muted'}`}
           >
             {isTemporarilyClosed ? <ToggleRight size={48} /> : <ToggleLeft size={48} />}
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between border-t border-theme-border/60 pt-3">
+          <div>
+            <h4 className="font-black text-sm text-theme-text flex items-center gap-1">
+              <AlertTriangle size={15} className="text-purple-500" />
+              وضع الإجازة
+            </h4>
+            <p className="text-[10px] text-theme-muted font-bold mt-1">
+              إغلاق المتجر لفترة طويلة (يمكن للعملاء جدولة الطلبات)
+            </p>
+          </div>
+          <button 
+            type="button"
+            onClick={() => setVacationMode(!vacationMode)}
+            className={`p-1 transition-colors rounded-xl ${vacationMode ? 'text-purple-500' : 'text-theme-muted'}`}
+          >
+            {vacationMode ? <ToggleRight size={48} /> : <ToggleLeft size={48} />}
           </button>
         </div>
       </div>
@@ -673,6 +720,40 @@ export const VendorSettings: React.FC = () => {
               className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs outline-none focus:border-primary font-bold text-theme-text"
             />
           </div>
+        </div>
+      </div>
+
+      {/* Account Security */}
+      <div className="bg-theme-card rounded-[30px] border border-theme-border p-5 shadow-sm space-y-4 theme-transition">
+        <h4 className="font-black text-sm text-theme-text flex items-center gap-2 border-b border-theme-border pb-2">
+          <ShieldCheck size={16} className="text-primary" /> أمان الحساب وتغيير كلمة المرور
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+          <div>
+            <label className="block text-[10px] font-black text-theme-muted mb-1">{isRTL ? 'كلمة المرور الحالية' : 'Current Password'}</label>
+            <input 
+              type="password"
+              value={vendorOldPass}
+              onChange={(e) => setVendorOldPass(e.target.value)}
+              className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs outline-none focus:border-primary font-bold text-theme-text"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-black text-theme-muted mb-1">{isRTL ? 'كلمة المرور الجديدة' : 'New Password'}</label>
+            <input 
+              type="password"
+              value={vendorNewPass}
+              onChange={(e) => setVendorNewPass(e.target.value)}
+              className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs outline-none focus:border-primary font-bold text-theme-text"
+            />
+          </div>
+          <button 
+            type="button"
+            onClick={handleUpdatePassword}
+            className="w-full md:w-auto md:col-span-2 bg-theme-bg border border-primary text-primary hover:bg-primary/10 font-black py-3 rounded-xl transition flex items-center justify-center gap-2"
+          >
+            تحديث كلمة المرور
+          </button>
         </div>
       </div>
 
