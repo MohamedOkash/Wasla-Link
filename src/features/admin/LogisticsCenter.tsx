@@ -1,16 +1,61 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { MapPin, Navigation, Compass, Package, Users, Activity, Search, AlertTriangle, Clock } from 'lucide-react';
-import { collection, onSnapshot, query } from 'firebase/firestore';
+import { collection, onSnapshot, query, doc, updateDoc } from 'firebase/firestore';
+import { dispatchService } from '../../services/dispatch.service';
 import { db } from '../../services/firebase';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 export const LogisticsCenter: React.FC = () => {
-  const { isRTL, drivers } = useApp();
+  const { isRTL, drivers, orders, showToast } = useApp();
   const [locations, setLocations] = useState<Record<string, any>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'online' | 'busy' | 'offline'>('all');
+  const [selectedDriverId, setSelectedDriverId] = useState<string | null>(null);
+  const [assignOrderId, setAssignOrderId] = useState<string>('');
+  
+  const handleForceAssign = async () => {
+    if (!selectedDriverId || !assignOrderId) return;
+    try {
+       // bypass logic and force assign
+       await updateDoc(doc(db, 'orders', assignOrderId), {
+          status: 'driver_assigned',
+          assignedDriverId: selectedDriverId,
+          assignedAt: new Date().toISOString(),
+          assignmentAttempts: 1
+       });
+       await updateDoc(doc(db, 'users', selectedDriverId), {
+          currentOrderId: assignOrderId
+       });
+       showToast('Force assignment successful');
+    } catch(e) {
+       console.error(e);
+       showToast('Failed to force assign', 'error');
+    }
+  };
+
+  const handleCancelAssignment = async () => {
+    if (!assignOrderId) return;
+    try {
+       const order = orders.find(o => o.id === assignOrderId);
+       if (order && order.assignedDriverId) {
+         await updateDoc(doc(db, 'users', order.assignedDriverId), {
+            currentOrderId: null
+         });
+       }
+       await updateDoc(doc(db, 'orders', assignOrderId), {
+          status: 'ready_for_delivery',
+          assignedDriverId: null,
+          assignedAt: null
+       });
+       showToast('Assignment cancelled');
+    } catch(e) {
+       console.error(e);
+       showToast('Failed to cancel assignment', 'error');
+    }
+  };
+
 
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -83,7 +128,8 @@ export const LogisticsCenter: React.FC = () => {
     online: drivers.filter(d => d.availability === 'online').length,
     busy: drivers.filter(d => d.availability === 'busy').length,
     offline: drivers.filter(d => d.availability === 'offline' || !d.availability).length,
-    errors: Object.values(locations).filter(l => l.status === 'gps_disabled' || l.status === 'permission_denied').length
+    errors: Object.values(locations).filter(l => l.status === 'gps_disabled' || l.status === 'permission_denied').length,
+    activeOrders: orders.filter(o => ['ready_for_delivery', 'driver_assigned', 'driver_accepted', 'picked_up', 'on_the_way'].includes(o.status)).length
   };
 
   const filteredDrivers = drivers.filter(d => {

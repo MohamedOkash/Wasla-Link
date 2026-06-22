@@ -1,5 +1,6 @@
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
+import etaService from './eta.service';
 
 export interface TrackingState {
   driverLocation: { lat: number; lng: number } | null;
@@ -41,7 +42,7 @@ class TrackingService {
         onUpdate({
           ...initialState,
           driverLocation: { lat: data.lat, lng: data.lng },
-          eta: Math.round(data.speed ? (this.calculateDistance(data.lat, data.lng, customerCoords.lat, customerCoords.lng) / data.speed) / 60 : 15)
+          eta: etaService.calculateTotalETA({ lat: data.lat, lng: data.lng }, storeCoords, customerCoords, orderStatus)
         });
       }
     });

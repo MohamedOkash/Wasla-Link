@@ -3,7 +3,9 @@ import { Clock, Check, X, ImageIcon, MapPin, Phone, Printer, ThumbsUp, Clipboard
 import { useApp } from '../../contexts/AppContext';
 import { Order } from '../../types/order.types';
 import { invoiceService } from '../../services/invoice.service';
+import { dispatchService } from '../../services/dispatch.service';
 import { VendorTracking } from './VendorTracking';
+import { VendorDeliveryCenter } from './VendorDeliveryCenter';
 
 export const VendorOrders: React.FC = () => {
   // Filter orders for Store g_1 (أسواق الخير)
@@ -29,9 +31,9 @@ export const VendorOrders: React.FC = () => {
       case 'pending': return 1;
       case 'accepted': return 2;
       case 'preparing': return 3;
-      case 'readyForPickup': return 4;
-      case 'pickedUp': return 5;
-      case 'onTheWay': return 6;
+      case 'ready_for_delivery': return 4;
+      case 'picked_up': return 5;
+      case 'on_the_way': return 6;
       case 'delivered': return 7;
       default: return 1;
     }
@@ -46,7 +48,7 @@ export const VendorOrders: React.FC = () => {
       if (tabId === 'new') return o.status === 'pending' && o.paymentMethod === 'cash';
       if (tabId === 'pendingVerification') return o.status === 'pending' && o.paymentMethod !== 'cash';
       if (tabId === 'preparing') return o.status === 'accepted' || o.status === 'preparing';
-      if (tabId === 'outForDelivery') return o.status === 'readyForPickup' || o.status === 'pickedUp' || o.status === 'onTheWay';
+      if (tabId === 'outForDelivery') return o.status === 'ready_for_delivery' || o.status === 'picked_up' || o.status === 'on_the_way';
       if (tabId === 'delivered') return o.status === 'delivered';
       if (tabId === 'cancelled') return o.status === 'cancelled';
       return false;
@@ -57,7 +59,7 @@ export const VendorOrders: React.FC = () => {
     if (statusFilter === 'new') return o.status === 'pending' && o.paymentMethod === 'cash';
     if (statusFilter === 'pendingVerification') return o.status === 'pending' && o.paymentMethod !== 'cash';
     if (statusFilter === 'preparing') return o.status === 'accepted' || o.status === 'preparing';
-    if (statusFilter === 'outForDelivery') return o.status === 'readyForPickup' || o.status === 'pickedUp' || o.status === 'onTheWay';
+    if (statusFilter === 'outForDelivery') return o.status === 'ready_for_delivery' || o.status === 'picked_up' || o.status === 'on_the_way';
     if (statusFilter === 'delivered') return o.status === 'delivered';
     if (statusFilter === 'cancelled') return o.status === 'cancelled';
     return false;
@@ -391,7 +393,7 @@ export const VendorOrders: React.FC = () => {
                     <button 
                       onClick={() => handleUpdateStatus(
                         order.id, 
-                        'readyForPickup', 
+                        'ready_for_delivery', 
                         isRTL ? 'الطلب جاهز للتسليم، في انتظار مندوب توصيل' : 'Order marked ready, waiting for driver pickup'
                       )}
                       className="flex-1 bg-primary hover:bg-primary-hover text-white font-black py-3 rounded-2xl text-xs flex items-center justify-center gap-1.5 shadow transition"
@@ -407,24 +409,25 @@ export const VendorOrders: React.FC = () => {
                   </>
                 )}
 
-                {order.status === 'readyForPickup' && (
+                {order.status === 'ready_for_delivery' && (
                   <div className="flex-1 bg-yellow-500/10 text-yellow-600 font-black py-3 rounded-2xl text-xs text-center border border-yellow-500/20">
                     {isRTL ? 'في انتظار قبول وقبول التوصيل من سائق...' : 'Waiting for a delivery driver to accept...'}
                   </div>
                 )}
 
-                {order.status === 'pickedUp' && (
+                {order.status === 'picked_up' && (
                   <div className="flex-1 bg-blue-500/10 text-blue-600 font-black py-3 rounded-2xl text-xs text-center border border-blue-500/20">
                     {isRTL ? `جاري التجهيز للشحن مع المندوب: ${order.driverName || ''}` : `Picked up by driver: ${order.driverName || ''}`}
                   </div>
                 )}
 
-                {order.status === 'onTheWay' && (
-                  <div className="flex-1 space-y-3">
-                    <div className="bg-primary/10 text-primary font-black py-3 rounded-2xl text-xs text-center border border-primary/20 animate-pulse">
-                      {isRTL ? `المندوب في الطريق للعميل (${order.driverName || ''})` : `Driver is on the way to client (${order.driverName || ''})`}
-                    </div>
-                    <VendorTracking order={order} />
+                {(order.status === 'ready_for_delivery' || order.status === 'driver_assigned' || order.status === 'driver_accepted' || order.status === 'picked_up' || order.status === 'on_the_way') && (
+                  <div className="mt-4 pt-4 border-t border-theme-border">
+                    <VendorDeliveryCenter 
+                      order={order} 
+                      storeLocation={stores.find(s => s.id === currentUser?.storeId)?.location || { lat: 30.0444, lng: 31.2357 }} 
+                    />
+                    {order.status === 'on_the_way' && <VendorTracking order={order} />}
                   </div>
                 )}
 

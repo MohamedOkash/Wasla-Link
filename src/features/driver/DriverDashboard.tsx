@@ -14,18 +14,88 @@ export const DriverDashboard: React.FC = () => {
   const [driver, setDriver] = useState<any>(null);
   const [gpsStatus, setGpsStatus] = useState<GpsStatus>('offline');
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
-
+  const { orders, updateOrderStatus } = useApp();
+  const [incomingOrder, setIncomingOrder] = useState<any>(null);
+  const [assignmentTimer, setAssignmentTimer] = useState<number>(30);
+  
+  // Listen for assigned orders
   useEffect(() => {
-    if (!currentUser || currentUser.role !== 'driver') return;
+    if (!driver || driver.availability !== 'online') return;
     
-    const unsub = onSnapshot(doc(db, 'drivers', currentUser.uid), (docSnap) => {
-      if (docSnap.exists()) {
-        setDriver({ id: docSnap.id, ...docSnap.data() });
-      }
-    });
+    const assignedOrder = orders.find(o => o.status === 'driver_assigned' && o.assignedDriverId === driver.id);
+    
+    if (assignedOrder && !incomingOrder) {
+      setIncomingOrder(assignedOrder);
+      setAssignmentTimer(30);
+    } else if (!assignedOrder && incomingOrder) {
+      setIncomingOrder(null);
+    }
+  }, [orders, driver, incomingOrder]);
 
-    return () => unsub();
-  }, [currentUser]);
+  // Handle Assignment Countdown Timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (incomingOrder) {
+      interval = setInterval(() => {
+        setAssignmentTimer((prev) => {
+          if (prev <= 1) {
+            // Auto reject
+            handleRejectOrder(incomingOrder.id);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [incomingOrder]);
+
+  const handleAcceptOrder = async (orderId: string) => {
+    try {
+      await updateOrderStatus(orderId, 'driver_accepted', driver.id, driver.name);
+      setIncomingOrder(null);
+      showToast(isRTL ? 'تم قبول الطلب' : 'Order accepted');
+    } catch(e) {
+      console.error(e);
+      showToast(isRTL ? 'حدث خطأ' : 'Error', 'error');
+    }
+  };
+
+  const handleRejectOrder = async (orderId: string) => {
+    try {
+      // Revert status to ready_for_delivery, dispatch service will pick it up or we can call handleDriverRejection directly
+      // Note: we just call updateOrderStatus with 'failed_assignment' locally to trigger next step in AppContext or let a firebase function handle it.
+      // But since we have dispatchService, let's just trigger updateOrderStatus as 'ready_for_delivery' with rejected status.
+      // For now, let's just use updateOrderStatus to clear our assignment.
+      const orderRef = doc(db, 'orders', orderId);
+      const { runTransaction } = require('firebase/firestore');
+      
+      await runTransaction(db, async (transaction) => {
+        const docSnap = await transaction.get(orderRef);
+        if (!docSnap.exists()) return;
+        const o = docSnap.data();
+        const rejectedBy = o.rejectedBy || [];
+        rejectedBy.push(driver.id);
+        
+        transaction.update(orderRef, {
+           status: 'ready_for_delivery',
+           assignedDriverId: null,
+           rejectedBy: rejectedBy
+        });
+        
+        transaction.update(doc(db, 'users', driver.id), {
+           currentOrderId: null
+        });
+      });
+      
+      setIncomingOrder(null);
+      showToast(isRTL ? 'تم رفض الطلب' : 'Order rejected');
+    } catch(e) {
+      console.error(e);
+    }
+  };
 
   // Sync battery level and app version periodically
   useEffect(() => {
@@ -354,6 +424,69 @@ export const DriverDashboard: React.FC = () => {
         {activeTab === 'orders' && <DriverOrders driver={driver} />}
         {activeTab === 'earnings' && <DriverEarnings driver={driver} />}
         {activeTab === 'profile' && <DriverProfile driver={driver} />}
+        {/* Incoming Order Modal */}
+        {incomingOrder && (
+          <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-theme-bg border border-theme-border rounded-xl p-6 w-full max-w-sm shadow-2xl animate-in zoom-in-95">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                  <Bike className="text-primary w-8 h-8" />
+                </div>
+                <h3 className="text-xl font-bold text-theme-text mb-2">
+                  {isRTL ? 'طلب جديد متاح!' : 'New Order Available!'}
+                </h3>
+                <p className="text-theme-secondary text-sm">
+                  {incomingOrder.shopName}
+                </p>
+              </div>
+              
+              <div className="flex justify-between items-center mb-6 p-4 bg-theme-bg-secondary rounded-lg border border-theme-border">
+                <div className="text-center">
+                  <span className="block text-theme-secondary text-xs">{isRTL ? 'المسافة' : 'Distance'}</span>
+                  <span className="font-bold text-theme-text">{incomingOrder.assignmentDistance?.toFixed(1) || 5} km</span>
+                </div>
+                <div className="h-8 w-px bg-theme-border" />
+                <div className="text-center">
+                  <span className="block text-theme-secondary text-xs">{isRTL ? 'العائد' : 'Est. Earning'}</span>
+                  <span className="font-bold text-green-500">
+                    {(incomingOrder.assignmentDistance || 5) > 12 ? 50 : (incomingOrder.assignmentDistance || 5) > 8 ? 35 : (incomingOrder.assignmentDistance || 5) > 5 ? 25 : (incomingOrder.assignmentDistance || 5) > 3 ? 20 : 15}
+                    {isRTL ? ' ج.م' : ' EGP'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <div className="flex justify-between text-sm mb-2 text-theme-text">
+                  <span>{isRTL ? 'الوقت المتبقي' : 'Time Remaining'}</span>
+                  <span className={`font-bold ${assignmentTimer <= 10 ? 'text-red-500 animate-pulse' : 'text-primary'}`}>
+                    {assignmentTimer}s
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-theme-bg-secondary rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full transition-all duration-1000 ${assignmentTimer <= 10 ? 'bg-red-500' : 'bg-primary'}`}
+                    style={{ width: `${(assignmentTimer / 30) * 100}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => handleRejectOrder(incomingOrder.id)}
+                  className="btn-secondary w-full"
+                >
+                  {isRTL ? 'رفض' : 'Reject'}
+                </button>
+                <button
+                  onClick={() => handleAcceptOrder(incomingOrder.id)}
+                  className="btn-primary w-full shadow-lg shadow-primary/25"
+                >
+                  {isRTL ? 'قبول' : 'Accept'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

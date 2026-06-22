@@ -1113,68 +1113,67 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let titleEn = '';
     let descAr = '';
     let descEn = '';
+    let shouldNotify = false;
 
-    if (status === 'accepted') {
-      titleAr = `تم قبول طلبك ${orderId}`;
-      titleEn = `Order ${orderId} accepted`;
-      descAr = `تم قبول طلبك من متجر ${order.shopName} وجاري تحضيره.`;
-      descEn = `Your order at ${order.shopName} was accepted and is being prepared.`;
-    } else if (status === 'preparing') {
-      titleAr = `طلبك ${orderId} قيد التحضير`;
-      titleEn = `Order ${orderId} is being prepared`;
-      descAr = `يقوم متجر ${order.shopName} بتحضير وتعبئة سلتك الآن.`;
-      descEn = `${order.shopName} is preparing and packaging your items now.`;
-    } else if (status === 'readyForPickup') {
-      titleAr = `طلبك ${orderId} جاهز للاستلام 📦`;
-      titleEn = `Order ${orderId} is ready for pickup 📦`;
-      descAr = `شحنتك معبأة وجاهزة بالكامل وبانتظار مندوب التوصيل.`;
-      descEn = `Your package is ready and waiting for delivery courier to pick up.`;
-    } else if (status === 'pickedUp') {
+    if (status === 'driver_assigned') {
+      titleAr = `تم تعيين مندوب لطلبك ${orderId}`;
+      titleEn = `Driver assigned to order ${orderId}`;
+      descAr = `تم تعيين المندوب وجاري التوجه للمتجر.`;
+      descEn = `A driver has been assigned and is heading to the store.`;
+      shouldNotify = true;
+    } else if (status === 'driver_accepted') {
+      titleAr = `المندوب وافق على الطلب ${orderId}`;
+      titleEn = `Driver accepted order ${orderId}`;
+      descAr = `المندوب وافق على طلبك.`;
+      descEn = `Driver accepted your order.`;
+      shouldNotify = true;
+    } else if (status === 'picked_up') {
       titleAr = `استلم المندوب طلبك ${orderId}`;
       titleEn = `Courier picked up order ${orderId}`;
-      descAr = `قام مندوب التوصيل باستلام الشحنة من المتجر.`;
+      descAr = `قام المندوب باستلام طلبك من المتجر وهو في الطريق إليك.`;
       descEn = `Our delivery partner picked up your order from the store.`;
-    } else if (status === 'onTheWay') {
-      titleAr = `طلبك ${orderId} خرج للتوصيل 🛵`;
-      titleEn = `Order ${orderId} is out for delivery 🛵`;
-      descAr = `شحنتك في الطريق إليك مع مندوب التوصيل المعتمد.`;
-      descEn = `Your shipment is on the way to your coordinates with our delivery agent.`;
+      shouldNotify = true;
+    } else if (status === 'on_the_way') {
+      titleAr = `طلبك ${orderId} اقترب منك 🚚`;
+      titleEn = `Order ${orderId} is nearby 🚚`;
+      descAr = `شحنتك قريبة جداً في الطريق إليك مع المندوب المعتمد.`;
+      descEn = `Your shipment is nearby and on the way to your coordinates.`;
+      shouldNotify = true;
     } else if (status === 'delivered') {
       titleAr = `تم تسليم طلبك ${orderId} بنجاح`;
       titleEn = `Order ${orderId} delivered successfully`;
       descAr = `شكراً لتسوقك من وصلة لينك! نتمنى أن تكون سعيداً بتجربتك.`;
       descEn = `Thank you for shopping at WaslaLink! We hope you enjoyed your service.`;
-    } else if (status === 'cancelled') {
-      titleAr = `تم إلغاء طلبك ${orderId}`;
-      titleEn = `Order ${orderId} cancelled`;
-      descAr = `تم إلغاء طلبك بالكامل. يمكنك مراجعة المتجر للتفاصيل.`;
-      descEn = `Your order was fully cancelled. You can contact support for details.`;
-    } else {
-      titleAr = `تم تحديث حالة الطلب ${orderId}`;
-      titleEn = `Order ${orderId} status updated`;
-      descAr = `تحديث جديد للطلب من متجر ${order.shopName}.`;
-      descEn = `New updates logged for your order by ${order.shopName}.`;
+      shouldNotify = true;
+    } else if (status === 'failed_assignment') {
+      titleAr = `فشل تعيين مندوب لطلبك ${orderId}`;
+      titleEn = `Failed to assign driver for ${orderId}`;
+      descAr = `عذراً، لا يوجد مناديب متاحين حالياً.`;
+      descEn = `Sorry, no drivers available at the moment.`;
+      shouldNotify = true;
     }
 
-    const notifId = `n_order_${Date.now()}`;
-    const newNotif: Notification = {
-      id: notifId,
-      title: { ar: titleAr, en: titleEn },
-      description: { ar: descAr, en: descEn },
-      type: status === 'onTheWay' || status === 'pickedUp' ? 'delivery' : 'order',
-      storeId: order.shopId || undefined,
-      orderId,
-      isRead: false,
-      createdAt: new Date().toISOString()
-    };
+    if (shouldNotify) {
+      const notifId = `n_order_${Date.now()}`;
+      const newNotif: Notification = {
+        id: notifId,
+        title: { ar: titleAr, en: titleEn },
+        description: { ar: descAr, en: descEn },
+        type: status === 'on_the_way' || status === 'picked_up' ? 'delivery' : 'order',
+        storeId: order.shopId || undefined,
+        orderId,
+        isRead: false,
+        createdAt: new Date().toISOString()
+      };
 
-    try {
-      await setDoc(doc(db, 'notifications', notifId), {
-        ...newNotif,
-        userId: order.customerId
-      });
-    } catch (err) {
-      console.error(err);
+      try {
+        await setDoc(doc(db, 'notifications', notifId), {
+          ...newNotif,
+          userId: order.customerId
+        });
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
@@ -1224,6 +1223,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       batch.update(orderRef, updateData);
 
+      // Order History Logging
+      const eventId = `event_${Date.now()}`;
+      batch.set(doc(db, `orderHistory/${orderId}/events`, eventId), {
+        status: status,
+        timestamp: new Date().toISOString(),
+        userId: auth.currentUser?.uid || 'system',
+        driverId: driverId || order.driverId || null,
+        notes: `Status changed to ${status}`
+      });
+
       if (status === 'preparing') {
         for (const item of order.items) {
           const prodRef = doc(db, 'products', item.id);
@@ -1238,7 +1247,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             batch.update(prodRef, { currentStock, reservedStock, availabilityStatus: availStatus });
           }
         }
-      } else if (status === 'pickedUp') {
+      } else if (status === 'picked_up' || status === 'pickedUp') {
         for (const item of order.items) {
           const prodRef = doc(db, 'products', item.id);
           const prodSnap = await getDoc(prodRef);
@@ -1255,7 +1264,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               storeId: order.shopId,
               quantity: -item.quantity,
               type: 'Sale',
-              reason: `مبيعات للطلب ${orderId}`,
+              reason: `فاتورة بيع للطلب ${orderId}`,
               createdAt: new Date().toISOString()
             });
           }
@@ -1282,7 +1291,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           storeId: order.shopId,
           amount: order.subtotal,
           type: 'sale',
-          description: `مبيعات مكتملة للطلب ${orderId}`,
+          description: `فاتورة مبيعات للطلب ${orderId}`,
           createdAt: new Date().toISOString(),
           status: 'completed'
         };
@@ -1298,6 +1307,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         };
         batch.set(doc(db, 'walletTransactions', txId1), saleTx);
         batch.set(doc(db, 'walletTransactions', txId2), deliveryTx);
+
+        // Driver Earnings Calculation
+        if (order.driverId || driverId) {
+          const actualDriverId = order.driverId || driverId;
+          const distance = order.assignmentDistance || 5; // Default to 5km if missing
+          let fee = 15;
+          if (distance > 12) fee = 50;
+          else if (distance > 8) fee = 35;
+          else if (distance > 5) fee = 25;
+          else if (distance > 3) fee = 20;
+
+          let bonus = 5; // Assuming on-time for now
+
+          // Rating check
+          if (order.ratingDriver && order.ratingDriver >= 4.5) {
+             bonus += 10;
+          }
+
+          const earningsId = `earn_${Date.now()}`;
+          batch.set(doc(db, 'driverEarnings', earningsId), {
+            orderId: orderId,
+            driverId: actualDriverId,
+            fee: fee,
+            bonus: bonus,
+            total: fee + bonus,
+            createdAt: new Date().toISOString()
+          });
+
+          // Unassign driver so they are free for next order
+          batch.update(doc(db, 'users', actualDriverId), {
+            currentOrderId: null
+          });
+        }
 
         // Loyalty Engine points award (1 EGP spent = 1 Point)
         if (order.customerId) {

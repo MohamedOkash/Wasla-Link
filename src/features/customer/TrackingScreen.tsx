@@ -160,9 +160,9 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
       case 'pending': return 1;
       case 'accepted': return 2;
       case 'preparing': return 3;
-      case 'readyForPickup': return 4;
-      case 'pickedUp': return 5;
-      case 'onTheWay': return 6;
+      case 'ready_for_delivery': return 4;
+      case 'picked_up': return 5;
+      case 'on_the_way': return 6;
       case 'delivered': return 7;
       default: return 1;
     }
@@ -222,15 +222,15 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
             <span className={`text-[8px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider block border ${
               trackingState.status === 'delivered' 
                 ? 'bg-green-500 text-white border-green-600' 
-                : trackingState.status === 'arrived' 
+                : trackingState.status === 'on_the_way' 
                 ? 'bg-blue-500 text-white border-blue-600 animate-bounce'
                 : 'bg-primary text-white border-primary-hover'
             }`}>
               {trackingState.status === 'preparing' 
                 ? (isRTL ? 'قيد التعبئة' : 'Preparing') 
-                : trackingState.status === 'outForDelivery'
+                : trackingState.status === 'on_the_way'
                 ? (isRTL ? 'على الطريق' : 'En Route')
-                : trackingState.status === 'arrived'
+                : trackingState.status === 'on_the_way'
                 ? (isRTL ? 'وصل المندوب' : 'Arrived')
                 : (isRTL ? 'تم التسليم' : 'Delivered')
               }
