@@ -13,7 +13,7 @@ export const searchProductsAndStores = (
   stores: Store[],
   categories: Category[]
 ) => {
-  const q = query.toLowerCase().trim();
+  const q = (query || '').toLowerCase().trim();
   if (!q) return { shops: [], products: [], categories: [] };
 
   // 1. Search & Score Stores (Store Name Match = 80)

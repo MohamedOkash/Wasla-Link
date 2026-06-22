@@ -312,5 +312,14 @@ service cloud.firestore {
       allow create: if isAdmin() || signedIn();
       allow update, delete: if isAdmin();
     }
+    // 29. carts Collection
+    match /carts/{cartId} {
+      allow read, write: if signedIn() && request.auth.uid == cartId;
+    }
+
+    // 30. securityLogs Collection
+    match /securityLogs/{logId} {
+      allow read, write: if isAdmin();
+    }
   }
 }

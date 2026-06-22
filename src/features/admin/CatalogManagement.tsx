@@ -450,9 +450,9 @@ export const CatalogManagement: React.FC = () => {
   };
 
   const filteredTemplates = templates.filter(t => {
-    const matchesSearch = (t.nameAr || t.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (t.nameEn || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (t.brand || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch = (t.nameAr || t.name || '').toLowerCase().includes((searchQuery || '').toLowerCase()) || 
+                          (t.nameEn || '').toLowerCase().includes((searchQuery || '').toLowerCase()) || 
+                          (t.brand || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
                           (t.barcode || '').includes(searchQuery);
     const matchesCategory = filterCategory === 'all' || t.categoryId === filterCategory;
     return matchesSearch && matchesCategory;

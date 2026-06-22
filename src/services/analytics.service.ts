@@ -92,7 +92,7 @@ class AnalyticsService {
     deliveredOrders.forEach(o => {
       let village = 'أخرى';
       if (o.location?.name) {
-        const parts = o.location.name.split('،');
+        const parts = (o.location?.name || '').split('،');
         if (parts.length >= 3) {
           village = parts[2].trim();
         } else {

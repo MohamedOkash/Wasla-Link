@@ -46,7 +46,7 @@ export const BulkImageImporter: React.FC = () => {
       const basename = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
       
       const found = templates.find(t => {
-        const val = basename.toLowerCase().trim();
+        const val = (basename || '').toLowerCase().trim();
         if (criteria === 'sku') {
           return (t.sku || '').toLowerCase().trim() === val;
         } else if (criteria === 'barcode') {
@@ -54,7 +54,7 @@ export const BulkImageImporter: React.FC = () => {
         } else if (criteria === 'id') {
           return t.id.toLowerCase().trim() === val;
         } else {
-          return t.name.toLowerCase().includes(val) || 
+          return (t.name || '').toLowerCase().includes(val) || 
                  (t.nameAr && t.nameAr.toLowerCase().includes(val)) ||
                  (t.nameEn && t.nameEn.toLowerCase().includes(val));
         }

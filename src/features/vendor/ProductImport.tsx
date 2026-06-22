@@ -36,7 +36,7 @@ export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
 
         const isDuplicateSKU = storeProducts.some(p => p.sku === row.sku);
         const isDuplicateBarcode = storeProducts.some(p => p.barcode === row.barcode);
-        const isDuplicateName = storeProducts.some(p => p.name.toLowerCase() === row.name.toLowerCase());
+        const isDuplicateName = storeProducts.some(p => (p.name || '').toLowerCase() === (row.name || '').toLowerCase());
 
         if (isDuplicateSKU || isDuplicateBarcode || isDuplicateName) {
           return {
@@ -101,7 +101,7 @@ export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
       validRows.forEach(row => {
         // Detect matched product index to overwrite
         const idx = updatedProducts.findIndex(p => 
-          p.storeId === 'g_1' && (p.sku === row.sku || p.barcode === row.barcode || p.name.toLowerCase() === row.name.toLowerCase())
+          p.storeId === 'g_1' && (p.sku === row.sku || p.barcode === row.barcode || (p.name || '').toLowerCase() === (row.name || '').toLowerCase())
         );
 
         const priceNum = row.price;

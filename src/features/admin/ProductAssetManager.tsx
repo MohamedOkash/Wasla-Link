@@ -236,9 +236,9 @@ export const ProductAssetManager: React.FC = () => {
 
   const filteredTemplates = templates.filter(t => {
     // Search
-    const nameMatch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                      (t.nameAr && t.nameAr.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                      (t.brand && t.brand.toLowerCase().includes(searchQuery.toLowerCase()));
+    const nameMatch = (t.name || '').toLowerCase().includes((searchQuery || '').toLowerCase()) || 
+                      (t.nameAr && t.nameAr.toLowerCase().includes((searchQuery || '').toLowerCase())) ||
+                      (t.brand && t.brand.toLowerCase().includes((searchQuery || '').toLowerCase()));
     
     // Store type filter
     const typeMatch = filterType === 'all' || t.storeType === filterType || t.cat === filterType;

@@ -67,8 +67,8 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
   // Filter products by sub-category and search query
   const filteredProducts = storeProducts.filter(p => {
     const matchesCat = selectedSubCat === 'all' || p.cat === selectedSubCat;
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          p.desc.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = (p.name || '').toLowerCase().includes((searchQuery || '').toLowerCase()) || 
+                          (p.desc || '').toLowerCase().includes((searchQuery || '').toLowerCase());
     return matchesCat && matchesSearch;
   });
 
