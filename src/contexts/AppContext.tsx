@@ -47,6 +47,14 @@ export interface Cart {
   items: CartItem[];
 }
 
+export interface CartConflictAlert {
+  isOpen: boolean;
+  product: any;
+  shop: any;
+  quantity: number;
+  isAbsolute: boolean;
+}
+
 export interface LocationState {
   name: string;
   coords: { lat: number; lng: number; accuracy?: number } | null;
@@ -119,6 +127,11 @@ interface AppContextType {
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   cart: Cart;
   setCart: React.Dispatch<React.SetStateAction<Cart>>;
+  cartConflictAlert: CartConflictAlert | null;
+  setCartConflictAlert: React.Dispatch<React.SetStateAction<CartConflictAlert | null>>;
+  addToCartGlobal: (product: any, shop: any, quantity?: number, isAbsolute?: boolean) => void;
+  confirmClearCartAndAdd: () => void;
+  cancelCartConflict: () => void;
   location: LocationState;
   setLocation: (loc: LocationState) => void;
   toasts: ToastItem[];
@@ -244,6 +257,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return { shopId: null, shopName: '', items: [] };
     }
   });
+  const [cartConflictAlert, setCartConflictAlert] = useState<CartConflictAlert | null>(null);
+
   const [location, setLocation] = useState<LocationState>(() => {
     const saved = localStorage.getItem('waslalink_loc');
     return saved ? JSON.parse(saved) : { name: '', coords: null, isVerified: false };
@@ -804,6 +819,60 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const addToCartGlobal = (product: any, shop: any, quantity: number = 1, isAbsolute: boolean = false) => {
+    const isDifferentStore = cart.shopId !== null && cart.shopId !== shop.id && cart.items.length > 0;
+    
+    if (isDifferentStore) {
+      setCartConflictAlert({ isOpen: true, product, shop, quantity, isAbsolute });
+      return;
+    }
+
+    setCart(prev => {
+      const items = [...prev.items];
+      const existingItem = items.find(item => item.id === product.id);
+      if (existingItem) {
+        existingItem.quantity = isAbsolute ? quantity : existingItem.quantity + quantity;
+      } else {
+        items.push({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          quantity,
+          imgUrl: product.imgUrl
+        });
+      }
+      return {
+        shopId: shop.id,
+        shopName: shop.name,
+        items
+      };
+    });
+    showToast(isRTL ? `تمت إضافة ${product.name} للسلة` : `Added ${product.name} to cart`);
+  };
+
+  const confirmClearCartAndAdd = () => {
+    if (!cartConflictAlert) return;
+    const { product, shop, quantity } = cartConflictAlert;
+    
+    setCart({
+      shopId: shop.id,
+      shopName: shop.name,
+      items: [{
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity,
+        imgUrl: product.imgUrl
+      }]
+    });
+    setCartConflictAlert(null);
+    showToast(isRTL ? `تم إفراغ السلة وإضافة ${product.name}` : `Cart cleared and ${product.name} added`);
+  };
+
+  const cancelCartConflict = () => {
+    setCartConflictAlert(null);
   };
 
   const toggleFollowStore = async (storeId: string) => {
@@ -1405,6 +1474,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setOrders,
         cart,
         setCart,
+        cartConflictAlert,
+        setCartConflictAlert,
+        addToCartGlobal,
+        confirmClearCartAndAdd,
+        cancelCartConflict,
         location,
         setLocation: updateLocationPersistent,
         toasts,

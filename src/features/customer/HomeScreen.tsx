@@ -35,6 +35,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigate, openSearch, op
     orders,
     cart,
     setCart,
+    addToCartGlobal,
     showToast
   } = useApp();
 
@@ -67,7 +68,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigate, openSearch, op
     return item ? item.quantity : 0;
   };
 
-  // Safe Add To Cart directly from cards
   const handleAddToCart = (product: any, e: React.MouseEvent) => {
     e.stopPropagation();
     const shop = stores.find(s => s.id === product.storeId);
@@ -87,30 +87,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigate, openSearch, op
       showToast(isRTL ? 'المتجر مغلق: سيتم وضع طلبك كطلب مجدول' : 'Store closed: your order will be scheduled', 'info');
     }
 
-    setCart(prev => {
-      const isDifferentStore = prev.shopId !== null && prev.shopId !== shop.id;
-      const items = isDifferentStore ? [] : [...prev.items];
-      
-      const existingItem = items.find(item => item.id === product.id);
-      if (existingItem) {
-        existingItem.quantity += 1;
-      } else {
-        items.push({
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          quantity: 1,
-          imgUrl: product.imgUrl
-        });
-      }
-
-      return {
-        shopId: shop.id,
-        shopName: shop.name,
-        items
-      };
-    });
-    showToast(isRTL ? `تمت إضافة ${product.name} للسلة` : `Added ${product.name} to cart`);
+    addToCartGlobal(product, shop, 1, false);
   };
 
   const handleRemoveFromCart = (productId: string, e: React.MouseEvent) => {

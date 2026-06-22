@@ -27,6 +27,7 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
     products, 
     cart, 
     setCart, 
+    addToCartGlobal,
     t, 
     isRTL, 
     favoriteProducts, 
@@ -97,30 +98,7 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
     if (openStatus.status === 'closed') {
       showToast(isRTL ? 'المتجر مغلق: سيتم وضع طلبك كطلب مجدول' : 'Store closed: your order will be scheduled', 'info');
     }
-    setCart(prev => {
-      const isDifferentStore = prev.shopId !== null && prev.shopId !== shop.id;
-      const items = isDifferentStore ? [] : [...prev.items];
-      
-      const existingItem = items.find(item => item.id === product.id);
-      if (existingItem) {
-        existingItem.quantity += 1;
-      } else {
-        items.push({
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          quantity: 1,
-          imgUrl: product.imgUrl
-        });
-      }
-
-      return {
-        shopId: shop.id,
-        shopName: shop.name,
-        items
-      };
-    });
-    showToast(isRTL ? `تمت إضافة ${product.name}` : `Added ${product.name}`);
+    addToCartGlobal(product, shop, 1, false);
   };
 
   const handleRemoveFromCart = (productId: string, e: React.MouseEvent) => {

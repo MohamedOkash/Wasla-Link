@@ -23,7 +23,7 @@ interface ProductModalProps {
 }
 
 export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProduct, shop: initialShop, goBack }) => {
-  const { cart, setCart, t, isRTL, favoriteProducts, toggleFavoriteProduct, products, orders, stores, showToast } = useApp();
+  const { cart, setCart, addToCartGlobal, t, isRTL, favoriteProducts, toggleFavoriteProduct, products, orders, stores, showToast } = useApp();
   
   const [product, setProduct] = useState(initialProduct);
   const [shop, setShop] = useState(initialShop);
@@ -58,31 +58,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
   const frequentlyBought = recommendationService.getFrequentlyBoughtTogether(product, products, orders, 6);
 
   const handleConfirm = () => {
-    setCart(prev => {
-      const isDifferentStore = prev.shopId !== shop.id;
-      const items = isDifferentStore ? [] : [...prev.items];
-      
-      const idx = items.findIndex(item => item.id === product.id);
-      if (idx !== -1) {
-        items[idx].quantity = quantity;
-      } else {
-        items.push({
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          quantity,
-          imgUrl: product.imgUrl
-        });
-      }
-
-      return {
-        shopId: shop.id,
-        shopName: shop.name,
-        items
-      };
-    });
-    
-    showToast(isRTL ? 'تم تحديث السلة بنجاح' : 'Shopping cart updated');
+    addToCartGlobal(product, shop, quantity, true);
     goBack();
   };
 
@@ -321,18 +297,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
                         }}
                         onAddToCart={(prod, e) => {
                           e.stopPropagation();
-                          setCart(prev => {
-                            const isDifferentStore = prev.shopId !== prod.storeId;
-                            const items = isDifferentStore ? [] : [...prev.items];
-                            const idx = items.findIndex(item => item.id === prod.id);
-                            if (idx !== -1) {
-                              items[idx].quantity += 1;
-                            } else {
-                              items.push({ id: prod.id, name: prod.name, price: prod.price, quantity: 1, imgUrl: prod.imgUrl });
-                            }
-                            return { shopId: prod.storeId, shopName: pStore ? pStore.name : '', items };
-                          });
-                          showToast(isRTL ? 'تم الإضافة للسلة' : 'Added to cart');
+                          if (pStore) {
+                            addToCartGlobal(prod, pStore, 1, false);
+                          }
                         }}
                         isFavorite={favoriteProducts.includes(p.id)}
                         onToggleFavorite={(id, e) => {
@@ -372,18 +339,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
                         }}
                         onAddToCart={(prod, e) => {
                           e.stopPropagation();
-                          setCart(prev => {
-                            const isDifferentStore = prev.shopId !== prod.storeId;
-                            const items = isDifferentStore ? [] : [...prev.items];
-                            const idx = items.findIndex(item => item.id === prod.id);
-                            if (idx !== -1) {
-                              items[idx].quantity += 1;
-                            } else {
-                              items.push({ id: prod.id, name: prod.name, price: prod.price, quantity: 1, imgUrl: prod.imgUrl });
-                            }
-                            return { shopId: prod.storeId, shopName: pStore ? pStore.name : '', items };
-                          });
-                          showToast(isRTL ? 'تم الإضافة للسلة' : 'Added to cart');
+                          if (pStore) {
+                            addToCartGlobal(prod, pStore, 1, false);
+                          }
                         }}
                         isFavorite={favoriteProducts.includes(p.id)}
                         onToggleFavorite={(id, e) => {

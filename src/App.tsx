@@ -3,6 +3,7 @@ import { AppProvider, useApp } from './contexts/AppContext';
 import { AppRoutes } from './routes/AppRoutes';
 import { ToastManager } from './components/premium/toast/ToastManager';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { CartConflictModal } from './components/premium/CartConflictModal';
 
 function AppContent() {
   const { isRTL, role, theme } = useApp();
@@ -18,6 +19,7 @@ function AppContent() {
       >
         <ErrorBoundary>
           <AppRoutes />
+          <CartConflictModal />
           <ToastManager />
         </ErrorBoundary>
       </div>
