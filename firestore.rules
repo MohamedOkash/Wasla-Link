@@ -107,8 +107,8 @@ service cloud.firestore {
     // 9. drivers Collection
     match /drivers/{driverId} {
       allow read: if true;
-      allow create: if isDriver() && request.resource.id == request.auth.uid;
-      allow update: if isAdmin() || (isDriver() && isOwner(driverId));
+      allow create: if signedIn() && request.auth.uid == driverId;
+      allow update: if isAdmin() || (signedIn() && isOwner(driverId));
       allow delete: if isAdmin();
     }
 

@@ -1,54 +1,65 @@
-import React, { useState } from 'react';
-import { BarChart3, ClipboardList, User, LogOut, Bike, Star, Power } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { BarChart3, ClipboardList, User, LogOut, Bike, Star, Power, Wallet } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
+import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { db } from '../../services/firebase';
 import { DriverOrders } from './DriverOrders';
 import { DriverProfile } from './DriverProfile';
+import { DriverEarnings } from './DriverEarnings';
 
 export const DriverDashboard: React.FC = () => {
-  const { goHome, currentUser, lang, isRTL, orders, drivers, toggleDriverOnline, driverMetrics } = useApp();
-  const [activeTab, setActiveTab] = useState<'summary' | 'orders' | 'profile'>('summary');
+  const { goHome, currentUser, isRTL, showToast } = useApp();
+  const [activeTab, setActiveTab] = useState<'summary' | 'orders' | 'earnings' | 'profile'>('summary');
+  const [driver, setDriver] = useState<any>(null);
 
-  const driverId = currentUser?.email || 'd1';
-  const driverName = currentUser?.name || 'كابتن محمود رضا';
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== 'driver') return;
+    
+    const unsub = onSnapshot(doc(db, 'drivers', currentUser.uid), (docSnap) => {
+      if (docSnap.exists()) {
+        setDriver({ id: docSnap.id, ...docSnap.data() });
+      }
+    });
 
-  // Get driver's details
-  const driverDetail = drivers.find(d => d.id === 'd1') || {
-    id: 'd1',
-    name: driverName,
-    isOnline: true,
-    rating: 4.8
+    return () => unsub();
+  }, [currentUser]);
+
+  const toggleAvailability = async () => {
+    if (!driver) return;
+    try {
+      const newStatus = driver.availability === 'online' ? 'offline' : 'online';
+      await updateDoc(doc(db, 'drivers', driver.id), {
+        availability: newStatus
+      });
+      showToast(
+        isRTL 
+          ? `أنت الآن ${newStatus === 'online' ? 'متصل' : 'غير متصل'}` 
+          : `You are now ${newStatus}`
+      );
+    } catch (error) {
+      console.error(error);
+      showToast(isRTL ? 'حدث خطأ' : 'Error', 'error');
+    }
   };
 
-  // Calculations
-  const driverOrders = orders.filter(o => o.driverId === driverId);
-  const activeCount = driverOrders.filter(o => !['delivered', 'cancelled'].includes(o.status)).length;
-  const completedCount = driverOrders.filter(o => o.status === 'delivered').length;
-  const earnings = driverOrders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + o.deliveryFee, 0);
+  if (!driver) {
+    return <div className="h-screen bg-theme-bg flex items-center justify-center animate-pulse"><Bike size={40} className="text-primary" /></div>;
+  }
 
-  const availableCount = orders.filter(o => o.status === 'readyForPickup' && !o.driverId).length;
-
-  const metrics = driverMetrics[driverDetail.id] || {
-    driverId: driverDetail.id,
-    todayEarnings: earnings,
-    weeklyEarnings: earnings * 5,
-    monthlyEarnings: earnings * 20,
-    lifetimeEarnings: earnings * 80,
-    acceptanceRate: 98,
-    completionRate: 97,
-    averageDeliveryTime: 22,
-    completedDeliveries: completedCount
-  };
+  // Calculate metrics based on driver object (from Phase 14A driver schema)
+  const isOnline = driver.availability === 'online';
+  const isBusy = driver.availability === 'busy';
 
   return (
     <div className="flex flex-col min-h-screen bg-theme-bg theme-transition pb-20 text-theme-text">
       {/* Top Header */}
-      <div className="bg-theme-card px-5 pt-12 pb-4 shadow-sm border-b border-theme-border flex justify-between items-center sticky top-0 z-30 theme-transition">
+      <div className="bg-theme-card px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-4 shadow-sm border-b border-theme-border flex justify-between items-center sticky top-0 z-30 theme-transition">
         <div className="flex items-center gap-2">
           <div className="bg-primary text-white p-2.5 rounded-xl">
             <Bike size={20} />
           </div>
           <div>
-            <h1 className="text-base font-black text-theme-text truncate max-w-[180px]">{driverName}</h1>
+            <h1 className="text-base font-black text-theme-text truncate max-w-[180px]">{driver.name}</h1>
             <p className="text-[10px] text-theme-muted font-bold mt-0.5">
               {isRTL ? 'لوحة توصيل الطلبات للمندوبين' : 'Driver Delivery Workspace'}
             </p>
@@ -58,17 +69,19 @@ export const DriverDashboard: React.FC = () => {
         <div className="flex items-center gap-2">
           {/* Online/Offline Toggle */}
           <button
-            onClick={() => toggleDriverOnline(driverDetail.id)}
+            onClick={toggleAvailability}
+            disabled={isBusy}
             className={`p-2.5 rounded-xl transition flex items-center justify-center gap-1.5 ${
-              driverDetail.isOnline 
+              isBusy ? 'bg-amber-500/10 text-amber-500 opacity-50 cursor-not-allowed' :
+              isOnline 
                 ? 'bg-green-500/10 text-green-500 hover:bg-green-500/15' 
-                : 'bg-red-500/10 text-red-500 hover:bg-red-500/15'
+                : 'bg-theme-border/50 text-theme-muted hover:text-theme-text'
             }`}
-            title={driverDetail.isOnline ? (isRTL ? 'متصل' : 'Online') : (isRTL ? 'غير متصل' : 'Offline')}
+            title={isOnline ? (isRTL ? 'متصل' : 'Online') : (isRTL ? 'غير متصل' : 'Offline')}
           >
             <Power size={16} />
             <span className="text-[10px] font-black hidden md:inline">
-              {driverDetail.isOnline ? (isRTL ? 'نشط' : 'Active') : (isRTL ? 'مغلق' : 'Inactive')}
+              {isBusy ? (isRTL ? 'مشغول' : 'Busy') : isOnline ? (isRTL ? 'متصل' : 'Online') : (isRTL ? 'غير متصل' : 'Offline')}
             </span>
           </button>
 
@@ -85,9 +98,10 @@ export const DriverDashboard: React.FC = () => {
       {/* Tabs Menu Navigation */}
       <div className="bg-theme-card px-3 py-2.5 border-b border-theme-border flex overflow-x-auto no-scrollbar gap-1.5 theme-transition">
         {[
-          { id: 'summary', label: isRTL ? 'لوحة القيادة' : 'Dashboard', icon: BarChart3 },
-          { id: 'orders', label: `${isRTL ? 'المهام والطلبات' : 'Dispatches'} (${activeCount + availableCount})`, icon: ClipboardList },
-          { id: 'profile', label: isRTL ? 'حسابي والركوبة' : 'My Account', icon: User },
+          { id: 'summary', label: isRTL ? 'الرئيسية' : 'Dashboard', icon: BarChart3 },
+          { id: 'orders', label: isRTL ? 'الطلبات' : 'Orders', icon: ClipboardList },
+          { id: 'earnings', label: isRTL ? 'الأرباح' : 'Earnings', icon: Wallet },
+          { id: 'profile', label: isRTL ? 'حسابي' : 'Account', icon: User },
         ].map(tab => (
           <button
             key={tab.id}
@@ -105,115 +119,83 @@ export const DriverDashboard: React.FC = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="p-5 flex-1 max-w-[1200px] w-full mx-auto">
+      <div className="p-5 flex-1 max-w-[1200px] w-full mx-auto pb-[120px]">
         {activeTab === 'summary' && (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-fade-in">
             
-            {/* Quick Earnings Dashboard */}
-            <div className="bg-gradient-to-br from-primary to-primary-hover text-white rounded-[32px] p-6 shadow-lg shadow-primary/10 relative overflow-hidden flex flex-col justify-between h-44">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-wider opacity-80">{isRTL ? 'محفظة الأرباح (الرصيد المتاح)' : 'Wallet Total Balance'}</span>
-                <h2 className="text-3xl font-black mt-2">{metrics.todayEarnings} ج.م</h2>
+            {/* Driver Guidelines / Status alert */}
+            <div className={`p-4 rounded-2xl border flex gap-3 items-center ${
+              isBusy ? 'bg-amber-500/10 border-amber-500/20 text-amber-900 dark:text-amber-300' :
+              isOnline 
+                ? 'bg-green-500/10 border-green-500/20 text-green-900 dark:text-green-300' 
+                : 'bg-theme-border/30 border-theme-border/50 text-theme-muted'
+            }`}>
+              <div className={`p-2.5 rounded-xl ${isBusy ? 'bg-amber-500/20 text-amber-500' : isOnline ? 'bg-green-500/20 text-green-500' : 'bg-theme-border text-theme-text'}`}>
+                <Bike size={18} />
               </div>
-              <div className="grid grid-cols-3 gap-2 pt-3 border-t border-white/20 text-[10px] font-bold text-center">
-                <div>
-                  <span className="opacity-75 block">{isRTL ? 'أرباح الأسبوع' : 'Weekly'}</span>
-                  <span className="font-black text-sm block mt-0.5">{metrics.weeklyEarnings} ج.م</span>
-                </div>
-                <div>
-                  <span className="opacity-75 block">{isRTL ? 'أرباح الشهر' : 'Monthly'}</span>
-                  <span className="font-black text-sm block mt-0.5">{metrics.monthlyEarnings} ج.م</span>
-                </div>
-                <div>
-                  <span className="opacity-75 block">{isRTL ? 'مدى الحياة' : 'Lifetime'}</span>
-                  <span className="font-black text-sm block mt-0.5">{metrics.lifetimeEarnings} ج.م</span>
-                </div>
+              <div>
+                <h4 className="text-sm font-black">
+                  {isBusy 
+                    ? (isRTL ? 'أنت في مهمة توصيل حالياً' : 'You are currently on a delivery')
+                    : isOnline 
+                    ? (isRTL ? 'أنت متصل ومستعد لاستقبال الطلبات' : 'You are online and ready!')
+                    : (isRTL ? 'أنت غير متصل' : 'You are offline')
+                  }
+                </h4>
+                <p className="text-[10px] font-bold mt-0.5 opacity-80">
+                  {isBusy 
+                    ? (isRTL ? 'يرجى إكمال الطلب الحالي لاستلام طلبات جديدة.' : 'Complete current order to receive new ones.')
+                    : isOnline 
+                    ? (isRTL ? 'سيتم تنبيهك فور توفر طلبات بالقرب منك.' : 'New orders will prompt immediately.')
+                    : (isRTL ? 'قم بالاتصال لبدء استقبال الطلبات.' : 'Go online to receive orders.')
+                  }
+                </p>
               </div>
             </div>
 
             {/* Stats Summary Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="bg-theme-card border border-theme-border p-4 rounded-[22px] text-center shadow-sm theme-transition">
-                <span className="text-[9px] text-theme-muted font-black block">{isRTL ? 'طلبات نشطة' : 'Active'}</span>
-                <span className="text-lg font-black text-theme-text mt-1.5 block">{activeCount}</span>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-theme-card border border-theme-border p-4 rounded-2xl shadow-sm">
+                <div className="flex items-center gap-2 mb-2 text-primary">
+                  <ClipboardList size={18} />
+                  <span className="text-xs font-black">{isRTL ? 'الطلبات المكتملة' : 'Completed'}</span>
+                </div>
+                <span className="text-2xl font-black text-theme-text block">{driver.completedOrders || 0}</span>
               </div>
-              <div className="bg-theme-card border border-theme-border p-4 rounded-[22px] text-center shadow-sm theme-transition">
-                <span className="text-[9px] text-theme-muted font-black block">{isRTL ? 'طلبات متاحة' : 'Available'}</span>
-                <span className="text-lg font-black text-theme-text mt-1.5 block">{availableCount}</span>
+              <div className="bg-theme-card border border-theme-border p-4 rounded-2xl shadow-sm">
+                <div className="flex items-center gap-2 mb-2 text-amber-500">
+                  <Star size={18} className="fill-amber-500" />
+                  <span className="text-xs font-black">{isRTL ? 'التقييم العام' : 'Rating'}</span>
+                </div>
+                <span className="text-2xl font-black text-theme-text block">{driver.rating || 5.0}</span>
               </div>
-              <div className="bg-theme-card border border-theme-border p-4 rounded-[22px] text-center shadow-sm theme-transition">
-                <span className="text-[9px] text-theme-muted font-black block">{isRTL ? 'التقييم العام' : 'Rating'}</span>
-                <span className="text-lg font-black text-amber-500 mt-1.5 block flex items-center justify-center gap-0.5">
-                  <Star size={14} fill="currentColor" /> {driverDetail.rating}
-                </span>
-              </div>
-              <div className="bg-theme-card border border-theme-border p-4 rounded-[22px] text-center shadow-sm theme-transition">
-                <span className="text-[9px] text-theme-muted font-black block">{isRTL ? 'الرحلات الناجحة' : 'Completed'}</span>
-                <span className="text-lg font-black text-theme-text mt-1.5 block">{metrics.completedDeliveries}</span>
-              </div>
-            </div>
-
-            {/* Performance Indicators */}
-            <div className="bg-theme-card border border-theme-border rounded-[28px] p-5 shadow-sm theme-transition grid grid-cols-3 gap-2 text-center text-xs font-bold">
-              <div className="border-l border-theme-border/60 last:border-0 pl-2">
-                <span className="text-[9px] text-theme-muted font-black block">{isRTL ? 'معدل القبول' : 'Acceptance Rate'}</span>
-                <span className="text-sm font-black text-green-500 mt-1 block">{metrics.acceptanceRate}%</span>
-              </div>
-              <div className="border-l border-theme-border/60 last:border-0 pl-2">
-                <span className="text-[9px] text-theme-muted font-black block">{isRTL ? 'معدل الإكمال' : 'Completion Rate'}</span>
-                <span className="text-sm font-black text-green-500 mt-1 block">{metrics.completionRate}%</span>
-              </div>
-              <div>
-                <span className="text-[9px] text-theme-muted font-black block">{isRTL ? 'متوسط زمن التوصيل' : 'Avg Delivery Time'}</span>
-                <span className="text-sm font-black text-primary mt-1 block">{metrics.averageDeliveryTime} {isRTL ? 'دقيقة' : 'mins'}</span>
+              <div className="bg-theme-card border border-theme-border p-4 rounded-2xl shadow-sm col-span-2">
+                <div className="flex items-center gap-2 mb-2 text-green-500">
+                  <Wallet size={18} />
+                  <span className="text-xs font-black">{isRTL ? 'إجمالي الأرباح' : 'Total Earnings'}</span>
+                </div>
+                <span className="text-3xl font-black text-theme-text block">{driver.totalEarnings || 0} <span className="text-sm text-theme-muted">ج.م</span></span>
               </div>
             </div>
 
-            {/* Driver Guidelines / Status alert */}
-            <div className={`p-4 rounded-2xl border flex gap-3 items-center ${
-              driverDetail.isOnline 
-                ? 'bg-green-500/10 border-green-500/20 text-green-900 dark:text-green-300' 
-                : 'bg-red-500/10 border-red-500/20 text-red-900 dark:text-red-300'
-            }`}>
-              <div className={`p-2.5 rounded-xl ${driverDetail.isOnline ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-                <Bike size={18} />
-              </div>
-              <div>
-                <h4 className="text-xs font-black">
-                  {driverDetail.isOnline 
-                    ? (isRTL ? 'أنت متصل بالشبكة وجاهز للاستلام!' : 'You are online and ready!')
-                    : (isRTL ? 'حسابك مغلق حالياً، لن تتلقى طلبات.' : 'You are offline, turn active to receive orders.')
-                  }
-                </h4>
-                <p className="text-[9px] font-bold mt-0.5 opacity-80">
-                  {driverDetail.isOnline 
-                    ? (isRTL ? 'سيتم تنبيهك فور توفر طلبات جديدة بالقرب منك.' : 'New orders in your zone will prompt immediately.')
-                    : (isRTL ? 'قم بتعديل الحالة من الزر بالأعلى للبدء.' : 'Change status trigger on top to begin.')
-                  }
-                </p>
-              </div>
-            </div>
-
-            {/* Quick Trip Log list */}
-            <div className="bg-theme-card border border-theme-border rounded-[28px] p-5 space-y-4 shadow-sm theme-transition">
-              <h3 className="font-black text-theme-text text-sm border-b border-theme-border/60 pb-3">
-                {isRTL ? 'سجل آخر التوصيلات المكتملة' : 'Recent Completed Trip Logs'}
+            {/* Active Order Placeholder */}
+            <div className="bg-theme-card border border-theme-border rounded-[28px] p-5 shadow-sm theme-transition">
+               <h3 className="font-black text-theme-text text-sm flex items-center gap-2 border-b border-theme-border/60 pb-3">
+                <Bike size={18} className="text-primary" />
+                {isRTL ? 'الطلب الحالي' : 'Active Order'}
               </h3>
-              {completedCount === 0 ? (
-                <p className="text-xs text-theme-muted text-center py-6 font-bold">
-                  {isRTL ? 'لا توجد عمليات توصيل مسجلة حالياً.' : 'No completed deliveries logged yet.'}
-                </p>
+              {driver.currentOrderId ? (
+                <div className="pt-4 text-center">
+                  {/* Phase 14B logic will go here. For now just show a button to navigate to orders tab */}
+                   <p className="text-xs font-bold text-amber-500 mb-3">{isRTL ? 'لديك طلب قيد التوصيل' : 'You have an active delivery'}</p>
+                   <button onClick={() => setActiveTab('orders')} className="bg-primary text-white text-xs font-black py-2.5 px-6 rounded-xl shadow-md hover:bg-primary-hover transition">
+                     {isRTL ? 'عرض الطلب' : 'View Order'}
+                   </button>
+                </div>
               ) : (
-                <div className="space-y-3">
-                  {driverOrders.filter(o => o.status === 'delivered').slice(0, 3).map(o => (
-                    <div key={o.id} className="flex justify-between items-center text-xs font-bold border-b border-theme-border/60 pb-2.5 last:border-b-0 last:pb-0">
-                      <div>
-                        <span className="text-theme-text block">{o.shopName}</span>
-                        <span className="text-[9px] text-theme-muted mt-0.5 block">{new Date(o.createdAt).toLocaleTimeString()}</span>
-                      </div>
-                      <span className="text-green-500 font-black">+{o.deliveryFee} ج.م</span>
-                    </div>
-                  ))}
+                <div className="pt-8 pb-4 text-center opacity-60">
+                   <ClipboardList size={32} className="mx-auto mb-2 text-theme-muted" />
+                   <p className="text-xs font-bold text-theme-muted">{isRTL ? 'لا يوجد طلب حالي' : 'No active order'}</p>
                 </div>
               )}
             </div>
@@ -221,9 +203,9 @@ export const DriverDashboard: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'orders' && <DriverOrders />}
-
-        {activeTab === 'profile' && <DriverProfile />}
+        {activeTab === 'orders' && <DriverOrders driver={driver} />}
+        {activeTab === 'earnings' && <DriverEarnings driver={driver} />}
+        {activeTab === 'profile' && <DriverProfile driver={driver} />}
       </div>
     </div>
   );
