@@ -26,17 +26,19 @@ import { DeliveryConfig } from './DeliveryConfig';
 import Analytics from './Analytics';
 import { AssetCoverageCenter } from './AssetCoverageCenter';
 import { SecurityCenter } from './SecurityCenter';
+import { LogisticsCenter } from './LogisticsCenter';
 
 export const AdminDashboard = () => {
   const { t, isRTL, goHome } = useApp();
   
-  const [activeTab, setActiveTab] = useState<'home' | 'stores' | 'categories' | 'users' | 'drivers' | 'monitor' | 'banners' | 'delivery' | 'analytics' | 'assets' | 'security'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'stores' | 'categories' | 'users' | 'drivers' | 'monitor' | 'banners' | 'delivery' | 'analytics' | 'assets' | 'security' | 'logistics'>('home');
 
   const adminModules = [
     { id: 'stores', label: isRTL ? 'المتاجر' : 'Stores', icon: StoreIcon, color: 'text-blue-500', bg: 'bg-blue-500/10' },
     { id: 'categories', label: isRTL ? 'الكتالوج والأقسام' : 'Catalog Center', icon: FolderOpen, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
     { id: 'users', label: isRTL ? 'الأعضاء' : 'Users', icon: Users, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
     { id: 'drivers', label: isRTL ? 'السائقين' : 'Drivers', icon: Bike, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+    { id: 'logistics', label: isRTL ? 'اللوجستيات والـ GPS' : 'Logistics', icon: Navigation, color: 'text-orange-500', bg: 'bg-orange-500/10' },
     { id: 'monitor', label: isRTL ? 'مراقبة السوق' : 'Market Monitor', icon: Activity, color: 'text-red-500', bg: 'bg-red-500/10' },
     { id: 'banners', label: isRTL ? 'الإعلانات' : 'Banners', icon: Tag, color: 'text-pink-500', bg: 'bg-pink-500/10' },
     { id: 'assets', label: isRTL ? 'تغطية الأصول' : 'Asset Coverage', icon: ImageIcon, color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
@@ -100,6 +102,7 @@ export const AdminDashboard = () => {
             {activeTab === 'categories' && <CatalogManagement />}
             {activeTab === 'users' && <UserManagement />}
             {activeTab === 'drivers' && <DriverManagement />}
+            {activeTab === 'logistics' && <LogisticsCenter />}
             {activeTab === 'monitor' && <MarketplaceMonitor />}
             {activeTab === 'banners' && <BannerManagement />}
             {activeTab === 'assets' && <AssetCoverageCenter />}

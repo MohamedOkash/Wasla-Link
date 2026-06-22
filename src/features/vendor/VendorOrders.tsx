@@ -3,6 +3,7 @@ import { Clock, Check, X, ImageIcon, MapPin, Phone, Printer, ThumbsUp, Clipboard
 import { useApp } from '../../contexts/AppContext';
 import { Order } from '../../types/order.types';
 import { invoiceService } from '../../services/invoice.service';
+import { VendorTracking } from './VendorTracking';
 
 export const VendorOrders: React.FC = () => {
   // Filter orders for Store g_1 (أسواق الخير)
@@ -419,8 +420,11 @@ export const VendorOrders: React.FC = () => {
                 )}
 
                 {order.status === 'onTheWay' && (
-                  <div className="flex-1 bg-primary/10 text-primary font-black py-3 rounded-2xl text-xs text-center border border-primary/20 animate-pulse">
-                    {isRTL ? `المندوب في الطريق للعميل (${order.driverName || ''})` : `Driver is on the way to client (${order.driverName || ''})`}
+                  <div className="flex-1 space-y-3">
+                    <div className="bg-primary/10 text-primary font-black py-3 rounded-2xl text-xs text-center border border-primary/20 animate-pulse">
+                      {isRTL ? `المندوب في الطريق للعميل (${order.driverName || ''})` : `Driver is on the way to client (${order.driverName || ''})`}
+                    </div>
+                    <VendorTracking order={order} />
                   </div>
                 )}
 

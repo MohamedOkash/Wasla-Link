@@ -31,12 +31,19 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
   // Initialize tracking subscription
   useEffect(() => {
     const customerCoords = location.coords || { lat: 30.0444, lng: 31.2357 };
-    const storeCoords = { 
+    const order = orders.find(o => o.id === orderId);
+    
+    // Default mock store location if order doesn't have it
+    const storeCoords = order?.storeLocation || { 
       lat: customerCoords.lat - 0.006, 
       lng: customerCoords.lng - 0.007 
     };
 
-    const unsubscribe = trackingService.subscribeToTracking(
+    if (!order) return;
+
+    const unsubscribe = trackingService.subscribeToLiveTracking(
+      order.driverId,
+      order.status,
       storeCoords,
       customerCoords,
       (state) => {
@@ -51,7 +58,7 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
         mapRef.current = null;
       }
     };
-  }, [location.coords]);
+  }, [location.coords, orders, orderId]);
 
   // Handle map rendering and updates
   useEffect(() => {
@@ -119,15 +126,22 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
     }
 
     // 2. Update Dynamic Driver Location
-    if (driverMarkerRef.current) {
-      driverMarkerRef.current.setLatLng([driverLocation.lat, driverLocation.lng]);
-    } else {
-      driverMarkerRef.current = L.marker([driverLocation.lat, driverLocation.lng], { icon: driverIcon }).addTo(mapRef.current);
-    }
+    if (driverLocation) {
+      if (driverMarkerRef.current) {
+        driverMarkerRef.current.setLatLng([driverLocation.lat, driverLocation.lng]);
+      } else {
+        driverMarkerRef.current = L.marker([driverLocation.lat, driverLocation.lng], { icon: driverIcon }).addTo(mapRef.current);
+      }
 
-    // Pan map to follow driver smoothly
-    if (mapRef.current) {
-      mapRef.current.panTo([driverLocation.lat, driverLocation.lng]);
+      // Pan map to follow driver smoothly
+      if (mapRef.current) {
+        mapRef.current.panTo([driverLocation.lat, driverLocation.lng]);
+      }
+    } else {
+      if (driverMarkerRef.current) {
+        mapRef.current?.removeLayer(driverMarkerRef.current);
+        driverMarkerRef.current = null;
+      }
     }
 
   }, [trackingState]);

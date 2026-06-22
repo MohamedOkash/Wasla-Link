@@ -1,83 +1,68 @@
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from './firebase';
+
 export interface TrackingState {
-  driverLocation: { lat: number; lng: number };
+  driverLocation: { lat: number; lng: number } | null;
   customerLocation: { lat: number; lng: number };
   storeLocation: { lat: number; lng: number };
-  status: 'preparing' | 'outForDelivery' | 'arrived' | 'delivered';
+  status: 'preparing' | 'ready_for_pickup' | 'accepted' | 'picked_up' | 'delivering' | 'delivered' | 'arrived';
   eta: number; // in minutes
-  route: [number, number][];
+  route: [number, number][]; // static straight line or mock route for now
 }
 
 class TrackingService {
-  // Generate a mock path with smooth intermediate points
-  generateRoute(start: { lat: number; lng: number }, end: { lat: number; lng: number }, steps = 15): [number, number][] {
-    const route: [number, number][] = [];
-    
-    // Add some realistic curves to the path rather than a straight line
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      
-      // Linear interpolation
-      const lat = start.lat + (end.lat - start.lat) * t;
-      const lng = start.lng + (end.lng - start.lng) * t;
-      
-      // Add slight noise/curves
-      const curveOffset = Math.sin(t * Math.PI) * 0.002;
-      route.push([lat + curveOffset, lng - curveOffset]);
-    }
-    
-    return route;
-  }
-
-  // Simulate courier movement from store to customer
-  subscribeToTracking(
+  subscribeToLiveTracking(
+    driverId: string | undefined,
+    orderStatus: any,
     storeCoords: { lat: number; lng: number },
     customerCoords: { lat: number; lng: number },
     onUpdate: (state: TrackingState) => void
   ): () => void {
-    const route = this.generateRoute(storeCoords, customerCoords, 20);
-    let currentStep = 0;
     
-    // Initial state: preparing
-    onUpdate({
-      driverLocation: storeCoords,
+    // Initial State without driver
+    const initialState: TrackingState = {
+      driverLocation: null,
       customerLocation: customerCoords,
       storeLocation: storeCoords,
-      status: 'preparing',
+      status: orderStatus,
       eta: 15,
-      route
+      route: [[storeCoords.lat, storeCoords.lng], [customerCoords.lat, customerCoords.lng]]
+    };
+
+    onUpdate(initialState);
+
+    if (!driverId) {
+      return () => {}; // No driver assigned yet
+    }
+
+    const unsub = onSnapshot(doc(db, 'driverLocations', driverId), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        onUpdate({
+          ...initialState,
+          driverLocation: { lat: data.lat, lng: data.lng },
+          eta: Math.round(data.speed ? (this.calculateDistance(data.lat, data.lng, customerCoords.lat, customerCoords.lng) / data.speed) / 60 : 15)
+        });
+      }
     });
 
-    const interval = setInterval(() => {
-      currentStep++;
-      
-      let status: TrackingState['status'] = 'outForDelivery';
-      let eta = Math.max(1, Math.round(15 * (1 - currentStep / route.length)));
-      let driverLocation = { lat: route[currentStep][0], lng: route[currentStep][1] };
+    return () => unsub();
+  }
 
-      if (currentStep >= route.length - 3 && currentStep < route.length) {
-        status = 'arrived';
-        eta = 0;
-        driverLocation = customerCoords;
-      } else if (currentStep >= route.length) {
-        status = 'delivered';
-        eta = 0;
-        driverLocation = customerCoords;
-        clearInterval(interval);
-      }
+  // Haversine formula
+  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371e3; // metres
+    const φ1 = lat1 * Math.PI/180; // φ, λ in radians
+    const φ2 = lat2 * Math.PI/180;
+    const Δφ = (lat2-lat1) * Math.PI/180;
+    const Δλ = (lon2-lon1) * Math.PI/180;
 
-      onUpdate({
-        driverLocation,
-        customerLocation: customerCoords,
-        storeLocation: storeCoords,
-        status,
-        eta,
-        route
-      });
-    }, 4000); // update every 4 seconds
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
-    return () => {
-      clearInterval(interval);
-    };
+    return R * c; // in metres
   }
 }
 
