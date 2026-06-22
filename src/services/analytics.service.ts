@@ -1,5 +1,7 @@
 import { Order } from '../types/order.types';
 import { Product } from '../types/product.types';
+import { User } from '../types/user.types';
+import { Store } from '../types/store.types';
 
 export interface VendorKPIs {
   totalSales: number;
@@ -15,12 +17,48 @@ export interface VendorKPIs {
 
 export interface AdminKPIs {
   totalGMV: number;
-  totalCommissions: number; // 5% of GMV or custom commission
+  totalCommissions: number;
   totalOrdersCount: number;
-  activeUsersCount: number; // Users with at least 1 order
+  activeUsersCount: number;
   storePerformance: { name: string; gmv: number; ordersCount: number }[];
-  salesTrend: number[]; // Daily GMV for last 7 days
+  salesTrend: number[];
   orderStatusDistribution: Record<string, number>;
+  totalUsers: number;
+  totalStores: number;
+  totalDrivers: number;
+  activeDrivers: number;
+  busyDrivers: number;
+  availableDrivers: number;
+  ordersInDelivery: number;
+  avgDeliveryTime: number;
+  avgAcceptanceRate: number;
+  driverRejectionRate: number;
+}
+
+export interface StorePerformance {
+  ordersCount: number;
+  revenue: number;
+  avgRating: number;
+  avgPreparationTime: number; // in minutes
+  cancelRate: number; // percentage
+  completionRate: number; // percentage
+  storeScore: number;
+}
+
+export interface DriverPerformance {
+  deliveries: number;
+  acceptanceRate: number;
+  rejectionRate: number;
+  avgDeliveryTime: number; // in minutes
+  earnings: number;
+  driverScore: number;
+}
+
+export interface CustomerAnalytics {
+  ordersCount: number;
+  totalSpending: number;
+  lastOrderDate: number | null;
+  retentionStatus: 'VIP' | 'Loyal' | 'Active' | 'At Risk' | 'Inactive';
 }
 
 class AnalyticsService {
@@ -136,7 +174,7 @@ class AnalyticsService {
     return data;
   }
 
-  getAdminKPIs(orders: Order[]): AdminKPIs {
+  getAdminKPIs(orders: Order[], users: User[] = [], stores: Store[] = [], drivers: User[] = []): AdminKPIs {
     const now = Date.now();
     if (this.adminCache && (now - this.adminCache.timestamp < this.CACHE_TTL)) {
       return this.adminCache.data;
@@ -183,6 +221,38 @@ class AnalyticsService {
       orderStatusDistribution[o.status] = (orderStatusDistribution[o.status] || 0) + 1;
     });
 
+    // Logistics Overview
+    const activeDrivers = drivers.filter(d => d.isOnline).length;
+    const busyDrivers = drivers.filter(d => d.isOnline && d.currentOrderId).length;
+    const availableDrivers = activeDrivers - busyDrivers;
+    const ordersInDelivery = orders.filter(o => o.status === 'picked_up' || o.status === 'on_the_way').length;
+
+    // Performance
+    let totalDeliveryTime = 0;
+    let validDeliveryOrders = 0;
+    deliveredOrders.forEach(o => {
+      const created = new Date(o.createdAt).getTime();
+      const completed = new Date(o.completedAt || o.updatedAt).getTime();
+      if (completed > created) {
+        totalDeliveryTime += (completed - created) / (1000 * 60); // minutes
+        validDeliveryOrders++;
+      }
+    });
+    const avgDeliveryTime = validDeliveryOrders > 0 ? parseFloat((totalDeliveryTime / validDeliveryOrders).toFixed(1)) : 0;
+
+    // Calculate acceptance and rejection rates over all orders
+    let totalPings = 0;
+    let totalAccepts = 0;
+    let totalRejects = 0;
+    orders.forEach(o => {
+      const rejects = o.rejectedBy ? o.rejectedBy.length : 0;
+      totalRejects += rejects;
+      if (o.driverId) totalAccepts += 1;
+      totalPings += (rejects + (o.driverId ? 1 : 0));
+    });
+    const avgAcceptanceRate = totalPings > 0 ? parseFloat(((totalAccepts / totalPings) * 100).toFixed(1)) : 0;
+    const driverRejectionRate = totalPings > 0 ? parseFloat(((totalRejects / totalPings) * 100).toFixed(1)) : 0;
+
     const data: AdminKPIs = {
       totalGMV,
       totalCommissions,
@@ -190,11 +260,139 @@ class AnalyticsService {
       activeUsersCount,
       storePerformance,
       salesTrend,
-      orderStatusDistribution
+      orderStatusDistribution,
+      totalUsers: users.length,
+      totalStores: stores.length,
+      totalDrivers: drivers.length,
+      activeDrivers,
+      busyDrivers,
+      availableDrivers,
+      ordersInDelivery,
+      avgDeliveryTime,
+      avgAcceptanceRate,
+      driverRejectionRate
     };
 
     this.adminCache = { data, timestamp: now };
     return data;
+  }
+
+  getStorePerformance(storeId: string, orders: Order[]): StorePerformance {
+    const vendorOrders = orders.filter(o => o.shopId === storeId);
+    const ordersCount = vendorOrders.length;
+    
+    let revenue = 0;
+    let totalPrepTime = 0;
+    let prepOrders = 0;
+    let ratingSum = 0;
+    let ratedCount = 0;
+    
+    const delivered = vendorOrders.filter(o => o.status === 'delivered');
+    const cancelled = vendorOrders.filter(o => o.status === 'cancelled');
+    
+    delivered.forEach(o => {
+      revenue += o.total;
+      // rating implementation placeholder if orders hold ratings
+      ratingSum += 4.5; // Stub for average rating until ratings array exists
+      ratedCount++;
+    });
+
+    // Preparation time mock - would be diff between accepted and ready_for_delivery
+    totalPrepTime = 15 * delivered.length; 
+    prepOrders = delivered.length;
+
+    const avgRating = ratedCount > 0 ? parseFloat((ratingSum / ratedCount).toFixed(1)) : 4.5;
+    const avgPreparationTime = prepOrders > 0 ? parseFloat((totalPrepTime / prepOrders).toFixed(1)) : 15;
+    const cancelRate = ordersCount > 0 ? parseFloat(((cancelled.length / ordersCount) * 100).toFixed(1)) : 0;
+    const completionRate = ordersCount > 0 ? parseFloat(((delivered.length / ordersCount) * 100).toFixed(1)) : 0;
+
+    // score = (revenue * 0.35) + (rating * 0.25) + (completionRate * 0.25) + ((100 - cancelRate) * 0.15)
+    // normalize revenue for score (e.g. max 100 score points)
+    const normRev = Math.min(revenue / 1000, 100); 
+    const score = (normRev * 0.35) + ((avgRating/5*100) * 0.25) + (completionRate * 0.25) + ((100 - cancelRate) * 0.15);
+
+    return {
+      ordersCount,
+      revenue,
+      avgRating,
+      avgPreparationTime,
+      cancelRate,
+      completionRate,
+      storeScore: parseFloat(score.toFixed(1))
+    };
+  }
+
+  getDriverPerformance(driverId: string, orders: Order[]): DriverPerformance {
+    let deliveries = 0;
+    let earnings = 0;
+    let totalDeliveryTime = 0;
+    let accepted = 0;
+    let rejected = 0;
+    
+    orders.forEach(o => {
+      if (o.driverId === driverId) {
+        accepted++;
+        if (o.status === 'delivered') {
+          deliveries++;
+          earnings += o.deliveryFee || 0; // simplistic earning calc
+          const created = new Date(o.createdAt).getTime();
+          const completed = new Date(o.completedAt || o.updatedAt).getTime();
+          totalDeliveryTime += (completed - created) / (1000 * 60);
+        }
+      } else if (o.rejectedBy?.includes(driverId)) {
+        rejected++;
+      }
+    });
+
+    const totalPings = accepted + rejected;
+    const acceptanceRate = totalPings > 0 ? parseFloat(((accepted / totalPings) * 100).toFixed(1)) : 100;
+    const rejectionRate = totalPings > 0 ? parseFloat(((rejected / totalPings) * 100).toFixed(1)) : 0;
+    const avgDeliveryTime = deliveries > 0 ? parseFloat((totalDeliveryTime / deliveries).toFixed(1)) : 30;
+    
+    // onTimeDeliveries mock
+    const onTimeDeliveries = 100; 
+    const rating = 4.8; // mock rating
+
+    const score = (acceptanceRate * 0.35) + (onTimeDeliveries * 0.35) + ((rating/5*100) * 0.20) + ((100 - rejectionRate) * 0.10);
+
+    return {
+      deliveries,
+      acceptanceRate,
+      rejectionRate,
+      avgDeliveryTime,
+      earnings,
+      driverScore: parseFloat(score.toFixed(1))
+    };
+  }
+
+  getCustomerAnalytics(customerId: string, orders: Order[]): CustomerAnalytics {
+    const userOrders = orders.filter(o => o.customerId === customerId);
+    const ordersCount = userOrders.length;
+    let totalSpending = 0;
+    let lastOrderDate = 0;
+
+    userOrders.forEach(o => {
+      if (o.status === 'delivered') totalSpending += o.total;
+      const ts = new Date(o.createdAt).getTime();
+      if (ts > lastOrderDate) lastOrderDate = ts;
+    });
+
+    let retentionStatus: 'VIP' | 'Loyal' | 'Active' | 'At Risk' | 'Inactive' = 'Inactive';
+    const daysSinceLastOrder = lastOrderDate > 0 ? (Date.now() - lastOrderDate) / (1000 * 60 * 60 * 24) : 999;
+
+    if (ordersCount === 0) retentionStatus = 'New' as any;
+    else if (ordersCount >= 10 && totalSpending > 500) retentionStatus = 'VIP';
+    else if (ordersCount >= 5) retentionStatus = 'Loyal';
+    else if (daysSinceLastOrder <= 30) retentionStatus = 'Active';
+    else if (daysSinceLastOrder <= 60) retentionStatus = 'At Risk';
+    else retentionStatus = 'Inactive';
+
+    return {
+      ordersCount,
+      totalSpending,
+      lastOrderDate: lastOrderDate > 0 ? lastOrderDate : null,
+      retentionStatus
+    };
   }
 }
 
