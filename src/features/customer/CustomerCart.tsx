@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState } from 'react';
 import { ChevronRight, Trash2, Plus, Minus, ArrowRight, ShoppingBag, Tag, Sparkles } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -25,6 +26,8 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
   const { products } = useProducts();;
 
   const handleIncrement = (id: string) => {
+  const { t } = useTranslation();
+
     setCart(prev => {
       const items = prev.items.map(item => {
         if (item.id === id) return { ...item, quantity: item.quantity + 1 };
@@ -80,7 +83,7 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
     if (!couponCode.trim()) return;
     const coupon = coupons.find(c => c.code.toUpperCase() === couponCode.trim().toUpperCase());
     if (!coupon) {
-      setCouponError(isRTL ? 'كود الخصم غير صحيح' : 'Invalid coupon code');
+      setCouponError(t('str_49'));
       setActiveCoupon(null);
       return;
     }
@@ -107,7 +110,7 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
     } else {
       setActiveCoupon(coupon);
       setCouponError(null);
-      showToast(isRTL ? 'تم تطبيق كود الخصم بنجاح' : 'Coupon applied successfully');
+      showToast(t('str_50'));
     }
   };
 
@@ -115,7 +118,7 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
     setActiveCoupon(null);
     setCouponCode('');
     setCouponError(null);
-    showToast(isRTL ? 'تم إزالة كود الخصم' : 'Coupon removed');
+    showToast(t('str_51'));
   };
 
   if (cart.items.length === 0) {
@@ -123,11 +126,11 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
       <div className="bg-theme-bg min-h-screen flex flex-col items-center justify-center p-6 animate-fade-in theme-transition">
         <PremiumEmptyState 
           title={t('emptyCart')}
-          description={isRTL ? 'سلتك فارغة تماماً حالياً. قم بإضافة المنتجات الطازجة والسلع التي تحتاجها!' : 'Your cart is completely empty. Add fresh goods and local items to start!'}
+          description={t('str_52')}
           icon={<ShoppingBag size={36} />}
           action={
             <PremiumButton onClick={goBack} variant="primary" size="md" className="shadow-md">
-              {isRTL ? 'ابدأ التسوق الآن' : 'Start Shopping Now'}
+              {t('str_53')}
             </PremiumButton>
           }
         />
@@ -220,12 +223,12 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
       <div className="bg-theme-card border-t border-theme-border/60 p-5 space-y-3 theme-transition">
         <div className="flex gap-2.5 items-end">
           <PremiumInput 
-            label={isRTL ? 'كوبون الخصم' : 'Promo Coupon Code'}
+            label={t('str_54')}
             type="text" 
             value={couponCode}
             disabled={!!activeCoupon}
             onChange={(e) => { setCouponCode(e.target.value); setCouponError(null); }}
-            placeholder={isRTL ? 'مثال: SOUQ20' : 'e.g. SOUQ20'} 
+            placeholder={t('str_55')} 
             leftIcon={<Tag size={14} />}
             wrapperClassName="flex-1"
           />
@@ -236,7 +239,7 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
               size="md"
               className="h-10 text-xs font-black rounded-xl"
             >
-              {isRTL ? 'إلغاء' : 'Remove'}
+              {t('str_56')}
             </PremiumButton>
           ) : (
             <PremiumButton 
@@ -245,7 +248,7 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
               size="md"
               className="h-10 text-xs font-black rounded-xl"
             >
-              {isRTL ? 'تطبيق' : 'Apply'}
+              {t('str_57')}
             </PremiumButton>
           )}
         </div>
@@ -255,17 +258,17 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
         {activeCoupon && (
           <p className="text-[10px] font-black text-green-500 flex items-center gap-1 animate-pop-in">
             <Sparkles size={11} className="text-green-500 animate-pulse" />
-            {isRTL ? 'كود خصم فعال! تم توفير:' : 'Coupon active! Discount saved:'} {discountAmount} ج.م
+            {t('str_58')} {discountAmount} ج.م
           </p>
         )}
       </div>
 
       {/* Sticky Bottom Order Summary Panel */}
       <div className="fixed bottom-0 left-0 right-0 max-w-[400px] mx-auto w-full bg-theme-card border-t border-theme-border p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] rounded-t-[32px] shadow-[0_-12px_28px_rgba(0,0,0,0.06)] z-30 theme-transition space-y-4">
-        <h3 className="font-black text-sm text-theme-text">{isRTL ? 'ملخص الطلب' : 'Order Summary'}</h3>
+        <h3 className="font-black text-sm text-theme-text">{t('str_59')}</h3>
         <div className="space-y-2.5 text-xs bg-theme-bg/50 p-3.5 rounded-2xl border border-theme-border/50">
           <div className="flex justify-between text-theme-muted font-semibold">
-            <span>{isRTL ? 'عدد المنتجات' : 'Product Count'}</span>
+            <span>{t('str_60')}</span>
             <span className="font-sans">{cart.items.reduce((sum, item) => sum + item.quantity, 0)}</span>
           </div>
           <div className="flex justify-between text-theme-muted font-semibold">
@@ -274,7 +277,7 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
           </div>
           {discountAmount > 0 && (
             <div className="flex justify-between text-green-500 font-bold animate-fade-in bg-green-500/10 p-2 rounded-lg mt-1">
-              <span>{isRTL ? 'خصم الكوبون:' : 'Coupon Discount:'}</span>
+              <span>{t('str_61')}</span>
               <span className="font-sans">-{discountAmount} ج.م</span>
             </div>
           )}
@@ -291,7 +294,7 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
         <PremiumButton
           onClick={() => {
             if (!currentUser) {
-              showToast(isRTL ? 'يجب تسجيل الدخول لإتمام الطلب' : 'You must login to place an order', 'error');
+              showToast(t('str_62'), 'error');
               return;
             }
             goToCheckout();
@@ -301,7 +304,7 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
           className="w-full shadow-lg shadow-primary/20 rounded-2xl flex items-center justify-center gap-2 font-black text-xs h-12"
           rightIcon={<ArrowRight size={15} strokeWidth={3} className={isRTL ? 'rotate-180' : ''} />}
         >
-          {isRTL ? 'الذهاب لصفحة الدفع' : 'Proceed to Checkout'}
+          {t('str_63')}
         </PremiumButton>
       </div>
 

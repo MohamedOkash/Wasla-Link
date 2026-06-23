@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, Plus, Minus, Check, Heart, Tag, Star, Reply, ShoppingBag, Sparkles, Share2 } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -62,6 +63,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
   const frequentlyBought = recommendationService.getFrequentlyBoughtTogether(product, products, orders, 6);
 
   const handleConfirm = () => {
+  const { t } = useTranslation();
+
     addToCartGlobal(product, shop, quantity, true);
     goBack();
   };
@@ -76,7 +79,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
     } else {
       // Fallback copy to clipboard
       navigator.clipboard.writeText(`${product.name} - SOUQ EL BALAD`);
-      showToast(isRTL ? 'تم نسخ رابط المنتج' : 'Product link copied to clipboard');
+      showToast(t('str_33'));
     }
   };
 
@@ -102,14 +105,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
             <button 
               onClick={handleShare}
               className="p-2.5 bg-theme-card/90 backdrop-blur border border-theme-border/30 shadow-md rounded-full text-theme-text hover:bg-theme-card active:scale-95 transition"
-              title={isRTL ? 'مشاركة' : 'Share'}
+              title={t('str_34')}
             >
               <Share2 size={15} />
             </button>
             <button 
               onClick={() => toggleFavoriteProduct(product.id)}
               className="p-2.5 bg-theme-card/90 backdrop-blur border border-theme-border/30 shadow-md rounded-full text-red-500 hover:bg-theme-card active:scale-95 transition"
-              title={isRTL ? 'حفظ في المفضلة' : 'Add to Favorites'}
+              title={t('str_35')}
             >
               <Heart 
                 size={15} 
@@ -140,7 +143,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
             {product.isOffer && (
               <PremiumBadge variant="danger" pill={true} className="flex items-center gap-0.5">
                 <Tag size={8} />
-                {isRTL ? 'خصم خاص' : 'SPECIAL OFFER'}
+                {t('str_36')}
               </PremiumBadge>
             )}
 
@@ -154,11 +157,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
           <h2 className="text-lg font-black text-theme-text leading-tight mb-1">{product.name}</h2>
           
           <div className="flex flex-wrap gap-x-2.5 gap-y-1 text-[10px] font-bold text-theme-muted mb-4 border-b border-theme-border/50 pb-3">
-            <span>{isRTL ? `المتجر: ${shop.name}` : `Store: ${shop.name}`}</span>
+            <span>{t('str_37')}</span>
             {product.productBrand && (
               <>
                 <span>•</span>
-                <span>{isRTL ? `العلامة التجارية: ${product.productBrand}` : `Brand: ${product.productBrand}`}</span>
+                <span>{t('str_38')}</span>
               </>
             )}
             {product.productWeight && (
@@ -173,12 +176,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
           {hasDiscount && (
             <div className="bg-gradient-to-r from-red-500/10 to-rose-500/5 border border-red-500/10 p-3.5 rounded-2xl mb-4 animate-pop-in">
               <span className="text-[10px] font-black text-red-500 block mb-1 uppercase tracking-wider">
-                {isRTL ? 'تفاصيل العرض والتخفيض' : 'Campaign details'}
+                {t('str_39')}
               </span>
               <p className="text-[11px] font-medium text-theme-text leading-relaxed">
-                {isRTL 
-                  ? `اشتري هذا المنتج بخصم رائع الآن! السعر المخفض ${discountedPrice} ج.م بدلاً من ${product.price} ج.م`
-                  : `Save on this item! Discounted price is EGP ${discountedPrice} instead of EGP ${product.price}`
+                {t('str_40')
                 }
               </p>
             </div>
@@ -192,7 +193,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
           <div className="border-t border-theme-border/60 pt-6 mt-6">
             <h3 className="text-xs font-black text-theme-text mb-4 uppercase tracking-wider flex items-center gap-1.5">
               <Star size={14} className="text-amber-500 fill-amber-500" />
-              {isRTL ? 'تقييمات المنتج وآراء العملاء' : 'Product Reviews & Ratings'}
+              {t('str_41')}
             </h3>
             
             {/* Average rating and distribution */}
@@ -206,7 +207,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
                     ))}
                   </div>
                   <span className="text-[9px] text-theme-muted font-bold">
-                    {reviews.length} {isRTL ? 'تقييم' : 'reviews'}
+                    {reviews.length} {t('str_42')}
                   </span>
                 </div>
                 
@@ -229,7 +230,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
               </PremiumCard>
             ) : (
               <div className="text-center py-6 border border-dashed border-theme-border/60 rounded-2xl mb-5">
-                <p className="text-[11px] text-theme-muted font-bold">{isRTL ? 'لا توجد تقييمات بعد لهذا المنتج' : 'No reviews yet for this product'}</p>
+                <p className="text-[11px] text-theme-muted font-bold">{t('str_43')}</p>
               </div>
             )}
 
@@ -240,7 +241,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
                   <div key={rev.id} className="p-3.5 border border-theme-border/60 rounded-2xl bg-theme-bg/5 space-y-2.5">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h4 className="text-xs font-black text-theme-text">{rev.userName || (isRTL ? 'عميل' : 'Customer')}</h4>
+                        <h4 className="text-xs font-black text-theme-text">{rev.userName || (t('str_44'))}</h4>
                         <span className="text-[9px] text-theme-muted font-bold">
                           {new Date(rev.createdAt).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US')}
                         </span>
@@ -267,7 +268,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
                       <div className="bg-primary/5 border border-primary/10 p-2.5 rounded-lg mt-2 text-[10px] font-bold text-theme-muted">
                         <p className="font-black text-primary mb-0.5 flex items-center gap-1">
                           <Reply size={10} />
-                          {isRTL ? 'رد المتجر:' : 'Store Reply:'}
+                          {t('str_45')}
                         </p>
                         <p>{rev.vendorReply}</p>
                       </div>
@@ -282,7 +283,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
               <div className="mt-8 border-t border-theme-border/60 pt-6">
                 <h3 className="text-xs font-black text-theme-text mb-4 uppercase tracking-wider flex items-center gap-1.5">
                   <Sparkles size={14} className="text-purple-500" />
-                  {isRTL ? 'منتجات مشابهة قد تنال إعجابك' : 'Similar Products You Might Like'}
+                  {t('str_46')}
                 </h3>
                 <div className="flex gap-3.5 overflow-x-auto no-scrollbar pb-2 px-0.5">
                   {similarProducts.map(p => {
@@ -324,7 +325,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
               <div className="mt-8 border-t border-theme-border/60 pt-6">
                 <h3 className="text-xs font-black text-theme-text mb-4 uppercase tracking-wider flex items-center gap-1.5">
                   <ShoppingBag size={14} className="text-primary" />
-                  {isRTL ? 'يُشترى عادة معاً' : 'Frequently Bought Together'}
+                  {t('str_47')}
                 </h3>
                 <div className="flex gap-3.5 overflow-x-auto no-scrollbar pb-2 px-0.5">
                   {frequentlyBought.map(p => {
@@ -406,7 +407,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
               className="px-5 rounded-2xl shadow shadow-primary/25 font-black text-xs h-10 flex items-center gap-1.5"
             >
               <Check size={14} strokeWidth={3} />
-              <span>{isRTL ? 'إضافة' : 'Confirm'}</span>
+              <span>{t('str_48')}</span>
             </PremiumButton>
           </div>
         </div>

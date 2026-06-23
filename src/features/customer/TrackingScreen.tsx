@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useEffect, useState, useRef } from 'react';
 import { ChevronRight, Phone, MessageSquare, MapPin, Compass, Clock, ShieldCheck, ShoppingBag, Store as StoreIcon, ExternalLink } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -152,12 +153,14 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
     return (
       <div className="bg-theme-bg h-full flex flex-col items-center justify-center p-6 text-center theme-transition">
         <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="font-bold text-sm text-theme-text">{isRTL ? 'جاري الاتصال بنظام تتبع الشحنات...' : 'Connecting to Live Tracking...'}</p>
+        <p className="font-bold text-sm text-theme-text">{t('str_186')}</p>
       </div>
     );
   }
 
   const getOrderStepNumber = (status: string) => {
+  const { t } = useTranslation();
+
     switch (status) {
       case 'pending': return 1;
       case 'accepted': return 2;
@@ -197,10 +200,10 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
           
           <div className="bg-theme-card/90 backdrop-blur-md px-4.5 py-2.5 rounded-2xl border border-theme-border/60 shadow-md flex-1">
             <h1 className="text-xs font-black text-theme-text truncate leading-none">
-              {isRTL ? `تتبع طلبك #${orderId}` : `Track Order #${orderId}`}
+              {t('str_187')}
             </h1>
             <span className="text-[9px] text-theme-muted font-bold block mt-1 animate-pulse text-green-500 leading-none">
-              ● {isRTL ? 'تحديث حي من المندوب' : 'Live courier coordinates active'}
+              ● {t('str_188')}
             </span>
           </div>
         </div>
@@ -213,10 +216,10 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
             </div>
             <div>
               <span className="text-[9px] text-theme-muted font-black block leading-none mb-1 uppercase tracking-wide">
-                {isRTL ? 'الوقت المتوقع للوصول' : 'Estimated Arrival'}
+                {t('str_189')}
               </span>
               <span className="text-sm font-black text-theme-text">
-                {trackingState.status === 'delivered' ? (isRTL ? 'تم التسليم' : 'Delivered') : `${trackingState.eta} ${isRTL ? 'دقيقة' : 'mins'}`}
+                {trackingState.status === 'delivered' ? (t('str_190')) : `${trackingState.eta} ${t('str_191')}`}
               </span>
             </div>
           </div>
@@ -229,12 +232,12 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
                 : 'bg-primary text-white border-primary-hover'
             }`}>
               {trackingState.status === 'preparing' 
-                ? (isRTL ? 'قيد التعبئة' : 'Preparing') 
+                ? (t('str_192')) 
                 : trackingState.status === 'on_the_way'
-                ? (isRTL ? 'على الطريق' : 'En Route')
+                ? (t('str_193'))
                 : trackingState.status === 'arrived'
-                ? (isRTL ? 'وصل المندوب' : 'Arrived')
-                : (isRTL ? 'تم التسليم' : 'Delivered')
+                ? (t('str_194'))
+                : (t('str_190'))
               }
             </span>
           </div>
@@ -250,12 +253,12 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
         <div className="bg-theme-bg/50 border border-theme-border/60 rounded-2xl p-3.5 flex items-center justify-between mb-4.5 theme-transition">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center text-white font-black text-base shadow-sm font-sans">
-              {isRTL ? 'ك' : 'C'}
+              {t('str_195')}
             </div>
             <div>
-              <h3 className="text-xs font-black text-theme-text">{isRTL ? 'الكابتن أحمد حسن' : 'Captain Ahmed Hassan'}</h3>
+              <h3 className="text-xs font-black text-theme-text">{t('str_196')}</h3>
               <p className="text-[9px] text-theme-muted font-bold mt-1 font-sans">
-                {isRTL ? 'سكوتر دايون أسود (ع-م-ر ٤٩٥)' : 'Black Dayun Scooter (E-M-R 495)'}
+                {t('str_197')}
               </p>
             </div>
           </div>
@@ -300,7 +303,7 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
             </div>
 
             <div className="border-t border-theme-border/40 pt-2 flex justify-between font-black text-[11px] text-theme-text">
-              <span>{isRTL ? 'إجمالي الحساب:' : 'Order Total:'}</span>
+              <span>{t('str_198')}</span>
               <span className="text-primary font-sans">{order.total} ج.م</span>
             </div>
           </div>
@@ -309,16 +312,16 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
         {/* Dynamic Stepper Timeline */}
         <div className="space-y-4 pr-0.5 border-t border-theme-border/40 pt-4.5">
           <span className="text-[9px] font-black text-theme-muted uppercase tracking-wider block mb-1">
-            {isRTL ? 'خطوات توصيل الطلب الحالي:' : 'Delivery Journey Progress:'}
+            {t('str_199')}
           </span>
           {[
-            { id: 1, label: isRTL ? 'إرسال الطلب' : 'Order Placed', desc: isRTL ? 'بانتظار قبول المتجر لبدء التجهيز' : 'Awaiting store confirmation' },
-            { id: 2, label: isRTL ? 'قبول الطلب' : 'Order Accepted', desc: isRTL ? 'تم قبول طلبك وجاري بدء التحضير' : 'Order approved by merchant' },
-            { id: 3, label: isRTL ? 'تحضير الطلب' : 'Preparing Items', desc: isRTL ? 'يقوم المتجر بتعبئة وتغليف منتجاتك' : 'Store packaging your products' },
-            { id: 4, label: isRTL ? 'جاهز للتوصيل' : 'Ready for Pickup', desc: isRTL ? 'الطلب معبأ بالكامل وبانتظار المندوب' : 'Package waiting for pickup' },
-            { id: 5, label: isRTL ? 'استلام المندوب' : 'Picked Up by Driver', desc: isRTL ? 'استلم المندوب شحنتك وهو يستعد للشحن' : 'Courier picked up your cargo' },
-            { id: 6, label: isRTL ? 'على الطريق' : 'On the Way', desc: isRTL ? 'يقود المندوب سكوتر باتجاه عنوانك' : 'Courier en route to your coordinates' },
-            { id: 7, label: isRTL ? 'تم التوصيل بنجاح' : 'Delivered successfully', desc: isRTL ? 'استلمت شحنتك وأغلقت الدورة بنجاح' : 'Shipment handed over cleanly' }
+            { id: 1, label: t('str_200'), desc: t('str_201') },
+            { id: 2, label: t('str_202'), desc: t('str_203') },
+            { id: 3, label: t('str_204'), desc: t('str_205') },
+            { id: 4, label: t('str_206'), desc: t('str_207') },
+            { id: 5, label: t('str_208'), desc: t('str_209') },
+            { id: 6, label: t('str_193'), desc: t('str_210') },
+            { id: 7, label: t('str_211'), desc: t('str_212') }
           ].map((s) => {
             const isCompleted = currentStepNum >= s.id;
             const isActive = currentStepNum === s.id;

@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState } from 'react';
 import { ClipboardList, Clock, CheckCircle2, MapPin, Bike, ShieldAlert, Star, ThumbsUp, Package, UserCheck, RotateCcw, AlertCircle, RefreshCw } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -33,6 +34,8 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
   const customerReturns = returnRequests.filter(r => r.customerId === (currentUser?.id || 'customer_1'));
 
   const handleReorder = (order: any) => {
+  const { t } = useTranslation();
+
     setCart({
       shopId: order.shopId,
       shopName: order.shopName,
@@ -44,7 +47,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
         imgUrl: item.imgUrl
       }))
     });
-    showToast(isRTL ? 'تمت إعادة إضافة المنتجات للسلة' : 'Items re-added to your cart');
+    showToast(t('str_132'));
     if (navigate) navigate('cart');
   };
 
@@ -52,55 +55,55 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
     switch (status) {
       case 'pending':
         return { 
-          label: isRTL ? 'بانتظار التأكيد' : 'Pending', 
+          label: t('str_133'), 
           color: 'text-amber-500 bg-amber-500/10 border-amber-500/20', 
           step: 1 
         };
       case 'accepted':
         return { 
-          label: isRTL ? 'مقبول' : 'Accepted', 
+          label: t('str_134'), 
           color: 'text-indigo-500 bg-indigo-500/10 border-indigo-500/20', 
           step: 2 
         };
       case 'preparing':
         return { 
-          label: isRTL ? 'جاري التحضير' : 'Preparing', 
+          label: t('str_135'), 
           color: 'text-blue-500 bg-blue-500/10 border-blue-500/20', 
           step: 3 
         };
       case 'readyForPickup':
         return { 
-          label: isRTL ? 'جاهز للاستلام' : 'Ready for Pickup', 
+          label: t('str_136'), 
           color: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20', 
           step: 4 
         };
       case 'pickedUp':
         return { 
-          label: isRTL ? 'تم الاستلام' : 'Picked Up', 
+          label: t('str_137'), 
           color: 'text-purple-500 bg-purple-500/10 border-purple-500/20', 
           step: 5 
         };
       case 'onTheWay':
         return { 
-          label: isRTL ? 'جاري التوصيل' : 'On the Way', 
+          label: t('str_138'), 
           color: 'text-orange-500 bg-orange-500/10 border-orange-500/20', 
           step: 6 
         };
       case 'delivered':
         return { 
-          label: isRTL ? 'تم التوصيل' : 'Delivered', 
+          label: t('str_139'), 
           color: 'text-green-500 bg-green-500/10 border-green-500/20', 
           step: 7 
         };
       case 'cancelled':
         return { 
-          label: isRTL ? 'ملغي' : 'Cancelled', 
+          label: t('str_140'), 
           color: 'text-red-500 bg-red-500/10 border-red-500/20', 
           step: 0 
         };
       default:
         return { 
-          label: isRTL ? 'قيد المراجعة' : 'Reviewing', 
+          label: t('str_141'), 
           color: 'text-theme-muted bg-theme-bg border-theme-border', 
           step: 1 
         };
@@ -109,22 +112,22 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
 
   const getReturnStatusLabel = (status: string) => {
     switch (status) {
-      case 'submitted': return isRTL ? 'قيد المراجعة لدى التاجر' : 'Submitted';
-      case 'reviewed': return isRTL ? 'تمت المراجعة' : 'Reviewed';
-      case 'approved': return isRTL ? 'مقبول وبانتظار الدفع/التبديل' : 'Approved';
-      case 'rejected': return isRTL ? 'طلب مرفوض' : 'Rejected';
-      case 'refunded': return isRTL ? 'تم استرداد الأموال للرصيد' : 'Refunded';
-      case 'replaced': return isRTL ? 'تم استبدال المنتج وإرسال المندوب' : 'Replaced';
-      case 'completed': return isRTL ? 'مكتمل' : 'Completed';
+      case 'submitted': return t('str_142');
+      case 'reviewed': return t('str_143');
+      case 'approved': return t('str_144');
+      case 'rejected': return t('str_145');
+      case 'refunded': return t('str_146');
+      case 'replaced': return t('str_147');
+      case 'completed': return t('str_148');
       default: return status;
     }
   };
 
   const getPaymentLabel = (method: string) => {
     switch (method) {
-      case 'cash': return isRTL ? 'نقدي عند الاستلام' : 'Cash on Delivery';
-      case 'vodafone': return isRTL ? 'فودافون كاش' : 'Vodafone Cash';
-      case 'instapay': return isRTL ? 'إنستاباي' : 'InstaPay Transfer';
+      case 'cash': return t('str_149');
+      case 'vodafone': return t('str_124');
+      case 'instapay': return t('str_125');
       default: return method;
     }
   };
@@ -158,11 +161,11 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
       }));
 
     if (itemsToReturn.length === 0) {
-      showToast(isRTL ? 'الرجاء تحديد منتج واحد على الأقل لإرجاعه' : 'Please select at least one item to return');
+      showToast(t('str_150'));
       return;
     }
     if (!returnReason.trim()) {
-      showToast(isRTL ? 'الرجاء إدخال سبب الإرجاع بالتفصيل' : 'Please enter return reason');
+      showToast(t('str_151'));
       return;
     }
 
@@ -178,12 +181,12 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
     });
 
     setReturnOrder(null);
-    showToast(isRTL ? 'تم إرسال طلب المرتجع بنجاح وبانتظار رد التاجر' : 'Return request submitted successfully');
+    showToast(t('str_152'));
   };
 
   return (
     <div className="bg-theme-bg h-full flex flex-col overflow-hidden animate-fade-in theme-transition">
-      <CustomerHeader title={isRTL ? 'طلباتي ومتابعة التوصيل' : 'My Orders & Tracking'} goBack={goBack} />
+      <CustomerHeader title={t('str_153')} goBack={goBack} />
 
       {/* Tabs */}
       <div className="flex bg-theme-card p-1 rounded-2xl border-b border-theme-border mx-4 mt-3">
@@ -193,7 +196,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
             activeTab === 'orders' ? 'bg-primary text-white shadow-sm' : 'text-theme-muted hover:text-theme-text'
           }`}
         >
-          {isRTL ? 'الطلبات الجارية والسابقة' : 'Current & Past Orders'}
+          {t('str_154')}
         </button>
         <button 
           onClick={() => setActiveTab('returns')}
@@ -201,7 +204,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
             activeTab === 'returns' ? 'bg-primary text-white shadow-sm' : 'text-theme-muted hover:text-theme-text'
           }`}
         >
-          {isRTL ? 'طلبات الإرجاع والاستبدال' : 'Returns & Refunds'} ({customerReturns.length})
+          {t('str_155')} ({customerReturns.length})
         </button>
       </div>
 
@@ -209,7 +212,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
         <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-[calc(env(safe-area-inset-bottom)+6.5rem)] no-scrollbar bg-theme-bg/30">
           {orders.length === 0 ? (
             <div className="text-center py-16 text-theme-muted text-xs">
-              {isRTL ? 'لا توجد طلبات جارية حالياً' : 'No active orders'}
+              {t('str_156')}
             </div>
           ) : (
             orders.map(order => {
@@ -225,7 +228,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
                     <div>
                       <h3 className="font-black text-sm text-theme-text">{order.shopName}</h3>
                       <p className="text-[9px] text-theme-muted font-bold mt-0.5">
-                        {isRTL ? `رقم الفاتورة: ${order.id}` : `Invoice ID: ${order.id}`}
+                        {t('str_157')}
                       </p>
                     </div>
                     <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg border leading-none ${statusInfo.color}`}>
@@ -273,13 +276,13 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
 
                         {/* Steps */}
                         {[
-                          { step: 1, icon: Clock, label: isRTL ? 'إرسال' : 'Sent' },
-                          { step: 2, icon: ThumbsUp, label: isRTL ? 'قبول' : 'Accept' },
-                          { step: 3, icon: ClipboardList, label: isRTL ? 'تحضير' : 'Prep' },
-                          { step: 4, icon: Package, label: isRTL ? 'جاهز' : 'Ready' },
-                          { step: 5, icon: UserCheck, label: isRTL ? 'استلام' : 'Picked' },
-                          { step: 6, icon: Bike, label: isRTL ? 'طريق' : 'Transit' },
-                          { step: 7, icon: CheckCircle2, label: isRTL ? 'تم' : 'Done' }
+                          { step: 1, icon: Clock, label: t('str_158') },
+                          { step: 2, icon: ThumbsUp, label: t('str_159') },
+                          { step: 3, icon: ClipboardList, label: t('str_160') },
+                          { step: 4, icon: Package, label: t('str_161') },
+                          { step: 5, icon: UserCheck, label: t('str_162') },
+                          { step: 6, icon: Bike, label: t('str_163') },
+                          { step: 7, icon: CheckCircle2, label: t('str_164') }
                         ].map(s => {
                           const isActive = statusInfo.step >= s.step;
                           const isCurrent = statusInfo.step === s.step;
@@ -310,11 +313,11 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
                   {/* Billing Summary */}
                   <div className="flex justify-between items-center pt-3 border-t border-theme-border/50 text-xs">
                     <span className="font-bold text-theme-muted">
-                      {isRTL ? 'طريقة الدفع: ' : 'Payment: '}
+                      {t('str_165')}
                       {getPaymentLabel(order.paymentMethod)}
                     </span>
                     <span className="font-black text-theme-text">
-                      {isRTL ? 'الإجمالي: ' : 'Total: '}
+                      {t('str_166')}
                       <span className="text-primary font-black text-sm">{order.total} ج.م</span>
                     </span>
                   </div>
@@ -326,7 +329,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
                       className="w-full bg-primary/10 border border-primary/20 hover:bg-primary/20 text-primary text-[10px] font-black py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95 theme-transition mt-2"
                     >
                       <Bike size={14} />
-                      <span>{isRTL ? 'تتبع المندوب المباشر بالخريطة 🛵' : 'Live Tracking Map 🛵'}</span>
+                      <span>{t('str_167')}</span>
                     </button>
                   )}
 
@@ -337,7 +340,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
                       className="w-full bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-500 text-[10px] font-black py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95 theme-transition mt-2"
                     >
                       <RotateCcw size={14} />
-                      <span>{isRTL ? 'طلب إرجاع أو استبدال منتجات 🔄' : 'Return / Refund Request 🔄'}</span>
+                      <span>{t('str_168')}</span>
                     </button>
                   )}
 
@@ -348,7 +351,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
                       className="w-full bg-theme-bg border border-theme-border hover:border-primary/20 text-theme-text text-[10px] font-black py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95 theme-transition mt-2"
                     >
                       <ClipboardList size={14} className="text-primary" />
-                      <span>{isRTL ? 'إعادة طلب هذه السلة (طلب مرة أخرى) 🔄' : 'Reorder This Cart 🔄'}</span>
+                      <span>{t('str_169')}</span>
                     </button>
                   )}
 
@@ -359,7 +362,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
                       className="w-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-black py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95 theme-transition mt-2"
                     >
                       <Star size={14} className="fill-amber-500 text-amber-500" />
-                      <span>{isRTL ? 'تقييم تجربة الطلب والتوصيل ⭐' : 'Rate Order Experience ⭐'}</span>
+                      <span>{t('str_170')}</span>
                     </button>
                   )}
                 </div>
@@ -372,7 +375,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
         <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-[calc(env(safe-area-inset-bottom)+6.5rem)] no-scrollbar bg-theme-bg/30">
           {customerReturns.length === 0 ? (
             <div className="text-center py-16 text-theme-muted text-xs">
-              {isRTL ? 'لا توجد طلبات إرجاع حالية' : 'No return requests found'}
+              {t('str_171')}
             </div>
           ) : (
             customerReturns.map(ret => (
@@ -384,7 +387,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
                   <div>
                     <h3 className="font-black text-xs text-theme-text">{ret.storeName}</h3>
                     <p className="text-[8px] text-theme-muted mt-0.5">
-                      {isRTL ? `طلب مرتجع رقم: ${ret.id}` : `Return ID: ${ret.id}`}
+                      {t('str_172')}
                     </p>
                   </div>
                   <span className={`text-[8px] font-black px-2 py-0.5 rounded border leading-none ${
@@ -397,7 +400,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
                 </div>
 
                 <div className="space-y-1.5">
-                  <span className="text-[9px] font-black text-theme-muted uppercase tracking-wider block">{isRTL ? 'المنتجات المطلوب إرجاعها:' : 'Items to return:'}</span>
+                  <span className="text-[9px] font-black text-theme-muted uppercase tracking-wider block">{t('str_173')}</span>
                   {ret.items.map(item => (
                     <div key={item.productId} className="flex justify-between text-[11px] font-bold text-theme-text">
                       <span>{item.quantity}x {item.name}</span>
@@ -407,13 +410,13 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
                 </div>
 
                 <div className="bg-theme-bg p-2.5 rounded-lg border border-theme-border text-[9px] text-theme-muted leading-relaxed font-bold">
-                  <p><span className="font-black text-theme-text">{isRTL ? 'السبب: ' : 'Reason: '}</span>{ret.reason}</p>
-                  <p className="mt-1"><span className="font-black text-theme-text">{isRTL ? 'النوع: ' : 'Type: '}</span>{ret.type === 'refund' ? (isRTL ? 'استرداد نقدي' : 'Refund') : (isRTL ? 'استبدال منتج' : 'Replacement')}</p>
+                  <p><span className="font-black text-theme-text">{t('str_174')}</span>{ret.reason}</p>
+                  <p className="mt-1"><span className="font-black text-theme-text">{t('str_175')}</span>{ret.type === 'refund' ? (t('str_176')) : (t('str_177'))}</p>
                 </div>
 
                 {/* Timeline display */}
                 <div className="pt-2 border-t border-theme-border/50">
-                  <span className="text-[9px] font-black text-theme-muted uppercase tracking-wider block mb-2">{isRTL ? 'خطوات التتبع للطلب:' : 'Timeline Log:'}</span>
+                  <span className="text-[9px] font-black text-theme-muted uppercase tracking-wider block mb-2">{t('str_178')}</span>
                   <div className="space-y-3.5 pr-2">
                     {ret.timeline.map((event, index) => (
                       <div key={index} className="flex gap-3 relative">
@@ -442,11 +445,11 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
           <div className="bg-theme-card w-full max-w-md rounded-[32px] border border-theme-border p-5 space-y-4 shadow-2xl animate-scale-up text-right">
             <h3 className="font-black text-sm text-theme-text border-b border-theme-border pb-3.5 flex items-center justify-between">
               <span className="text-primary"><RotateCcw size={20} /></span>
-              <span>{isRTL ? 'تقديم طلب إرجاع/استبدال المنتجات' : 'Submit Return / Replacement Request'}</span>
+              <span>{t('str_179')}</span>
             </h3>
 
             <div className="space-y-3">
-              <span className="text-[10px] font-black text-theme-muted block">{isRTL ? 'اختر المنتجات المراد إرجاعها:' : 'Select items to return:'}</span>
+              <span className="text-[10px] font-black text-theme-muted block">{t('str_180')}</span>
               <div className="max-h-40 overflow-y-auto space-y-2 bg-theme-bg/50 p-2.5 border border-theme-border rounded-xl">
                 {returnOrder.items.map((item: any) => (
                   <div 
@@ -475,7 +478,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
                   returnType === 'refund' ? 'border-primary bg-primary/10 text-primary' : 'border-theme-border text-theme-muted'
                 }`}
               >
-                {isRTL ? 'استرداد نقدي (Refund)' : 'Cash Refund'}
+                {t('str_181')}
               </button>
               <button 
                 onClick={() => setReturnType('replacement')}
@@ -483,17 +486,17 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
                   returnType === 'replacement' ? 'border-primary bg-primary/10 text-primary' : 'border-theme-border text-theme-muted'
                 }`}
               >
-                {isRTL ? 'استبدال منتج (Replace)' : 'Replacement'}
+                {t('str_182')}
               </button>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-theme-muted block">{isRTL ? 'سبب الإرجاع بالتفصيل:' : 'Reason for return:'}</label>
+              <label className="text-[10px] font-black text-theme-muted block">{t('str_183')}</label>
               <textarea 
                 rows={3}
                 value={returnReason}
                 onChange={e => setReturnReason(e.target.value)}
-                placeholder={isRTL ? 'اكتب هنا سبب إرجاع المنتجات بالتفصيل (مثال: تالف أو منتهي الصلاحية عند الاستلام)...' : 'Enter detail reason...'}
+                placeholder={t('str_184')}
                 className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs font-bold text-theme-text outline-none focus:border-primary resize-none"
               />
             </div>
@@ -503,13 +506,13 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
                 onClick={() => setReturnOrder(null)}
                 className="flex-1 bg-theme-bg border border-theme-border text-theme-muted font-bold py-3 rounded-xl text-xs transition"
               >
-                {isRTL ? 'إلغاء' : 'Cancel'}
+                {t('str_56')}
               </button>
               <button 
                 onClick={handleSubmitReturn}
                 className="flex-1 bg-primary hover:bg-primary-hover text-white font-black py-3 rounded-xl text-xs shadow-md transition"
               >
-                {isRTL ? 'تأكيد الإرسال' : 'Submit Return'}
+                {t('str_185')}
               </button>
             </div>
           </div>

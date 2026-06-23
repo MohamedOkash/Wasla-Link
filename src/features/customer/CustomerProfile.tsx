@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState } from 'react';
 import { 
   User as UserIcon, Globe, Settings, HelpCircle, LogOut, ShieldCheck, 
@@ -44,9 +45,11 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
   } = useApp();
 
   const handleLogout = () => {
+  const { t } = useTranslation();
+
     setCurrentUser(null);
     setRole('login');
-    showToast(isRTL ? 'تم تسجيل الخروج بنجاح' : 'Logged out successfully');
+    showToast(t('str_213'));
   };
 
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
@@ -88,21 +91,21 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
   const handleForgotPassword = async () => {
     const emailToReset = forgotEmail.trim() || currentUser?.email || '';
     if (!emailToReset) {
-      showToast(isRTL ? 'يرجى إدخال البريد الإلكتروني' : 'Please enter email');
+      showToast(t('str_214'));
       return;
     }
     if (!emailToReset.includes('@')) {
-      showToast(isRTL ? 'يرجى إدخال بريد إلكتروني صحيح' : 'Please enter a valid email');
+      showToast(t('str_215'));
       return;
     }
     setLoading(true);
     try {
       await sendPasswordResetEmail(auth, emailToReset);
-      showToast(isRTL ? `تم إرسال رابط إعادة تعيين كلمة المرور إلى ${emailToReset}` : `Password reset link sent to ${emailToReset}`);
+      showToast(t('str_216'));
       setShowForgotModal(false);
     } catch (err: any) {
       console.error(err);
-      showToast(isRTL ? 'فشل إرسال البريد الإلكتروني. يرجى المحاولة لاحقاً.' : 'Failed to send reset email. Try again.');
+      showToast(t('str_217'));
     } finally {
       setLoading(false);
     }
@@ -111,7 +114,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
   const handleSaveInfo = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim()) {
-      showToast(isRTL ? 'الرجاء إدخال حقول صحيحة' : 'Please fill required fields');
+      showToast(t('str_218'));
       return;
     }
     if (currentUser) {
@@ -122,24 +125,24 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
         phone
       });
     }
-    showToast(isRTL ? 'تم حفظ التعديلات بنجاح' : 'Changes saved successfully');
+    showToast(t('str_219'));
     setActiveSection('root');
   };
 
   const handleSavePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!oldPass || !newPass || !confirmPass) {
-      showToast(isRTL ? 'الرجاء ملء جميع حقول كلمات المرور' : 'Please fill all password fields');
+      showToast(t('str_220'));
       return;
     }
     if (newPass !== confirmPass) {
-      showToast(isRTL ? 'كلمة المرور الجديدة غير متطابقة' : 'Passwords do not match');
+      showToast(t('str_221'));
       return;
     }
 
     const user = auth.currentUser;
     if (!user || !user.email) {
-      showToast(isRTL ? 'يجب تسجيل الدخول أولاً' : 'Must be logged in');
+      showToast(t('str_222'));
       return;
     }
 
@@ -149,7 +152,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
       await reauthenticateWithCredential(user, credential);
       await updatePassword(user, newPass);
       
-      showToast(isRTL ? 'تم تغيير كلمة المرور بأمان' : 'Password changed securely');
+      showToast(t('str_223'));
       setOldPass('');
       setNewPass('');
       setConfirmPass('');
@@ -157,9 +160,9 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
     } catch (error: any) {
       console.error('Password change error:', error);
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-        showToast(isRTL ? 'كلمة المرور الحالية غير صحيحة' : 'Current password incorrect');
+        showToast(t('str_224'));
       } else {
-        showToast(isRTL ? 'حدث خطأ أثناء تغيير كلمة المرور' : 'Error changing password');
+        showToast(t('str_225'));
       }
     } finally {
       setLoading(false);
@@ -188,7 +191,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
   const handleAddNewAddress = (e: React.FormEvent) => {
     e.preventDefault();
     if (!addrLabel.trim() || !addrText.trim()) {
-      showToast(isRTL ? 'املأ اسم اللافتة وتفاصيل العنوان' : 'Fill address label and details');
+      showToast(t('str_226'));
       return;
     }
     const parsed = parseAddressText(addrText);
@@ -208,28 +211,26 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
     }
     setAddrLabel('');
     setAddrText('');
-    showToast(isRTL ? 'تم حفظ العنوان بنجاح' : 'Address saved successfully');
+    showToast(t('str_227'));
   };
 
   const handleContactSupport = (e: React.FormEvent) => {
     e.preventDefault();
     if (!supportMsg.trim()) {
-      showToast(isRTL ? 'الرجاء كتابة رسالة دعم' : 'Please write support message');
+      showToast(t('str_228'));
       return;
     }
-    showToast(isRTL ? 'تم إرسال رسالتك، سنتصل بك قريباً!' : 'Message sent, we will contact you soon!');
+    showToast(t('str_229'));
     setSupportMsg('');
     setActiveSection('root');
   };
 
   const handleDeleteAccount = () => {
     const confirmation = window.confirm(
-      isRTL 
-        ? 'تحذير: هل أنت متأكد من رغبتك في حذف حسابك نهائياً؟ سيتم حذف جميع عناوينك وطلباتك ولا يمكن التراجع عن هذا الإجراء.' 
-        : 'Warning: Are you sure you want to delete your account permanently? This deletes all addresses and orders and cannot be undone.'
+      t('str_230')
     );
     if (confirmation) {
-      showToast(isRTL ? 'تم إرسال طلب حذف الحساب للإدارة للمراجعة' : 'Account deletion request submitted for admin review');
+      showToast(t('str_231'));
       goHome();
     }
   };
@@ -242,25 +243,25 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
           <button onClick={() => setActiveSection('root')} className="p-2.5 text-theme-text bg-theme-bg hover:bg-theme-border/50 rounded-full transition flex items-center justify-center border border-theme-border/30">
             <ChevronLeft size={18} className={isRTL ? '' : 'rotate-180'} />
           </button>
-          <h2 className="text-sm font-black text-theme-text">{isRTL ? 'تعديل الملف الشخصي' : 'Edit Personal Profile'}</h2>
+          <h2 className="text-sm font-black text-theme-text">{t('str_232')}</h2>
         </div>
 
         <form onSubmit={handleSaveInfo} className="flex-1 overflow-y-auto p-5 no-scrollbar space-y-5">
           <PremiumCard hoverable={false} className="space-y-4">
             <PremiumInput 
-              label={isRTL ? 'الاسم بالكامل' : 'Full Name'}
+              label={t('str_233')}
               type="text" 
               value={name} 
               onChange={e => setName(e.target.value)} 
             />
             <PremiumInput 
-              label={isRTL ? 'البريد الإلكتروني' : 'Email Address'}
+              label={t('str_234')}
               type="email" 
               value={email} 
               onChange={e => setEmail(e.target.value)} 
             />
             <PremiumInput 
-              label={isRTL ? 'رقم الهاتف (فودافون كاش)' : 'Phone Number (Vodafone Cash)'}
+              label={t('str_235')}
               type="tel" 
               value={phone} 
               onChange={e => setPhone(e.target.value)} 
@@ -269,7 +270,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
           
           <PremiumButton type="submit" variant="primary" size="lg" className="w-full shadow-md rounded-2xl h-12 text-xs font-black">
             <Save size={15} />
-            <span>{isRTL ? 'حفظ البيانات' : 'Save Info'}</span>
+            <span>{t('str_236')}</span>
           </PremiumButton>
         </form>
       </div>
@@ -289,7 +290,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
           <button onClick={() => { setActiveSection('root'); setEditingAddressId(null); setAddrLabel(''); setAddrText(''); }} className="p-2.5 text-theme-text bg-theme-bg hover:bg-theme-border/50 rounded-full transition flex items-center justify-center border border-theme-border/30">
             <ChevronLeft size={18} className={isRTL ? '' : 'rotate-180'} />
           </button>
-          <h2 className="text-sm font-black text-theme-text">{isRTL ? 'دفتر العناوين المحفوظة' : 'My Shipping Addresses'}</h2>
+          <h2 className="text-sm font-black text-theme-text">{t('str_237')}</h2>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 no-scrollbar space-y-5">
@@ -297,20 +298,20 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
           <form onSubmit={handleAddNewAddress} className="bg-theme-card p-5 border border-theme-border rounded-[28px] space-y-4 theme-transition">
             <span className="text-[10px] text-theme-muted font-black uppercase tracking-wider block">
               {editingAddressId 
-                ? (isRTL ? 'تعديل العنوان المحدد' : 'Edit Selected Address')
-                : (isRTL ? 'إضافة عنوان شحن جديد' : 'Add New Shipping Address')}
+                ? (t('str_238'))
+                : (t('str_239'))}
             </span>
             <PremiumInput 
               type="text" 
               value={addrLabel}
               onChange={e => setAddrLabel(e.target.value)}
-              placeholder={isRTL ? 'اسم اللافتة (مثال: المنزل 🏠، المكتب 🏢)' : 'Label (e.g. Home 🏠, Office 🏢)'}
+              placeholder={t('str_240')}
             />
             <PremiumInput 
               type="text" 
               value={addrText}
               onChange={e => setAddrText(e.target.value)}
-              placeholder={isRTL ? 'تفاصيل العنوان بالكامل (الشارع، البناء، الشقة...)' : 'Full Address details (Street, Building, Flat...)'}
+              placeholder={t('str_241')}
             />
             <div className="flex gap-3">
               {editingAddressId && (
@@ -321,11 +322,11 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
                   size="md"
                   className="flex-1 rounded-xl h-10 text-xs font-black"
                 >
-                  {isRTL ? 'إلغاء' : 'Cancel'}
+                  {t('str_56')}
                 </PremiumButton>
               )}
               <PremiumButton type="submit" variant="primary" size="md" className="flex-1 rounded-xl h-10 text-xs font-black">
-                {editingAddressId ? (isRTL ? 'حفظ التعديل' : 'Save Changes') : (isRTL ? 'إضافة للدفتر' : 'Add to Address Book')}
+                {editingAddressId ? (t('str_242')) : (t('str_243'))}
               </PremiumButton>
             </div>
           </form>
@@ -345,7 +346,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
                     <span className="font-black text-xs text-theme-text">{addr.label || addr.village}</span>
                     {addr.isDefault && (
                       <PremiumBadge variant="primary" pill={true}>
-                        {isRTL ? 'افتراضي' : 'Default'}
+                        {t('str_77')}
                       </PremiumBadge>
                     )}
                   </div>
@@ -356,7 +357,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
                       onClick={() => setDefaultAddress(addr.id || '')} 
                       className="text-primary hover:underline text-[10px] font-black mt-2 block"
                     >
-                      {isRTL ? 'تعيين كافتراضي' : 'Set as default'}
+                      {t('str_244')}
                     </button>
                   )}
                 </div>
@@ -369,7 +370,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
                       setAddrText(getAddressDetails(addr));
                     }} 
                     className="p-2 text-theme-muted hover:text-primary rounded-xl bg-theme-bg border border-theme-border/60 transition"
-                    title={isRTL ? 'تعديل العنوان' : 'Edit Address'}
+                    title={t('str_245')}
                   >
                     <Settings size={14} />
                   </button>
@@ -402,7 +403,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
           <button onClick={() => setActiveSection('root')} className="p-2.5 text-theme-text bg-theme-bg hover:bg-theme-border/50 rounded-full transition flex items-center justify-center border border-theme-border/30">
             <ChevronLeft size={18} className={isRTL ? '' : 'rotate-180'} />
           </button>
-          <h2 className="text-sm font-black text-theme-text">{isRTL ? 'الأمان وتغيير كلمة المرور' : 'Security & Password'}</h2>
+          <h2 className="text-sm font-black text-theme-text">{t('str_246')}</h2>
         </div>
 
         <form onSubmit={handleSavePassword} className="flex-1 overflow-y-auto p-5 no-scrollbar space-y-4">
@@ -416,19 +417,19 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
             </button>
 
             <PremiumInput 
-              label={isRTL ? 'كلمة المرور الحالية' : 'Current Password'}
+              label={t('str_247')}
               type={showPass ? 'text' : 'password'} 
               value={oldPass} 
               onChange={e => setOldPass(e.target.value)} 
             />
             <PremiumInput 
-              label={isRTL ? 'كلمة المرور الجديدة' : 'New Password'}
+              label={t('str_248')}
               type={showPass ? 'text' : 'password'} 
               value={newPass} 
               onChange={e => setNewPass(e.target.value)} 
             />
             <PremiumInput 
-              label={isRTL ? 'تأكيد كلمة المرور الجديدة' : 'Confirm New Password'}
+              label={t('str_249')}
               type={showPass ? 'text' : 'password'} 
               value={confirmPass} 
               onChange={e => setConfirmPass(e.target.value)} 
@@ -442,12 +443,12 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
             size="md"
             className="w-full rounded-2xl h-11 text-xs font-black border-theme-border"
           >
-            {isRTL ? 'نسيت كلمة المرور؟' : 'Forgot Password?'}
+            {t('str_250')}
           </PremiumButton>
 
           <PremiumButton type="submit" variant="primary" size="lg" className="w-full shadow-md rounded-2xl h-12 text-xs font-black">
             <Save size={15} />
-            <span>{isRTL ? 'حفظ كلمة المرور' : 'Save Password'}</span>
+            <span>{t('str_251')}</span>
           </PremiumButton>
 
           <PremiumButton 
@@ -457,7 +458,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
             size="md"
             className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 hover:text-red-600 rounded-2xl h-11 text-xs font-black transition-all"
           >
-            {isRTL ? 'حذف الحساب نهائياً من وصلة لينك' : 'Delete Account Permanently'}
+            {t('str_252')}
           </PremiumButton>
         </form>
       </div>
@@ -472,23 +473,23 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
           <button onClick={() => setActiveSection('root')} className="p-2.5 text-theme-text bg-theme-bg hover:bg-theme-border/50 rounded-full transition flex items-center justify-center border border-theme-border/30">
             <ChevronLeft size={18} className={isRTL ? '' : 'rotate-180'} />
           </button>
-          <h2 className="text-sm font-black text-theme-text">{isRTL ? 'الاتصال بالدعم الفني' : 'Technical Support Help'}</h2>
+          <h2 className="text-sm font-black text-theme-text">{t('str_253')}</h2>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 no-scrollbar space-y-4">
           <PremiumCard hoverable={false} className="space-y-3.5 p-4.5 bg-theme-bg/15">
-            <span className="text-[10px] text-theme-muted font-black uppercase tracking-wider block">{isRTL ? 'معلومات الاتصال المباشر' : 'Direct Contact Info'}</span>
+            <span className="text-[10px] text-theme-muted font-black uppercase tracking-wider block">{t('str_254')}</span>
             <div className="text-xs font-bold text-theme-text space-y-3">
               <p className="flex items-center justify-between">
-                <span className="text-theme-muted">{isRTL ? '📞 الخط الساخن: ' : 'Hotline: '}</span>
+                <span className="text-theme-muted">{t('str_255')}</span>
                 <a href="tel:19999" className="text-primary font-black hover:underline font-sans">19999</a>
               </p>
               <p className="flex items-center justify-between">
-                <span className="text-theme-muted">{isRTL ? '💬 واتساب الدعم: ' : 'WhatsApp chat: '}</span>
+                <span className="text-theme-muted">{t('str_256')}</span>
                 <a href="https://wa.me/201000000000" className="text-primary font-black hover:underline font-sans">01000000000</a>
               </p>
               <p className="flex items-center justify-between">
-                <span className="text-theme-muted">{isRTL ? '✉️ البريد الإلكتروني: ' : 'Support email: '}</span>
+                <span className="text-theme-muted">{t('str_257')}</span>
                 <a href="mailto:support@waslalink.com" className="text-primary font-black hover:underline font-sans">support@waslalink.com</a>
               </p>
             </div>
@@ -496,17 +497,17 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
 
           <form onSubmit={handleContactSupport} className="space-y-4">
             <PremiumCard hoverable={false} className="space-y-3">
-              <span className="text-[10px] text-theme-muted font-black uppercase tracking-wider block">{isRTL ? 'أرسل لنا استفسارك أو مشكلتك مباشرة وسيرد عليك ممثلو خدمة العملاء' : 'Send us your questions or problems and customer agents will reply'}</span>
+              <span className="text-[10px] text-theme-muted font-black uppercase tracking-wider block">{t('str_258')}</span>
               <textarea 
                 rows={5}
                 value={supportMsg}
                 onChange={e => setSupportMsg(e.target.value)}
-                placeholder={isRTL ? 'اكتب رسالتك أو استفسارك بالتفصيل هنا...' : 'Write your request details here...'}
+                placeholder={t('str_259')}
                 className="w-full bg-theme-bg border border-theme-border rounded-xl p-3.5 text-xs font-bold text-theme-text outline-none focus:border-primary theme-transition"
               />
             </PremiumCard>
             <PremiumButton type="submit" variant="primary" size="lg" className="w-full shadow-md rounded-2xl h-12 text-xs font-black">
-              {isRTL ? 'إرسال الرسالة' : 'Send Ticket'}
+              {t('str_260')}
             </PremiumButton>
           </form>
         </div>
@@ -522,7 +523,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
           <button onClick={() => setActiveSection('root')} className="p-2.5 text-theme-text bg-theme-bg hover:bg-theme-border/50 rounded-full transition flex items-center justify-center border border-theme-border/30">
             <ChevronLeft size={18} className={isRTL ? '' : 'rotate-180'} />
           </button>
-          <h2 className="text-sm font-black text-theme-text">{isRTL ? 'تفاصيل محفظة نقاط الولاء' : 'Loyalty Points Wallet'}</h2>
+          <h2 className="text-sm font-black text-theme-text">{t('str_261')}</h2>
         </div>
         <div className="flex-1 overflow-y-auto p-5 no-scrollbar">
           <LoyaltyWallet />
@@ -539,7 +540,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
           <button onClick={() => setActiveSection('root')} className="p-2.5 text-theme-text bg-theme-bg hover:bg-theme-border/50 rounded-full transition flex items-center justify-center border border-theme-border/30">
             <ChevronLeft size={18} className={isRTL ? '' : 'rotate-180'} />
           </button>
-          <h2 className="text-sm font-black text-theme-text">{isRTL ? 'نظام الإحالات ودعوة الأصدقاء' : 'Referral & Invite System'}</h2>
+          <h2 className="text-sm font-black text-theme-text">{t('str_262')}</h2>
         </div>
         <div className="flex-1 overflow-y-auto p-5 no-scrollbar">
           <ReferralCenter />
@@ -566,7 +567,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
         {/* Dashboard Grid Layout (Better information density) */}
         <div className="p-5 space-y-4">
           <span className="text-[10px] text-theme-muted font-black px-1 uppercase tracking-wider block leading-none">
-            {isRTL ? 'لوحة التحكم والخدمات' : 'Control Dashboard'}
+            {t('str_263')}
           </span>
 
           <div className="grid grid-cols-2 gap-3.5">
@@ -580,8 +581,8 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
                 <UserIcon size={18} />
               </div>
               <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{isRTL ? 'بياناتي' : 'Personal Info'}</h3>
-                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{isRTL ? 'الاسم والهاتف والبريد' : 'Edit name & phone'}</p>
+                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_264')}</h3>
+                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{t('str_265')}</p>
               </div>
             </PremiumCard>
             
@@ -594,8 +595,8 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
                 <MapPin size={18} />
               </div>
               <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{isRTL ? 'عناويني' : 'My Addresses'}</h3>
-                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{isRTL ? 'إدارة وتعديل عناوين التوصيل' : 'Manage shipping routes'}</p>
+                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_266')}</h3>
+                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{t('str_267')}</p>
               </div>
             </PremiumCard>
 
@@ -608,9 +609,9 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
                 <Coins size={18} />
               </div>
               <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{isRTL ? 'نقاط الولاء' : 'Loyalty Points'}</h3>
+                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_268')}</h3>
                 <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">
-                  {isRTL ? `رصيدك: ${currentUser?.points || 0} نقطة` : `Balance: ${currentUser?.points || 0} pts`}
+                  {t('str_269')}
                 </p>
               </div>
             </PremiumCard>
@@ -624,9 +625,9 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
                 <UserPlus size={18} />
               </div>
               <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{isRTL ? 'دعوة أصدقاء' : 'Invite Friends'}</h3>
+                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_270')}</h3>
                 <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">
-                  {isRTL ? 'اكسب 500 نقطة عن كل صديق' : 'Share code, earn 500 pts'}
+                  {t('str_271')}
                 </p>
               </div>
             </PremiumCard>
@@ -640,8 +641,8 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
                 <ShoppingBag size={18} />
               </div>
               <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{isRTL ? 'طلباتي' : 'My Orders'}</h3>
-                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{isRTL ? 'متابعة وتتبع طلباتك الحالية' : 'Track your order history'}</p>
+                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_272')}</h3>
+                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{t('str_273')}</p>
               </div>
             </PremiumCard>
 
@@ -654,8 +655,8 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
                 <Heart size={18} />
               </div>
               <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{isRTL ? 'المفضلة' : 'Favorites'}</h3>
-                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{isRTL ? 'المتاجر والسلع المحفوظة' : 'Favorite store & products'}</p>
+                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_274')}</h3>
+                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{t('str_275')}</p>
               </div>
             </PremiumCard>
 
@@ -668,8 +669,8 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
                 <Bell size={18} />
               </div>
               <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{isRTL ? 'الإشعارات' : 'Notifications'}</h3>
-                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{isRTL ? 'تنبيهات العروض والتوصيل' : 'View notification log'}</p>
+                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_276')}</h3>
+                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{t('str_277')}</p>
               </div>
             </PremiumCard>
 
@@ -682,9 +683,9 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
                 <Settings size={18} />
               </div>
               <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{isRTL ? 'المظهر' : 'Theme Mode'}</h3>
+                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_278')}</h3>
                 <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">
-                  {theme === 'orange' ? (isRTL ? 'برتقالي 🍊' : 'Orange 🍊') : (isRTL ? 'داكن 🌙' : 'Midnight 🌙')}
+                  {theme === 'orange' ? (t('str_279')) : (t('str_280'))}
                 </p>
               </div>
             </PremiumCard>
@@ -698,9 +699,9 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
                 <Globe size={18} />
               </div>
               <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{isRTL ? 'اللغة' : 'Language'}</h3>
+                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_281')}</h3>
                 <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug font-sans">
-                  {lang === 'ar' ? 'English (En)' : 'العربية (Ar)'}
+                  {t('str_347')}
                 </p>
               </div>
             </PremiumCard>
@@ -714,8 +715,8 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
                 <ShieldCheck size={18} />
               </div>
               <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{isRTL ? 'الأمان' : 'Security'}</h3>
-                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{isRTL ? 'تعديل وحماية الحساب' : 'Edit account password'}</p>
+                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_282')}</h3>
+                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{t('str_283')}</p>
               </div>
             </PremiumCard>
 
@@ -728,8 +729,8 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
                 <HelpCircle size={18} />
               </div>
               <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{isRTL ? 'الدعم الفني' : 'Support Help'}</h3>
-                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{isRTL ? 'الاتصال بنا والمساعدة' : 'Talk with customer agents'}</p>
+                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_284')}</h3>
+                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{t('str_285')}</p>
               </div>
             </PremiumCard>
 
@@ -742,8 +743,8 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
                 <BookOpen size={18} />
               </div>
               <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{isRTL ? 'الشروط والأحكام' : 'Terms & Info'}</h3>
-                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{isRTL ? 'بيان الخصوصية واستخدام التطبيق' : 'About and privacy policies'}</p>
+                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_286')}</h3>
+                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{t('str_287')}</p>
               </div>
             </PremiumCard>
 
@@ -768,9 +769,9 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
           <div className="bg-theme-card p-6 border-t border-theme-border rounded-t-[32px] w-full max-w-[400px] space-y-4.5 shadow-2xl animate-slide-up pb-[calc(env(safe-area-inset-bottom)+1.5rem)] theme-transition text-right">
             <div className="flex justify-between items-center pb-3 border-b border-theme-border/60">
               <h4 className="font-black text-sm text-theme-text leading-none">
-                {showLegal === 'privacy' && (isRTL ? 'سياسة الخصوصية' : 'Privacy Policy')}
-                {showLegal === 'terms' && (isRTL ? 'الشروط والأحكام' : 'Terms of Use')}
-                {showLegal === 'about' && (isRTL ? 'عن وصلة لينك' : 'About WaslaLink')}
+                {showLegal === 'privacy' && (t('str_288'))}
+                {showLegal === 'terms' && (t('str_286'))}
+                {showLegal === 'about' && (t('str_289'))}
               </h4>
               <button 
                 onClick={() => setShowLegal('none')} 
@@ -781,19 +782,13 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
             </div>
             <div className="text-[11px] text-theme-muted leading-relaxed font-bold max-h-[35vh] overflow-y-auto pr-1 no-scrollbar text-right">
               {showLegal === 'privacy' && (
-                isRTL 
-                  ? 'منصة وصلة لينك ملتزمة بحماية بياناتك الشخصية وموقعك الجغرافي. نستخدم إذن الموقع فقط لتحديد وتيسير شحن وتوصيل الطلبات من المتاجر المجاورة لك بدقة. لا يتم مشاركة بيانات الدفع أو أرقام الهواتف لأطراف ثالثة لأغراض دعائية.'
-                  : 'WaslaLink marketplace is fully committed to protecting your personal coordinates and profile data. Geolocation services are queried strictly to route delivery orders from nearby neighborhood stores. No digital wallets or email logs are shared with external third-party agencies.'
+                t('str_290')
               )}
               {showLegal === 'terms' && (
-                isRTL
-                  ? 'باستخدامك لتطبيق وصلة لينك، فإنك توافق على الشروط والأحكام الحالية. المتاجر الشريكة مسؤولة بالكامل عن تسعير المنتجات وجودتها. يلتزم مندوب التوصيل بتوصيل الطلب إلى موقعك المحدد بالـ GPS، ويرجى إرفاق إيصالات دفع صحيحة لطلبات الدفع الرقمي.'
-                  : 'By accessing or placing orders through WaslaLink, you legally agree to these Terms. Partner merchants maintain full authority over product pricing, availability, and packaging. Drivers will complete shipments to the resolved GPS coordinates.'
+                t('str_291')
               )}
               {showLegal === 'about' && (
-                isRTL
-                  ? 'وصلة لينك (WaslaLink) هي منصة للتجارة المحلية والطلب اللحظي، تهدف لربط العملاء بأقرب المتاجر، الصيدليات، المطاعم، والمكتبات والفرن في محيطهم الجغرافي لتبسيط دورة الشراء والتوصيل اليومية.'
-                  : 'WaslaLink is a localized marketplace connecting neighborhood customers directly with supermarkets, pharmacies, bakeries, libraries, and restaurants nearby to simplify daily home shopping and delivery.'
+                t('str_292')
               )}
             </div>
             <PremiumButton 
@@ -802,7 +797,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
               size="md"
               className="w-full rounded-xl text-xs font-black h-10"
             >
-              {isRTL ? 'فهمت وموافق' : 'I Understand'}
+              {t('str_293')}
             </PremiumButton>
           </div>
         </div>
@@ -814,7 +809,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
           <div className="bg-theme-card p-6 border-t border-theme-border rounded-t-[32px] w-full max-w-[400px] space-y-4.5 shadow-2xl animate-slide-up pb-[calc(env(safe-area-inset-bottom)+1.5rem)] theme-transition text-right">
             <div className="flex justify-between items-center pb-3 border-b border-theme-border/60">
               <h4 className="font-black text-sm text-theme-text leading-none">
-                {isRTL ? 'إعادة تعيين كلمة المرور' : 'Reset Password'}
+                {t('str_294')}
               </h4>
               <button 
                 onClick={() => setShowForgotModal(false)} 
@@ -827,9 +822,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
             {forgotStep === 1 ? (
               <form onSubmit={handleForgotPassword} className="space-y-4">
                 <p className="text-[11px] text-theme-muted font-bold leading-relaxed">
-                  {isRTL 
-                    ? 'أدخل بريدك الإلكتروني المسجل وسنقوم بإرسال رابط إعادة تعيين كلمة المرور التجريبي.' 
-                    : 'Enter your registered email address and we will send a password reset link.'}
+                  {t('str_295')}
                 </p>
                 <PremiumInput 
                   type="email" 
@@ -844,19 +837,17 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
                   size="md"
                   className="w-full rounded-xl text-xs font-black h-10"
                 >
-                  {isRTL ? 'إرسال رابط إعادة التعيين' : 'Send Reset Link'}
+                  {t('str_296')}
                 </PremiumButton>
               </form>
             ) : (
               <div className="space-y-4">
                 <div className="bg-green-500/10 border border-green-500/20 text-green-600 p-4.5 rounded-2xl text-center space-y-2">
                   <Check className="mx-auto text-green-500" size={24} />
-                  <p className="text-xs font-black">{isRTL ? 'تم الإرسال بنجاح!' : 'Sent Successfully!'}</p>
+                  <p className="text-xs font-black">{t('str_297')}</p>
                 </div>
                 <p className="text-[11px] text-theme-muted font-bold leading-relaxed text-center">
-                  {isRTL 
-                    ? `تم إرسال الرابط بنجاح إلى ${forgotEmail}. يرجى التحقق من صندوق البريد الوارد.` 
-                    : `The link has been sent successfully to ${forgotEmail}. Please check your inbox.`}
+                  {t('str_298')}
                 </p>
                 <PremiumButton 
                   onClick={() => setShowForgotModal(false)} 
@@ -864,7 +855,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
                   size="md"
                   className="w-full rounded-xl text-xs font-black h-10"
                 >
-                  {isRTL ? 'إغلاق' : 'Close'}
+                  {t('str_299')}
                 </PremiumButton>
               </div>
             )}

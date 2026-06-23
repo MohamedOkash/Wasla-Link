@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState } from 'react';
 import { ChevronRight, MapPin, Wallet, Check, AlertCircle, Camera, Upload, Plus, Info, Coins, Minus, ClipboardList, ArrowRight, Store, ShoppingBag } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -106,13 +107,15 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
   const total = Math.max(0, subtotal - discountAmount - pointsDiscount) + deliveryFee;
 
   const handleReceiptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const { t } = useTranslation();
+
     const file = e.target.files?.[0];
     if (file) {
       setReceiptFile(file);
       const reader = new FileReader();
       reader.onload = () => {
         setReceiptImage(reader.result as string);
-        showToast(isRTL ? 'تم تحميل صورة الإيصال بنجاح' : 'Receipt proof uploaded successfully');
+        showToast(t('str_64'));
       };
       reader.readAsDataURL(file);
     }
@@ -120,11 +123,11 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
 
   const handleConfirmOrder = async () => {
     if (!isCovered) {
-      showToast(isRTL ? 'عذراً، هذا المتجر لا يغطي منطقة التوصيل المحددة.' : 'Sorry, this store does not deliver to the selected region.');
+      showToast(t('str_65'));
       return;
     }
     if (paymentMethod !== 'cash' && !receiptImage) {
-      showToast(isRTL ? 'الرجاء إرفاق صورة إيصال التحويل لإتمام الطلب الإلكتروني' : 'Please upload transfer receipt screenshot to place online order');
+      showToast(t('str_66'));
       return;
     }
 
@@ -162,19 +165,19 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
       
       // Checkout Validation (Task 3)
       if (!customerId) {
-        showToast(isRTL ? 'خطأ في المصادقة: يرجى تسجيل الدخول مجدداً' : 'Auth Error: Please login again');
+        showToast(t('str_67'));
         setLoading(false);
         return;
       }
       
       if (!cart.shopId || cart.items.length === 0) {
-        showToast(isRTL ? 'السلة فارغة' : 'Cart is empty');
+        showToast(t('str_68'));
         setLoading(false);
         return;
       }
 
       if (!activeAddress && selectedAddressId !== 'new') {
-        showToast(isRTL ? 'يرجى اختيار عنوان التوصيل' : 'Please select delivery address');
+        showToast(t('str_69'));
         setLoading(false);
         return;
       }
@@ -277,7 +280,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
         >
           <ChevronRight size={20} className={isRTL ? '' : 'rotate-180'} />
         </button>
-        <h2 className="text-xl font-black text-theme-text">{isRTL ? 'إتمام الطلب' : 'Checkout'}</h2>
+        <h2 className="text-xl font-black text-theme-text">{t('str_70')}</h2>
       </div>
 
       <div className="flex-1 overflow-y-auto no-scrollbar pb-[180px] pb-[calc(env(safe-area-inset-bottom)+180px)]">
@@ -286,8 +289,8 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
           <div className="mx-5 mt-5 bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex items-start gap-3">
             <Info size={20} className="text-amber-500 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="font-bold text-amber-500 text-sm mb-1">{isRTL ? 'المتجر مغلق حالياً' : 'Store is Closed'}</h3>
-              <p className="text-xs text-theme-muted">{isRTL ? 'سيتم إرسال الطلب عند موعد فتح المتجر' : 'Your order will be sent when the store opens.'}</p>
+              <h3 className="font-bold text-amber-500 text-sm mb-1">{t('str_71')}</h3>
+              <p className="text-xs text-theme-muted">{t('str_72')}</p>
             </div>
           </div>
         )}
@@ -299,16 +302,16 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
         <PremiumCard hoverable={false} className="space-y-4">
           <h3 className="font-black text-theme-text text-xs flex items-center gap-1.5 border-b border-theme-border pb-2.5 uppercase tracking-wide">
             <MapPin size={15} className="text-primary" />
-            {isRTL ? 'معلومات التوصيل والشحن' : 'Delivery Information'}
+            {t('str_73')}
           </h3>
 
           <div className="bg-theme-bg/50 p-3 rounded-xl border border-theme-border/50 space-y-2 mb-4">
             <div className="flex justify-between text-[11px] font-bold">
-              <span className="text-theme-muted">{isRTL ? 'الاسم:' : 'Name:'}</span>
+              <span className="text-theme-muted">{t('str_74')}</span>
               <span className="text-theme-text">{currentUser?.name || ''}</span>
             </div>
             <div className="flex justify-between text-[11px] font-bold">
-              <span className="text-theme-muted">{isRTL ? 'رقم الهاتف:' : 'Phone:'}</span>
+              <span className="text-theme-muted">{t('str_75')}</span>
               <span className="text-theme-text" dir="ltr">{currentUser?.phone || ''}</span>
             </div>
           </div>
@@ -316,7 +319,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
           {savedAddresses.length > 0 && (
             <div className="space-y-3">
               <span className="text-[10px] font-black text-theme-muted uppercase tracking-wider block">
-                {isRTL ? 'اختر من العناوين المحفوظة:' : 'Select from saved addresses:'}
+                {t('str_76')}
               </span>
               <div className="grid grid-cols-1 gap-2.5">
                 {savedAddresses.map(addr => {
@@ -338,12 +341,12 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
                           <span className="font-black text-xs text-theme-text">{addr.label || addr.village}</span>
                           {addr.isDefault && (
                             <PremiumBadge variant="primary" pill={true}>
-                              {isRTL ? 'افتراضي' : 'Default'}
+                              {t('str_77')}
                             </PremiumBadge>
                           )}
                           {!covered && (
                             <PremiumBadge variant="danger" pill={true}>
-                              {isRTL ? 'غير مغطى للتوصيل' : 'Not Covered'}
+                              {t('str_78')}
                             </PremiumBadge>
                           )}
                         </div>
@@ -367,7 +370,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
                   }`}
                 >
                   <Plus size={14} />
-                  <span>{isRTL ? 'إدخال عنوان شحن جديد' : 'Enter New Address'}</span>
+                  <span>{t('str_79')}</span>
                 </div>
               </div>
             </div>
@@ -377,18 +380,18 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
           {selectedAddressId === 'new' && (
             <div className="space-y-4.5 pt-2 border-t border-theme-border/50 animate-fade-in">
               <span className="text-[10px] font-black text-theme-muted uppercase tracking-wider block">
-                {isRTL ? 'تفاصيل العنوان المصري الجديد:' : 'New Egyptian Address Details:'}
+                {t('str_80')}
               </span>
               
               <div className="grid grid-cols-2 gap-3">
                 <PremiumInput 
-                  label={isRTL ? 'المحافظة' : 'Governorate'}
+                  label={t('str_81')}
                   type="text" 
                   value={newGov} 
                   onChange={e => setNewGov(e.target.value)} 
                 />
                 <PremiumInput 
-                  label={isRTL ? 'المركز/المدينة' : 'Center/City'}
+                  label={t('str_82')}
                   type="text" 
                   value={newCenter} 
                   onChange={e => setNewCenter(e.target.value)} 
@@ -397,7 +400,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-black text-theme-muted uppercase tracking-wider">
-                  {isRTL ? 'القرية/المنطقة (تخضع للتغطية)' : 'Village/Area (Coverage Zone)'}
+                  {t('str_83')}
                 </label>
                 <select 
                   value={newVillage} 
@@ -408,10 +411,10 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
                     <option key={v} value={v}>{v}</option>
                   )) || (
                     <>
-                      <option value="ميت غراب">ميت غراب</option>
-                      <option value="السنبلاوين">السنبلاوين</option>
-                      <option value="المنصورة">المنصورة</option>
-                      <option value="تمي الأمديد">تمي الأمديد</option>
+                      <option value={t('str_1')}>{t('str_1')}</option>
+                      <option value={t('str_2')}>{t('str_2')}</option>
+                      <option value={t('str_3')}>{t('str_3')}</option>
+                      <option value={t('str_4')}>{t('str_4')}</option>
                     </>
                   )}
                 </select>
@@ -419,15 +422,15 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
 
               <div className="grid grid-cols-2 gap-3">
                 <PremiumInput 
-                  label={isRTL ? 'الشارع' : 'Street'}
-                  placeholder={isRTL ? 'اسم الشارع' : 'Street Name'}
+                  label={t('str_84')}
+                  placeholder={t('str_85')}
                   type="text" 
                   value={newStreet} 
                   onChange={e => setNewStreet(e.target.value)} 
                 />
                 <PremiumInput 
-                  label={isRTL ? 'رقم العمارة/المنزل' : 'Building/House'}
-                  placeholder={isRTL ? 'مثال: منزل 14' : 'e.g. House 14'}
+                  label={t('str_86')}
+                  placeholder={t('str_87')}
                   type="text" 
                   value={newBuilding} 
                   onChange={e => setNewBuilding(e.target.value)} 
@@ -436,22 +439,22 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
 
               <div className="grid grid-cols-3 gap-2.5">
                 <PremiumInput 
-                  label={isRTL ? 'الدور' : 'Floor'}
+                  label={t('str_88')}
                   placeholder="2"
                   type="text" 
                   value={newFloor} 
                   onChange={e => setNewFloor(e.target.value)} 
                 />
                 <PremiumInput 
-                  label={isRTL ? 'الشقة' : 'Apartment'}
+                  label={t('str_89')}
                   placeholder="4"
                   type="text" 
                   value={newApartment} 
                   onChange={e => setNewApartment(e.target.value)} 
                 />
                 <PremiumInput 
-                  label={isRTL ? 'علامة مميزة' : 'Landmark'}
-                  placeholder={isRTL ? 'بجوار المسجد' : 'Near Mosque'}
+                  label={t('str_90')}
+                  placeholder={t('str_91')}
                   type="text" 
                   value={newLandmark} 
                   onChange={e => setNewLandmark(e.target.value)} 
@@ -459,8 +462,8 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
               </div>
 
               <PremiumInput 
-                label={isRTL ? 'ملاحظات إضافية' : 'Additional Delivery Notes'}
-                placeholder={isRTL ? 'ملاحظات إضافية للتوصيل' : 'Delivery details'}
+                label={t('str_92')}
+                placeholder={t('str_93')}
                 type="text" 
                 value={newNotes} 
                 onChange={e => setNewNotes(e.target.value)} 
@@ -475,7 +478,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
                   className="w-4.5 h-4.5 rounded text-primary focus:ring-primary border-theme-border bg-theme-bg"
                 />
                 <label htmlFor="saveToBook" className="text-[10px] font-black text-theme-text cursor-pointer select-none">
-                  {isRTL ? 'حفظ العنوان في دفتر العناوين المحفوظة' : 'Save this address for later use'}
+                  {t('str_94')}
                 </label>
               </div>
             </div>
@@ -491,15 +494,11 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
             <div className="text-[10px] font-black leading-relaxed">
               {isCovered ? (
                 <span>
-                  {isRTL 
-                    ? `منطقة التوصيل مغطاة! رسوم الشحن: ${deliveryFee} ج.م • وقت التوصيل المتوقع: ${deliveryETA}` 
-                    : `Zone Covered! Shipping Fee: EGP ${deliveryFee} • Delivery ETA: ${deliveryETA}`}
+                  {t('str_95')}
                 </span>
               ) : (
                 <span>
-                  {isRTL 
-                    ? 'عذراً، هذا المتجر لا يغطي منطقة التوصيل المحددة حالياً.' 
-                    : 'Sorry, this store does not cover the selected zone currently.'}
+                  {t('str_96')}
                 </span>
               )}
             </div>
@@ -515,9 +514,9 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
           
           <div className="space-y-2.5">
             {[
-              { id: 'cash', title: t('cash'), desc: isRTL ? 'الدفع نقداً للمندوب عند استلام الطلب' : 'Pay in cash directly to delivery rider' },
-              { id: 'vodafone', title: t('vodafone'), desc: isRTL ? 'تحويل للمحفظة الإلكترونية للمتجر مباشرة' : 'Direct transfer to store digital wallet' },
-              { id: 'instapay', title: t('instapay'), desc: isRTL ? 'تحويل بنكي فوري عبر تطبيق إنستاباي' : 'Direct bank transfer via InstaPay App' }
+              { id: 'cash', title: t('cash'), desc: t('str_97') },
+              { id: 'vodafone', title: t('vodafone'), desc: t('str_98') },
+              { id: 'instapay', title: t('instapay'), desc: t('str_99') }
             ].map(method => {
               const isSelected = paymentMethod === method.id;
               return (
@@ -553,22 +552,22 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
               <div className="text-[11px] font-bold text-theme-muted leading-relaxed">
                 {paymentMethod === 'vodafone' ? (
                   <>
-                    <p className="font-black text-theme-text mb-0.5">{isRTL ? 'تعليمات تحويل فودافون كاش:' : 'Vodafone Cash Instructions:'}</p>
-                    <p>{isRTL ? 'قم بتحويل مبلغ ' : 'Please transfer '}<span className="text-primary font-black">{total} ج.م</span> {isRTL ? 'إلى رقم المتجر:' : 'to store wallet number:'}</p>
+                    <p className="font-black text-theme-text mb-0.5">{t('str_100')}</p>
+                    <p>{t('str_101')}<span className="text-primary font-black">{total} ج.م</span> {t('str_102')}</p>
                     <p className="text-sm font-black text-primary mt-1 tracking-wide">
                       {store.paymentInfo?.vodafone || '01011112222'}
                     </p>
                   </>
                 ) : (
                   <>
-                    <p className="font-black text-theme-text mb-0.5">{isRTL ? 'تعليمات تحويل إنستاباي:' : 'InstaPay Transfer Instructions:'}</p>
-                    <p>{isRTL ? 'أرسل مبلغ ' : 'Please send '}<span className="text-primary font-black">{total} ج.م</span> {isRTL ? 'إلى عنوان الدفع (IPA):' : 'to payment address (IPA):'}</p>
+                    <p className="font-black text-theme-text mb-0.5">{t('str_103')}</p>
+                    <p>{t('str_104')}<span className="text-primary font-black">{total} ج.م</span> {t('str_105')}</p>
                     <p className="text-sm font-black text-primary mt-1 tracking-wide">
                       {store.paymentInfo?.instapay || `${store.id}@instapay`}
                     </p>
                   </>
                 )}
-                <p className="text-[9.5px] text-primary mt-1.5 font-black">{isRTL ? 'يرجى إرفاق لقطة شاشة لإثبات التحويل بالأسفل لتأكيد الطلب.' : 'Upload screenshot proof below to verify transfer.'}</p>
+                <p className="text-[9.5px] text-primary mt-1.5 font-black">{t('str_106')}</p>
               </div>
             </div>
 
@@ -579,13 +578,13 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
                   <img src={receiptImage} className="w-full h-full object-cover animate-fade-in" alt="Receipt Proof" />
                   <div className="absolute inset-0 bg-black/45 flex items-center justify-center opacity-0 hover:opacity-100 transition text-white text-[10px] font-black gap-1.5">
                     <Camera size={14} /> 
-                    <span>{isRTL ? 'تغيير صورة الإيصال' : 'Change Receipt Proof'}</span>
+                    <span>{t('str_107')}</span>
                   </div>
                 </>
               ) : (
                 <div className="text-center p-4">
                   <Upload size={24} className="text-theme-muted mx-auto mb-2" />
-                  <p className="text-xs font-black text-theme-text">{isRTL ? 'إرفاق إيصال التحويل' : 'Upload Screenshot'}</p>
+                  <p className="text-xs font-black text-theme-text">{t('str_108')}</p>
                   <p className="text-[9px] text-theme-muted mt-0.5 font-bold">PNG, JPG (max 5MB)</p>
                 </div>
               )}
@@ -605,21 +604,21 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
           <PremiumCard hoverable={false} className="space-y-4">
             <h3 className="font-black text-theme-text text-xs flex items-center gap-1.5 border-b border-theme-border pb-2.5 uppercase tracking-wide">
               <Coins size={15} className="text-primary" />
-              {isRTL ? 'استبدال نقاط الولاء والمكافآت' : 'Redeem Loyalty Points'}
+              {t('str_109')}
             </h3>
             
             <div className="flex justify-between items-center text-xs flex-wrap gap-2">
               <div>
-                <p className="font-black text-theme-text">{isRTL ? `رصيدك الحالي: ${currentUser.points || 0} نقطة` : `Your balance: ${currentUser.points || 0} pts`}</p>
-                <p className="text-[9px] text-theme-muted font-bold mt-0.5">{isRTL ? 'كل 100 نقطة تعادل خصم 5 ج.م' : 'Every 100 pts equivalent to 5 EGP'}</p>
+                <p className="font-black text-theme-text">{t('str_110')}</p>
+                <p className="text-[9px] text-theme-muted font-bold mt-0.5">{t('str_111')}</p>
               </div>
               <span className="bg-primary/10 text-primary font-black text-[10px] px-2.5 py-1 rounded-xl border border-primary/15">
-                {isRTL ? `${Math.floor((currentUser.points || 0) / 100) * 5} ج.م متاحة` : `${Math.floor((currentUser.points || 0) / 100) * 5} EGP available`}
+                {t('str_112')}
               </span>
             </div>
 
             <div className="flex items-center justify-between border-t border-theme-border/50 pt-3">
-              <span className="text-[10px] font-black text-theme-text">{isRTL ? 'النقاط التي سيتم استبدالها:' : 'Points to redeem:'}</span>
+              <span className="text-[10px] font-black text-theme-text">{t('str_113')}</span>
               <div className="flex items-center bg-theme-bg border border-theme-border rounded-xl overflow-hidden p-0.5 shadow-inner">
                 <button 
                   type="button"
@@ -649,9 +648,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
 
             {pointsToRedeem > 0 && (
               <p className="text-[9.5px] font-black text-green-600 text-center bg-green-500/5 py-2 rounded-xl animate-pop-in">
-                {isRTL 
-                  ? `✓ سيتم تطبيق خصم بقيمة ${pointsDiscount} ج.م مقابل ${pointsToRedeem} نقطة` 
-                  : `✓ ${pointsDiscount} EGP discount applied for ${pointsToRedeem} pts`}
+                {t('str_114')}
               </p>
             )}
           </PremiumCard>
@@ -661,37 +658,37 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
         <PremiumCard hoverable={false} className="space-y-3">
           <h3 className="font-black text-theme-text text-xs flex items-center gap-1.5 border-b border-theme-border pb-2.5 uppercase tracking-wide">
             <ClipboardList size={15} className="text-primary" />
-            {isRTL ? 'معلومات الطلب' : 'Order Information'}
+            {t('str_115')}
           </h3>
           <div className="space-y-2 text-xs">
             <div className="flex justify-between">
-              <span className="text-theme-muted">{isRTL ? 'اسم العميل:' : 'Customer Name:'}</span>
+              <span className="text-theme-muted">{t('str_116')}</span>
               <span className="font-black text-theme-text">{currentUser?.name || ''}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-theme-muted">{isRTL ? 'رقم الهاتف:' : 'Phone Number:'}</span>
+              <span className="text-theme-muted">{t('str_75')}</span>
               <span className="font-black text-theme-text" dir="ltr">{currentUser?.phone || ''}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-theme-muted">{isRTL ? 'عنوان التوصيل:' : 'Delivery Address:'}</span>
+              <span className="text-theme-muted">{t('str_117')}</span>
               <span className="font-black text-theme-text text-left" style={{maxWidth: '60%'}}>
                 {activeAddress ? getAddressTextStr(activeAddress) : ''}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-theme-muted">{isRTL ? 'المنطقة:' : 'Area:'}</span>
+              <span className="text-theme-muted">{t('str_118')}</span>
               <span className="font-black text-theme-text">{activeAddress?.village || ''}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-theme-muted">{isRTL ? 'وقت التوصيل:' : 'Delivery Time:'}</span>
+              <span className="text-theme-muted">{t('str_119')}</span>
               <span className="font-black text-theme-text">
-                {isStoreClosed ? (isRTL ? 'عند افتتاح المتجر' : 'When store opens') : (isRTL ? 'في أسرع وقت' : 'ASAP')}
+                {isStoreClosed ? (t('str_120')) : (t('str_121'))}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-theme-muted">{isRTL ? 'طريقة الدفع:' : 'Payment Method:'}</span>
+              <span className="text-theme-muted">{t('str_122')}</span>
               <span className="font-black text-theme-text">
-                {paymentMethod === 'cash' ? (isRTL ? 'الدفع عند الاستلام' : 'Cash on Delivery') : paymentMethod === 'vodafone' ? (isRTL ? 'فودافون كاش' : 'Vodafone Cash') : (isRTL ? 'إنستاباي' : 'InstaPay')}
+                {paymentMethod === 'cash' ? (t('str_123')) : paymentMethod === 'vodafone' ? (t('str_124')) : (t('str_125'))}
               </span>
             </div>
           </div>
@@ -701,54 +698,54 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
 
       {/* Checkout Totals & Place Order Panel */}
       <div className="fixed bottom-0 left-0 right-0 max-w-[400px] mx-auto w-full bg-theme-card border-t border-theme-border p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] rounded-t-[32px] shadow-[0_-12px_28px_rgba(0,0,0,0.06)] z-30 theme-transition space-y-4">
-        <h3 className="font-black text-sm text-theme-text">{isRTL ? 'ملخص الطلب' : 'Order Summary'}</h3>
+        <h3 className="font-black text-sm text-theme-text">{t('str_59')}</h3>
         <div className="space-y-2.5 text-xs bg-theme-bg/50 p-3.5 rounded-2xl border border-theme-border/50">
           
           {/* Customer Delivery Info Card */}
           <div className="bg-theme-card border border-theme-border/50 rounded-xl p-3 mb-3 space-y-1.5">
             <div className="flex justify-between items-center text-theme-muted font-semibold">
-              <span>{isRTL ? 'الاسم:' : 'Name:'}</span>
+              <span>{t('str_74')}</span>
               <span className="font-black text-theme-text">{currentUser?.name || ''}</span>
             </div>
             <div className="flex justify-between items-center text-theme-muted font-semibold">
-              <span>{isRTL ? 'الهاتف:' : 'Phone:'}</span>
+              <span>{t('str_126')}</span>
               <span className="font-sans font-black text-theme-text">{currentUser?.phone || ''}</span>
             </div>
             <div className="flex justify-between items-start text-theme-muted font-semibold gap-2">
-              <span className="whitespace-nowrap">{isRTL ? 'العنوان:' : 'Address:'}</span>
+              <span className="whitespace-nowrap">{t('str_127')}</span>
               <span className="font-bold text-theme-text text-left max-w-[200px] leading-relaxed line-clamp-2">
                 {activeAddress ? `${activeAddress.street}، عمارة ${activeAddress.building}` : ''}
               </span>
             </div>
             <div className="flex justify-between items-center text-theme-muted font-semibold">
-              <span>{isRTL ? 'المنطقة:' : 'Area:'}</span>
+              <span>{t('str_118')}</span>
               <span className="font-bold text-theme-text">{activeAddress?.village || ''}</span>
             </div>
           </div>
 
           <div className="flex justify-between text-theme-muted font-semibold">
-            <span>{isRTL ? 'عدد المنتجات' : 'Product Count'}</span>
+            <span>{t('str_60')}</span>
             <span className="font-sans">{cart.items.reduce((sum, item) => sum + item.quantity, 0)}</span>
           </div>
           <div className="flex justify-between text-theme-muted font-semibold">
-            <span>{isRTL ? 'المجموع الفرعي:' : 'Subtotal:'}</span>
+            <span>{t('str_128')}</span>
             <span className="font-sans font-bold text-theme-text">{subtotal} ج.م</span>
           </div>
           {discountAmount > 0 && (
             <div className="flex justify-between text-green-500 font-bold animate-fade-in bg-green-500/10 p-2 rounded-lg mt-1">
-              <span>{isRTL ? 'خصم الكوبون:' : 'Coupon Discount:'}</span>
+              <span>{t('str_61')}</span>
               <span className="font-sans">-{discountAmount} ج.م</span>
             </div>
           )}
           {pointsDiscount > 0 && (
             <div className="flex justify-between text-green-500 font-bold animate-fade-in bg-green-500/10 p-2 rounded-lg mt-1">
-              <span>{isRTL ? 'خصم نقاط الولاء:' : 'Loyalty Points Discount:'}</span>
+              <span>{t('str_129')}</span>
               <span className="font-sans">-{pointsDiscount} ج.م</span>
             </div>
           )}
           <div className="flex justify-between text-theme-muted font-semibold">
-            <span>{isRTL ? 'رسوم التوصيل:' : 'Delivery fee:'}</span>
-            <span className="font-sans font-bold text-theme-text">{deliveryFee === 0 ? (isRTL ? 'مجاني' : 'Free') : `${deliveryFee} ج.م`}</span>
+            <span>{t('str_130')}</span>
+            <span className="font-sans font-bold text-theme-text">{deliveryFee === 0 ? (t('str_131')) : `${deliveryFee} ج.م`}</span>
           </div>
           <div className="border-t border-theme-border/80 my-2 pt-3 flex justify-between items-center text-theme-text font-black">
             <span className="text-sm">{t('total')}</span>

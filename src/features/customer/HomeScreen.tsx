@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, LayoutGrid, Flame, Clock, Heart, Tag, TrendingUp, Sparkles, Navigation } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -51,6 +52,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigate, openSearch, op
   const youMayLike = recommendationService.getYouMayLike(products, orders, favoriteStores, 8);
 
   const getProductQuantity = (productId: string) => {
+  const { t } = useTranslation();
+
     const item = cart.items.find(i => i.id === productId);
     return item ? item.quantity : 0;
   };
@@ -71,7 +74,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigate, openSearch, op
     };
     const check = deliveryService.checkStoreOpenStatus(businessHours);
     if (check.status === 'closed') {
-      showToast(isRTL ? 'المتجر مغلق: سيتم وضع طلبك كطلب مجدول' : 'Store closed: your order will be scheduled', 'info');
+      showToast(t('str_5'), 'info');
     }
 
     addToCartGlobal(product, shop, 1, false);
@@ -212,19 +215,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigate, openSearch, op
         </PremiumSection>
 
         {/* 3. Featured Campaigns (Product Offers) */}
-        {renderProductSlider(isRTL ? 'العروض المميزة' : 'Featured Campaigns', <Tag size={15} />, featuredPromotions)}
+        {renderProductSlider(t('str_6'), <Tag size={15} />, featuredPromotions)}
 
         {/* 4. Trending Now */}
-        {renderProductSlider(isRTL ? 'شائع الآن' : 'Trending Now', <Flame size={15} />, trendingNow)}
+        {renderProductSlider(t('str_7'), <Flame size={15} />, trendingNow)}
 
         {/* 5. Recommended For You */}
-        {renderProductSlider(isRTL ? 'منتجات قد تعجبك' : 'Recommended For You', <Sparkles size={15} />, youMayLike)}
+        {renderProductSlider(t('str_8'), <Sparkles size={15} />, youMayLike)}
 
         {/* 6. New Arrivals */}
-        {renderProductSlider(isRTL ? 'وصل حديثاً' : 'New Arrivals', <Sparkles size={15} />, newArrivals)}
+        {renderProductSlider(t('str_9'), <Sparkles size={15} />, newArrivals)}
 
         {/* 6. Best Sellers */}
-        {renderProductSlider(isRTL ? 'الأكثر طلباً' : 'Best Sellers', <TrendingUp size={15} />, bestSellers)}
+        {renderProductSlider(t('str_10'), <TrendingUp size={15} />, bestSellers)}
 
         {/* 7. Nearby Stores */}
         <PremiumSection title={t('nearbyStores')} icon={<Navigation size={15} />}>

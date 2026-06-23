@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState } from 'react';
 import { ChevronRight, Search, Star, Clock, ShoppingBag, Plus, Minus, Heart, ShieldAlert, Facebook, Instagram, Globe, Link, Phone, Sparkles, Tag, ShoppingCart, Flame } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -77,13 +78,15 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
     : shop.rating || 4.5;
 
   const handleAddToCart = (product: any, e: React.MouseEvent) => {
+  const { t } = useTranslation();
+
     e.stopPropagation();
     if (!isDeliverable) {
-      showToast(isRTL ? 'عذراً، هذا المتجر لا يوصل إلى منطقتك حالياً' : 'Sorry, this store does not deliver to your region currently');
+      showToast(t('str_11'));
       return;
     }
     if (openStatus.status === 'closed') {
-      showToast(isRTL ? 'المتجر مغلق: سيتم وضع طلبك كطلب مجدول' : 'Store closed: your order will be scheduled', 'info');
+      showToast(t('str_5'), 'info');
     }
     addToCartGlobal(product, shop, 1, false);
   };
@@ -136,7 +139,7 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
             size="sm"
             className="h-8.5 rounded-xl font-black text-[10px]"
           >
-            {followedStores.includes(shop.id) ? (isRTL ? 'متابع ✓' : 'Following ✓') : (isRTL ? 'متابعة' : 'Follow')}
+            {followedStores.includes(shop.id) ? (t('str_12')) : (t('str_13'))}
           </PremiumButton>
 
           {/* Toggle Favorite Store */}
@@ -219,36 +222,36 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
           <div className="grid grid-cols-3 gap-2.5 mb-5">
             <div className="bg-theme-card border border-theme-border/60 rounded-2xl p-3 flex flex-col items-center justify-center shadow-sm">
               <Star size={18} className="text-yellow-400 fill-current mb-1" />
-              <span className="text-[10px] text-theme-muted font-bold">{isRTL ? 'التقييم' : 'Rating'}</span>
+              <span className="text-[10px] text-theme-muted font-bold">{t('str_14')}</span>
               <span className="text-xs font-black text-theme-text">{avgRating}</span>
             </div>
             <div className="bg-theme-card border border-theme-border/60 rounded-2xl p-3 flex flex-col items-center justify-center shadow-sm">
               <ShoppingBag size={18} className="text-primary mb-1" />
-              <span className="text-[10px] text-theme-muted font-bold">{isRTL ? 'المنتجات' : 'Products'}</span>
+              <span className="text-[10px] text-theme-muted font-bold">{t('str_15')}</span>
               <span className="text-xs font-black text-theme-text">{storeProducts.length}</span>
             </div>
             <div className="bg-theme-card border border-theme-border/60 rounded-2xl p-3 flex flex-col items-center justify-center shadow-sm">
               <Heart size={18} className="text-red-500 mb-1" />
-              <span className="text-[10px] text-theme-muted font-bold">{isRTL ? 'متابع' : 'Followers'}</span>
+              <span className="text-[10px] text-theme-muted font-bold">{t('str_16')}</span>
               <span className="text-xs font-black text-theme-text">{shop.followersCount || 0}</span>
             </div>
           </div>
           
           <div className="flex items-center gap-2 mb-4 bg-theme-card border border-theme-border/60 p-3 rounded-2xl">
              <div className="flex-1 flex flex-col items-center border-r border-theme-border/50">
-               <span className="text-[10px] text-theme-muted font-bold">{isRTL ? 'وقت التوصيل' : 'Delivery Time'}</span>
+               <span className="text-[10px] text-theme-muted font-bold">{t('str_17')}</span>
                <span className="text-xs font-black text-theme-text">{activeZone ? activeZone.eta : `${shop.time} دقيقة`}</span>
              </div>
              <div className="flex-1 flex flex-col items-center">
-               <span className="text-[10px] text-theme-muted font-bold">{isRTL ? 'رسوم التوصيل' : 'Delivery Fee'}</span>
-               <span className="text-xs font-black text-theme-text">{activeZone ? `${activeZone.fee} ج.م` : (isRTL ? 'غير مدعوم' : 'N/A')}</span>
+               <span className="text-[10px] text-theme-muted font-bold">{t('str_18')}</span>
+               <span className="text-xs font-black text-theme-text">{activeZone ? `${activeZone.fee} ج.م` : (t('str_19'))}</span>
              </div>
           </div>
 
           {!isDeliverable && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl text-xs py-3 px-4 flex items-center justify-center gap-2 font-black mb-4 text-center">
               <ShieldAlert size={16} />
-              <span>{isRTL ? 'عذراً، هذا المتجر لا يوصل إلى منطقتك حالياً 📍' : 'Sorry, this store does not deliver to your region currently 📍'}</span>
+              <span>{t('str_20')}</span>
             </div>
           )}
 
@@ -256,7 +259,7 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
           {totalPrice > 0 && totalPrice < (shop.minOrder || 0) && (
             <div className="bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-2xl text-[10px] py-3 px-4 flex items-center justify-center gap-2 font-bold mb-4">
               <ShieldAlert size={14} />
-              <span>{isRTL ? `الحد الأدنى للطلب ${shop.minOrder} ج.م (متبقي ${shop.minOrder - totalPrice} ج.م)` : `Min order is EGP ${shop.minOrder} (Add EGP ${shop.minOrder - totalPrice} more)`}</span>
+              <span>{t('str_21')}</span>
             </div>
           )}
         </div>
@@ -268,7 +271,7 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             leftIcon={<Search size={16} />}
-            placeholder={isRTL ? 'البحث داخل المتجر...' : 'Search inside store products...'}
+            placeholder={t('str_22')}
           />
         </div>
 
@@ -291,7 +294,7 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
           <div className="px-5 mb-6">
             <div className="bg-gradient-to-r from-red-500/10 to-primary/10 rounded-2xl p-4 border border-red-500/20">
                <h3 className="text-xs font-black text-red-500 flex items-center gap-2 mb-3">
-                 <Tag size={16}/> {isRTL ? 'عروض حصرية' : 'Exclusive Offers'}
+                 <Tag size={16}/> {t('str_23')}
                </h3>
                <div className="grid grid-cols-2 gap-2">
                  {shop.offers.map(offer => (
@@ -307,7 +310,7 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
 
         {/* Featured Products from Offers Engine */}
         {storeFeatured.length > 0 && !searchQuery && selectedSubCat === 'all' && (
-          <PremiumSection title={isRTL ? 'منتجات مميزة' : 'Featured Products'} icon={<Sparkles size={15} />}>
+          <PremiumSection title={t('str_24')} icon={<Sparkles size={15} />}>
             <div className="flex gap-3.5 overflow-x-auto no-scrollbar pb-2 pt-1 px-0.5">
               {storeFeatured.map(product => (
                 <ProductCard 
@@ -333,7 +336,7 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
 
         {/* Discount Products Section */}
         {discountProducts.length > 0 && !searchQuery && selectedSubCat === 'all' && (
-          <PremiumSection title={isRTL ? 'تخفيضات كبرى' : 'Mega Discounts'} icon={<Tag size={15} className="text-red-500"/>}>
+          <PremiumSection title={t('str_25')} icon={<Tag size={15} className="text-red-500"/>}>
             <div className="flex gap-3.5 overflow-x-auto no-scrollbar pb-2 pt-1 px-0.5">
               {discountProducts.map(product => (
                 <ProductCard 
@@ -359,7 +362,7 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
 
         {/* Recommended for You Section slider */}
         {storeRecommendations.length > 0 && !searchQuery && selectedSubCat === 'all' && (
-          <PremiumSection title={isRTL ? 'مقترحات مخصصة لك' : 'Recommended for You'} icon={<Sparkles size={15} />}>
+          <PremiumSection title={t('str_26')} icon={<Sparkles size={15} />}>
             <div className="flex gap-3.5 overflow-x-auto no-scrollbar pb-2 pt-1 px-0.5">
               {storeRecommendations.map(product => (
                 <ProductCard 
@@ -385,7 +388,7 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
 
         {/* Offers Section slider */}
         {offersList.length > 0 && !searchQuery && selectedSubCat === 'all' && (
-          <PremiumSection title={isRTL ? 'عروض وتخفيضات المتجر' : 'Store Campaigns & Offers'} icon={<Tag size={15} />}>
+          <PremiumSection title={t('str_27')} icon={<Tag size={15} />}>
             <div className="flex gap-3.5 overflow-x-auto no-scrollbar pb-2 pt-1 px-0.5">
               {offersList.map(product => (
                 <ProductCard 
@@ -411,7 +414,7 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
 
         {/* Best Sellers Section */}
         {bestSellers.length > 0 && !searchQuery && selectedSubCat === 'all' && (
-          <PremiumSection title={isRTL ? 'الأكثر مبيعاً هنا' : 'Best Sellers Here'} icon={<Flame size={15} />}>
+          <PremiumSection title={t('str_28')} icon={<Flame size={15} />}>
             <div className="flex gap-3.5 overflow-x-auto no-scrollbar pb-2 pt-1 px-0.5">
               {bestSellers.map(product => (
                 <ProductCard 
@@ -437,7 +440,7 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
 
         {/* Categories Horizontal Scroll Tabs */}
         <div className="px-5 mt-5">
-          <h3 className="text-xs font-black text-theme-text mb-3 uppercase tracking-wider">{isRTL ? 'قائمة المنتجات الكاملة' : 'Full Products Catalog'}</h3>
+          <h3 className="text-xs font-black text-theme-text mb-3 uppercase tracking-wider">{t('str_29')}</h3>
           <div className="overflow-x-auto no-scrollbar flex gap-2 py-1">
             {subCategories.map(cat => (
               <button
@@ -449,7 +452,7 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
                     : 'bg-theme-card border-theme-border text-theme-text hover:bg-theme-bg'
                 }`}
               >
-                {cat === 'all' ? (isRTL ? 'تصفح الكل' : 'View All') : cat}
+                {cat === 'all' ? (t('str_30')) : cat}
               </button>
             ))}
           </div>
@@ -458,7 +461,7 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
         {/* Products list grid */}
         <div className="px-5 mt-4.5 grid grid-cols-2 gap-3.5">
           {filteredProducts.length === 0 ? (
-            <div className="col-span-2 text-center text-theme-muted py-8 text-xs font-bold">{isRTL ? 'لا توجد منتجات مطابقة في هذا الصنف' : 'No matching products in this category'}</div>
+            <div className="col-span-2 text-center text-theme-muted py-8 text-xs font-bold">{t('str_31')}</div>
           ) : (
             filteredProducts.map(product => (
               <ProductCard 
@@ -501,7 +504,7 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
             onClick={() => navigate('cart')} 
             className="bg-primary hover:bg-primary-hover text-white font-black px-5 py-2.5 rounded-xl text-xs flex items-center gap-2 transition"
           >
-            {isRTL ? 'عرض سلتك' : 'Checkout Cart'}
+            {t('str_32')}
           </PremiumButton>
         </div>
       )}

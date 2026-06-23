@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState } from 'react';
 import { Globe, ArrowRight, ArrowLeft, Check, Store as StoreIcon, ShieldAlert } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -68,6 +69,8 @@ export const AuthScreen: React.FC = () => {
   const [customVillage, setCustomVillage] = useState('');
 
   const getAvailableCities = () => {
+  const { t } = useTranslation();
+
     return EGYPT_REGIONS[governorate]?.cities ? Object.keys(EGYPT_REGIONS[governorate].cities) : ['أخرى'];
   };
 
@@ -79,7 +82,7 @@ export const AuthScreen: React.FC = () => {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      showToast(lang === 'ar' ? 'يرجى إدخال البريد الإلكتروني وكلمة المرور' : 'Please enter email and password');
+      showToast(t('str_300'));
       return;
     }
     setLoading(true);
@@ -87,9 +90,9 @@ export const AuthScreen: React.FC = () => {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (err: any) {
       console.error(err);
-      let errMsg = lang === 'ar' ? 'فشل تسجيل الدخول. يرجى التحقق من البيانات' : 'Login failed. Please check credentials';
+      let errMsg = t('str_301');
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-        errMsg = lang === 'ar' ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة' : 'Incorrect email or password';
+        errMsg = t('str_302');
       }
       showToast(errMsg);
     } finally {
@@ -100,7 +103,7 @@ export const AuthScreen: React.FC = () => {
   const handleCustomerRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || !name) {
-      showToast(lang === 'ar' ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill all required fields');
+      showToast(t('str_303'));
       return;
     }
     setLoading(true);
@@ -119,7 +122,7 @@ export const AuthScreen: React.FC = () => {
           referredByUid = inviterDoc.id;
           isReferralValid = true;
         } else {
-          showToast(lang === 'ar' ? 'كود الإحالة غير صحيح. سيتم التسجيل بدون إحالة.' : 'Invalid referral code. Registering without referral.');
+          showToast(t('str_304'));
         }
       }
 
@@ -179,14 +182,14 @@ export const AuthScreen: React.FC = () => {
       }
 
       await batch.commit();
-      showToast(lang === 'ar' ? 'تم إنشاء الحساب بنجاح' : 'Account created successfully');
+      showToast(t('str_305'));
     } catch (err: any) {
       console.error(err);
-      let errMsg = lang === 'ar' ? 'فشل إنشاء الحساب' : 'Registration failed';
+      let errMsg = t('str_306');
       if (err.code === 'auth/email-already-in-use') {
-        errMsg = lang === 'ar' ? 'البريد الإلكتروني مستخدم بالفعل' : 'Email already in use';
+        errMsg = t('str_307');
       } else if (err.code === 'auth/weak-password') {
-        errMsg = lang === 'ar' ? 'كلمة المرور ضعيفة جداً' : 'Password is too weak';
+        errMsg = t('str_308');
       }
       showToast(errMsg);
     } finally {
@@ -197,7 +200,7 @@ export const AuthScreen: React.FC = () => {
   const handleVendorRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || !storeName || !phone) {
-      showToast(lang === 'ar' ? 'يرجى ملء جميع الحقول لتسجيل المتجر' : 'Please fill all fields to register store');
+      showToast(t('str_309'));
       return;
     }
     setLoading(true);
@@ -206,7 +209,7 @@ export const AuthScreen: React.FC = () => {
       const finalVillage = village === 'أخرى' ? customVillage : village;
 
       if (!finalCity || !finalVillage) {
-        showToast(lang === 'ar' ? 'يرجى تحديد المدينة والقرية التابع لها المتجر' : 'Please specify the city and village of the store');
+        showToast(t('str_310'));
         setLoading(false);
         return;
       }
@@ -295,14 +298,14 @@ export const AuthScreen: React.FC = () => {
         }
       }
 
-      showToast(lang === 'ar' ? 'تم تسجيل متجرك وتوليد كتالوج المنتجات بنجاح!' : 'Store registered and inventory templates cloned successfully!');
+      showToast(t('str_311'));
       setRegStep(1);
       setView('login');
     } catch (err: any) {
       console.error(err);
-      let errMsg = lang === 'ar' ? 'فشل تسجيل المتجر' : 'Store registration failed';
+      let errMsg = t('str_312');
       if (err.code === 'auth/email-already-in-use') {
-        errMsg = lang === 'ar' ? 'البريد الإلكتروني مستخدم بالفعل' : 'Email already in use';
+        errMsg = t('str_307');
       }
       showToast(errMsg);
     } finally {
@@ -313,17 +316,17 @@ export const AuthScreen: React.FC = () => {
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
-      showToast(lang === 'ar' ? 'يرجى إدخال البريد الإلكتروني أولاً' : 'Please enter email first');
+      showToast(t('str_313'));
       return;
     }
     setLoading(true);
     try {
       await sendPasswordResetEmail(auth, email);
-      showToast(lang === 'ar' ? 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني' : 'Password reset link sent to your email');
+      showToast(t('str_314'));
       setView('login');
     } catch (err: any) {
       console.error(err);
-      showToast(lang === 'ar' ? 'فشل إرسال البريد الإلكتروني. تحقق من العنوان' : 'Failed to send password reset email');
+      showToast(t('str_315'));
     } finally {
       setLoading(false);
     }
@@ -337,7 +340,7 @@ export const AuthScreen: React.FC = () => {
       await signInWithEmailAndPassword(auth, demoEmail, demoPass);
     } catch (err: any) {
       console.error(err);
-      showToast(lang === 'ar' ? 'بيانات الدخول التجريبي غير متوفرة، يرجى التسجيل أولاً' : 'Demo account not found, please register');
+      showToast(t('str_316'));
     } finally {
       setLoading(false);
     }
@@ -350,19 +353,18 @@ export const AuthScreen: React.FC = () => {
         onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')} 
         className="absolute top-6 left-6 bg-theme-card border border-theme-border/60 p-2.5 rounded-2xl text-xs font-black flex items-center gap-2 hover:border-primary/20 transition active:scale-95 shadow-sm"
       >
-        <Globe size={15}/> {t('language')}
+        <Globe size={15}/> {t('str_250')}
       </button>
 
       <img 
         src="/logo.jpg" 
-        alt="WaslaLink Logo" 
-        className="w-20 h-20 object-cover rounded-[24px] shadow-lg mb-4 mt-8 border border-theme-border/20"
+        alt="Logo"
+        className="w-24 h-24 rounded-full mb-8 shadow-lg"
       />
-      <h1 className="text-2xl font-black mb-6 tracking-tight text-theme-text">{t('appName')}</h1>
 
       {/* LOGIN VIEW */}
       {view === 'login' && (
-        <form onSubmit={handleEmailLogin} className="w-full max-w-sm space-y-4">
+        <form onSubmit={handleLogin} className="w-full max-w-sm space-y-4">
           <PremiumInput 
             type="email" 
             placeholder={t('email')} 
@@ -377,26 +379,16 @@ export const AuthScreen: React.FC = () => {
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
           />
-          
           <PremiumButton 
             type="submit"
             isLoading={loading}
             className="w-full py-3.5"
           >
-            {t('loginAsCustomer')}
+            {t('login')}
           </PremiumButton>
-          
-          <div className="text-right">
-            <span 
-              onClick={() => setView('forgot_password')}
-              className="text-xs font-black text-primary cursor-pointer hover:underline"
-            >
-              {lang === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot Password?'}
-            </span>
-          </div>
 
           <div className="border-t border-theme-border/60 my-6 pt-4 text-center">
-            <span className="text-[10px] font-black text-theme-muted uppercase tracking-wider">{lang === 'ar' ? 'دخول تجريبي سريع' : 'Quick Demo Access'}</span>
+            <span className="text-[10px] font-black text-theme-muted uppercase tracking-wider">{t('str_317')}</span>
           </div>
           
           <div className="grid grid-cols-2 gap-2">
@@ -405,14 +397,14 @@ export const AuthScreen: React.FC = () => {
               onClick={() => handleDemoLogin('vendor')} 
               className="bg-primary/10 text-primary font-black py-3 rounded-xl border border-primary/20 hover:bg-primary/15 transition text-[10px] truncate"
             >
-              {lang === 'ar' ? 'دخول بائع' : 'Vendor'}
+              {t('str_318')}
             </button>
             <button 
               type="button"
               onClick={() => handleDemoLogin('driver')} 
               className="bg-primary/10 text-primary font-black py-3 rounded-xl border border-primary/20 hover:bg-primary/15 transition text-[10px] truncate"
             >
-              {lang === 'ar' ? 'دخول مندوب' : 'Driver'}
+              {t('str_319')}
             </button>
           </div>
 
@@ -420,13 +412,13 @@ export const AuthScreen: React.FC = () => {
             className="text-center text-xs font-bold text-theme-muted mt-6 cursor-pointer hover:text-primary transition" 
             onClick={() => { setView('register'); setEmail(''); setPassword(''); }}
           >
-            {lang === 'ar' ? 'إنشاء حساب جديد كعميل' : 'Create new customer account'}
+            {t('str_320')}
           </p>
           <p 
             className="text-center text-xs font-black text-primary cursor-pointer hover:underline" 
             onClick={() => { setView('vendor_register'); setEmail(''); setPassword(''); setRegStep(1); }}
           >
-            {lang === 'ar' ? 'تسجيل متجرك معنا' : 'Register your store with us'}
+            {t('str_321')}
           </p>
         </form>
       )}
@@ -450,14 +442,14 @@ export const AuthScreen: React.FC = () => {
           />
           <PremiumInput 
             type="text" 
-            placeholder={lang === 'ar' ? 'رقم الهاتف (اختياري)' : 'Phone Number (Optional)'} 
+            placeholder={t('str_322')} 
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             disabled={loading}
           />
           <PremiumInput 
             type="text" 
-            placeholder={lang === 'ar' ? 'كود الدعوة / الإحالة (اختياري)' : 'Referral / Invite Code (Optional)'} 
+            placeholder={t('str_323')} 
             value={referralCodeInput}
             onChange={(e) => setReferralCodeInput(e.target.value)}
             disabled={loading}
@@ -480,7 +472,7 @@ export const AuthScreen: React.FC = () => {
             className="text-center text-xs font-bold text-theme-muted mt-4 cursor-pointer hover:text-primary transition" 
             onClick={() => setView('login')}
           >
-            {lang === 'ar' ? 'لدي حساب بالفعل' : 'Already have an account'}
+            {t('str_324')}
           </p>
         </form>
       )}
@@ -491,10 +483,10 @@ export const AuthScreen: React.FC = () => {
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <h2 className="font-black text-sm text-primary uppercase tracking-wider">
-              {lang === 'ar' ? 'تسجيل شريك جديد' : 'Vendor Onboarding'}
+              {t('str_325')}
             </h2>
             <PremiumBadge variant="primary" pill>
-              {lang === 'ar' ? `الخطوة ${regStep} من 5` : `Step ${regStep} of 5`}
+              {t('str_326')}
             </PremiumBadge>
           </div>
 
@@ -514,7 +506,7 @@ export const AuthScreen: React.FC = () => {
           {regStep === 1 && (
             <div className="space-y-4">
               <p className="text-xs text-theme-muted font-bold mb-2">
-                {lang === 'ar' ? 'اختر نوع نشاط متجرك لتوليد المنتجات والكتالوج تلقائياً:' : 'Select your store category to load starter inventory templates:'}
+                {t('str_327')}
               </p>
               <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-1 no-scrollbar">
                 {categories.map(c => {
@@ -549,7 +541,7 @@ export const AuthScreen: React.FC = () => {
                 className="w-full mt-4"
                 rightIcon={<ArrowRight size={14} />}
               >
-                {lang === 'ar' ? 'التالي: الموقع الجغرافي' : 'Next: Store Location'}
+                {t('str_328')}
               </PremiumButton>
             </div>
           )}
@@ -558,7 +550,7 @@ export const AuthScreen: React.FC = () => {
           {regStep === 2 && (
             <div className="space-y-4">
               <p className="text-xs text-theme-muted font-bold">
-                {lang === 'ar' ? 'حدد المحافظة التي يقع بها متجرك شريكاً للمنصة:' : 'Choose the Governorate of your physical store:'}
+                {t('str_329')}
               </p>
               <select
                 value={governorate}
@@ -583,14 +575,14 @@ export const AuthScreen: React.FC = () => {
                   className="flex-1"
                   leftIcon={<ArrowLeft size={14} />}
                 >
-                  {lang === 'ar' ? 'السابق' : 'Back'}
+                  {t('str_330')}
                 </PremiumButton>
                 <PremiumButton 
                   onClick={() => setRegStep(3)}
                   className="flex-1"
                   rightIcon={<ArrowRight size={14} />}
                 >
-                  {lang === 'ar' ? 'التالي: المركز' : 'Next: City'}
+                  {t('str_331')}
                 </PremiumButton>
               </div>
             </div>
@@ -600,7 +592,7 @@ export const AuthScreen: React.FC = () => {
           {regStep === 3 && (
             <div className="space-y-4">
               <p className="text-xs text-theme-muted font-bold">
-                {lang === 'ar' ? 'اختر المدينة أو المركز التابع له المتجر:' : 'Select the City / Operational center:'}
+                {t('str_332')}
               </p>
               <select
                 value={city}
@@ -619,7 +611,7 @@ export const AuthScreen: React.FC = () => {
               {city === 'أخرى' && (
                 <PremiumInput 
                   type="text" 
-                  placeholder={lang === 'ar' ? 'اكتب اسم المدينة/المركز' : 'Type City / Center name'} 
+                  placeholder={t('str_333')} 
                   value={customCity}
                   onChange={(e) => setCustomCity(e.target.value)}
                 />
@@ -632,14 +624,14 @@ export const AuthScreen: React.FC = () => {
                   className="flex-1"
                   leftIcon={<ArrowLeft size={14} />}
                 >
-                  {lang === 'ar' ? 'السابق' : 'Back'}
+                  {t('str_330')}
                 </PremiumButton>
                 <PremiumButton 
                   onClick={() => setRegStep(4)}
                   className="flex-1"
                   rightIcon={<ArrowRight size={14} />}
                 >
-                  {lang === 'ar' ? 'التالي: القرية' : 'Next: Village'}
+                  {t('str_334')}
                 </PremiumButton>
               </div>
             </div>
@@ -649,7 +641,7 @@ export const AuthScreen: React.FC = () => {
           {regStep === 4 && (
             <div className="space-y-4">
               <p className="text-xs text-theme-muted font-bold">
-                {lang === 'ar' ? 'حدد اسم القرية أو الحي الفرعي للخدمات واللوجستيات:' : 'Choose the Village or local neighborhood:'}
+                {t('str_335')}
               </p>
               <select
                 value={village}
@@ -664,7 +656,7 @@ export const AuthScreen: React.FC = () => {
               {village === 'أخرى' && (
                 <PremiumInput 
                   type="text" 
-                  placeholder={lang === 'ar' ? 'اكتب اسم القرية/الحي' : 'Type Village / District name'} 
+                  placeholder={t('str_336')} 
                   value={customVillage}
                   onChange={(e) => setCustomVillage(e.target.value)}
                 />
@@ -677,14 +669,14 @@ export const AuthScreen: React.FC = () => {
                   className="flex-1"
                   leftIcon={<ArrowLeft size={14} />}
                 >
-                  {lang === 'ar' ? 'السابق' : 'Back'}
+                  {t('str_330')}
                 </PremiumButton>
                 <PremiumButton 
                   onClick={() => setRegStep(5)}
                   className="flex-1"
                   rightIcon={<ArrowRight size={14} />}
                 >
-                  {lang === 'ar' ? 'التالي: الحساب' : 'Next: Credentials'}
+                  {t('str_337')}
                 </PremiumButton>
               </div>
             </div>
@@ -695,28 +687,28 @@ export const AuthScreen: React.FC = () => {
             <form onSubmit={handleVendorRegister} className="space-y-4">
               <PremiumInput 
                 type="text" 
-                placeholder={lang === 'ar' ? 'اسم المتجر (مثال: ماركت الخير)' : 'Store Name (e.g. Al-Khair Market)'} 
+                placeholder={t('str_338')} 
                 value={storeName}
                 onChange={(e) => setStoreName(e.target.value)}
                 disabled={loading}
               />
               <PremiumInput 
                 type="text" 
-                placeholder={lang === 'ar' ? 'رقم هاتف فودافون كاش للمدفوعات' : 'Vodafone Cash Phone Number'} 
+                placeholder={t('str_339')} 
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 disabled={loading}
               />
               <PremiumInput 
                 type="email" 
-                placeholder={lang === 'ar' ? 'البريد الإلكتروني للعمل' : 'Vendor Business Email'} 
+                placeholder={t('str_340')} 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
               />
               <PremiumInput 
                 type="password" 
-                placeholder={lang === 'ar' ? 'كلمة مرور حساب البائع' : 'Password'} 
+                placeholder={t('str_341')} 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
@@ -730,14 +722,14 @@ export const AuthScreen: React.FC = () => {
                   className="flex-grow-[1]"
                   leftIcon={<ArrowLeft size={14} />}
                 >
-                  {lang === 'ar' ? 'السابق' : 'Back'}
+                  {t('str_330')}
                 </PremiumButton>
                 <PremiumButton 
                   type="submit"
                   isLoading={loading}
                   className="flex-grow-[2]"
                 >
-                  {lang === 'ar' ? 'إنشاء المتجر وتوليد الكتالوج' : 'Create Store & Catalog'}
+                  {t('str_342')}
                 </PremiumButton>
               </div>
             </form>
@@ -747,7 +739,7 @@ export const AuthScreen: React.FC = () => {
             className="text-center text-xs font-bold text-theme-muted mt-5 cursor-pointer hover:text-primary transition" 
             onClick={() => { setView('login'); setRegStep(1); }}
           >
-            {lang === 'ar' ? 'إلغاء والعودة لتسجيل الدخول' : 'Cancel and Go Back'}
+            {t('str_343')}
           </p>
         </div>
       )}
@@ -755,9 +747,9 @@ export const AuthScreen: React.FC = () => {
       {/* FORGOT PASSWORD VIEW */}
       {view === 'forgot_password' && (
         <form onSubmit={handleForgotPassword} className="w-full max-w-sm space-y-4">
-          <h2 className="text-center font-black text-primary mb-2">{lang === 'ar' ? 'إعادة تعيين كلمة المرور' : 'Reset Password'}</h2>
+          <h2 className="text-center font-black text-primary mb-2">{t('str_294')}</h2>
           <p className="text-center text-xs font-bold text-theme-muted mb-4">
-            {lang === 'ar' ? 'أدخل بريدك الإلكتروني لإرسال رابط إعادة التعيين' : 'Enter your email to receive a password reset link'}
+            {t('str_344')}
           </p>
           <PremiumInput 
             type="email" 
@@ -771,13 +763,13 @@ export const AuthScreen: React.FC = () => {
             isLoading={loading}
             className="w-full py-3.5"
           >
-            {lang === 'ar' ? 'إرسال الرابط' : 'Send Link'}
+            {t('str_345')}
           </PremiumButton>
           <p 
             className="text-center text-xs font-bold text-theme-muted mt-4 cursor-pointer hover:text-primary transition" 
             onClick={() => setView('login')}
           >
-            {lang === 'ar' ? 'العودة لتسجيل الدخول' : 'Back to Login'}
+            {t('str_346')}
           </p>
         </form>
       )}
