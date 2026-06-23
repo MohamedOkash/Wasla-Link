@@ -9,6 +9,7 @@ import { mediaService } from '../../services/media.service';
 import { deliveryFeeService } from '../../services/deliveryFee.service';
 import { doc, writeBatch, increment, setDoc } from 'firebase/firestore';
 import { db, auth, sanitizeFirestoreData } from '../../services/firebase';
+import { initiatePayment, PaymentMethod } from '../../services/payment.service';
 
 // Premium Rebuild Imports
 import { PremiumButton } from '../../components/premium/PremiumButton';
@@ -30,7 +31,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
   const { stores } = useStores();
   const { products } = useProducts();;
 
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'vodafone' | 'instapay'>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash_on_delivery');
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -211,9 +212,13 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
           coords: location.coords,
           isVerified: true
         },
-        status: paymentMethod === 'cash' ? 'new' : 'pendingVerification',
+        status: 'new', // Real status will be updated if it's pendingVerification
         createdAt: new Date().toISOString()
       };
+
+      if (paymentMethod === 'instapay') {
+        newOrder.status = 'pendingVerification';
+      }
 
       const cleanedOrder = sanitizeFirestoreData(newOrder);
 
@@ -249,6 +254,15 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
         }
 
         await batch.commit();
+        
+        // Phase 16E: Initiate Payment after order creation
+        const paymentRes = await initiatePayment(orderId, paymentMethod, total, { receiptUrl: paymentReceiptUrl });
+        
+        if (paymentRes.redirectUrl) {
+          window.location.href = paymentRes.redirectUrl;
+          return;
+        }
+
       } catch (err: any) {
         console.error("EXACT_FIRESTORE_ERROR", err.code, err.message, err);
         throw err; // throw to be caught by outer catch block
@@ -256,7 +270,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
 
       setCart({ shopId: null, shopName: '', items: [] });
       setActiveCoupon(null);
-      showToast(paymentMethod === 'cash' ? 'تم تأكيد طلبك بنجاح وجاري التحضير' : 'تم إرسال إيصال الدفع وجاري تأكيده');
+      showToast(paymentMethod === 'cash_on_delivery' ? 'تم تأكيد طلبك بنجاح وجاري التحضير' : 'تم استلام الطلب بنجاح');
       placeOrder();
     } catch (err: any) {
       console.error("ORDER_CREATE_ERROR", err);
@@ -515,9 +529,10 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
           
           <div className="space-y-2.5">
             {[
-              { id: 'cash', title: t('cash'), desc: t('str_97') },
-              { id: 'vodafone', title: t('vodafone'), desc: t('str_98') },
-              { id: 'instapay', title: t('instapay'), desc: t('str_99') }
+              { id: 'cash_on_delivery', title: t('cash'), desc: t('str_97') },
+              { id: 'instapay', title: t('instapay'), desc: t('str_99') },
+              { id: 'paymob_card', title: t('paymobCard'), desc: t('paymobCardDesc') },
+              { id: 'paymob_wallet', title: t('paymobWallet'), desc: t('paymobWalletDesc') }
             ].map(method => {
               const isSelected = paymentMethod === method.id;
               return (
@@ -545,21 +560,12 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
           </div>
         </PremiumCard>
 
-        {/* Vodafone / Instapay Transfer Instructions Panel */}
-        {paymentMethod !== 'cash' && store && (
+        {/* Instapay Transfer Instructions Panel */}
+        {paymentMethod === 'instapay' && store && (
           <div className="bg-theme-card p-4 rounded-[24px] border border-primary/20 shadow-sm space-y-4 animate-fade-in theme-transition">
             <div className="bg-primary/5 p-3.5 rounded-xl flex gap-3 border border-primary/10">
               <AlertCircle className="text-primary flex-shrink-0" size={16} />
               <div className="text-[11px] font-bold text-theme-muted leading-relaxed">
-                {paymentMethod === 'vodafone' ? (
-                  <>
-                    <p className="font-black text-theme-text mb-0.5">{t('str_100')}</p>
-                    <p>{t('str_101')}<span className="text-primary font-black">{total} ج.م</span> {t('str_102')}</p>
-                    <p className="text-sm font-black text-primary mt-1 tracking-wide">
-                      {store.paymentInfo?.vodafone || '01011112222'}
-                    </p>
-                  </>
-                ) : (
                   <>
                     <p className="font-black text-theme-text mb-0.5">{t('str_103')}</p>
                     <p>{t('str_104')}<span className="text-primary font-black">{total} ج.م</span> {t('str_105')}</p>
@@ -567,7 +573,6 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
                       {store.paymentInfo?.instapay || `${store.id}@instapay`}
                     </p>
                   </>
-                )}
                 <p className="text-[9.5px] text-primary mt-1.5 font-black">{t('str_106')}</p>
               </div>
             </div>

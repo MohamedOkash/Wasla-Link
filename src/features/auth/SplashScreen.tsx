@@ -11,7 +11,7 @@ export const SplashScreen: React.FC = () => {
     <div className="flex-1 bg-orange-500 flex flex-col items-center justify-center animate-fade-in relative overflow-hidden">
       <img 
         src="/logo.jpg" 
-        alt="WaslaLink Logo" 
+        alt={t('appName')} 
         className="w-32 h-32 object-cover rounded-[40px] shadow-2xl mb-6 relative z-10 animate-bounce border border-white/20"
       />
       <h1 className="text-5xl font-black text-white tracking-tight relative z-10">{t('appName')}</h1>

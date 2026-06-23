@@ -16,7 +16,14 @@ export interface Order {
   subtotal: number;
   deliveryFee: number;
   total: number;
-  paymentMethod: 'cash' | 'vodafone' | 'instapay';
+  paymentMethod: 'cash_on_delivery' | 'instapay' | 'paymob_card' | 'paymob_wallet';
+  paymentStatus?: 'pending' | 'authorized' | 'paid' | 'failed' | 'refunded' | 'cancelled';
+  paymentId?: string;
+  paymentMetadata?: Record<string, any>;
+  paymentVerifiedAt?: any;
+  paymentVerifiedBy?: string;
+  paymentReceiptUrl?: string;
+  paymentReference?: string;
   paymentReceipt?: string;
   location: {
     name: string;

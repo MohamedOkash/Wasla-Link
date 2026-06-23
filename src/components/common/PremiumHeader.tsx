@@ -57,7 +57,7 @@ export const PremiumHeader: React.FC<PremiumHeaderProps> = ({
           <div className="relative">
             <img 
               src="/logo.jpg" 
-              alt="WaslaLink Logo" 
+              alt={t('appName')} 
               className="w-14 h-14 object-cover rounded-[20px] shadow-lg border border-theme-border/30 shrink-0"
             />
             {/* Ambient indicator glow */}
@@ -67,7 +67,7 @@ export const PremiumHeader: React.FC<PremiumHeaderProps> = ({
           <div className="flex flex-col">
             <div className="flex items-center gap-1">
               <h1 className="text-base font-black tracking-tight text-theme-text leading-none font-sans">
-                WaslaLink
+                {t('appName')}
               </h1>
               <Sparkles size={10} className="text-primary animate-pulse" />
             </div>

@@ -356,6 +356,16 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     // 32. Vendor and Driver Wallets
+    match /payments/{paymentId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /refundRequests/{refundId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /paymentLogs/{logId} {
+      allow read, write: if isAuthenticated();
+    }
+
     match /vendorWallets/{walletId} {
       allow read: if isAdmin() || (isVendor() && walletId == request.auth.uid);
       allow write: if isAdmin();

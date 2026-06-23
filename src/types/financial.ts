@@ -14,6 +14,7 @@ export interface LedgerTransaction {
   status: TransactionStatus;
   createdAt: any; // Firestore Timestamp
   metadata?: Record<string, any>;
+  paymentId?: string;
 }
 
 export interface PlatformSettings {

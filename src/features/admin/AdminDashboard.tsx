@@ -31,6 +31,7 @@ import { SecurityCenter } from './SecurityCenter';
 import { LogisticsCenter } from './LogisticsCenter';
 import { FinancialCenter } from './FinancialCenter';
 import { SettlementRequests } from './SettlementRequests';
+import { PaymentCenter } from './PaymentCenter';
 
 export const AdminDashboard = () => {
   const { t } = useTranslation();
@@ -38,7 +39,7 @@ export const AdminDashboard = () => {
 
   const { isRTL, goHome } = useApp();
   
-  const [activeTab, setActiveTab] = useState<'home' | 'stores' | 'categories' | 'users' | 'drivers' | 'monitor' | 'banners' | 'delivery' | 'analytics' | 'assets' | 'security' | 'logistics' | 'finance' | 'settlements'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'stores' | 'categories' | 'users' | 'drivers' | 'monitor' | 'banners' | 'delivery' | 'analytics' | 'assets' | 'security' | 'logistics' | 'finance' | 'settlements' | 'payments'>('home');
 
   const adminModules = [
     { id: 'stores', label: t('str_348'), icon: StoreIcon, color: 'text-blue-500', bg: 'bg-blue-500/10' },
@@ -51,9 +52,10 @@ export const AdminDashboard = () => {
     { id: 'assets', label: t('str_355'), icon: ImageIcon, color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
     { id: 'delivery', label: t('str_356'), icon: Truck, color: 'text-orange-500', bg: 'bg-orange-500/10' },
     { id: 'analytics', label: t('str_357'), icon: BarChart3, color: 'text-purple-500', bg: 'bg-purple-500/10' },
-    { id: 'finance', label: 'Finance', icon: Activity, color: 'text-green-500', bg: 'bg-green-500/10' },
-    { id: 'settlements', label: 'Settlements', icon: Activity, color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
+    { id: 'finance', label: t('finance'), icon: Activity, color: 'text-green-500', bg: 'bg-green-500/10' },
+    { id: 'settlements', label: t('settlements'), icon: Activity, color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
     { id: 'security', label: t('str_358'), icon: Shield, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+    { id: 'payments', label: t('payments'), icon: Activity, color: 'text-blue-500', bg: 'bg-blue-500/10' },
   ];
 
   return (
@@ -120,6 +122,7 @@ export const AdminDashboard = () => {
             {activeTab === 'security' && <SecurityCenter />}
             {activeTab === 'finance' && <FinancialCenter />}
             {activeTab === 'settlements' && <SettlementRequests />}
+            {activeTab === 'payments' && <PaymentCenter />}
           </div>
         )}
       </main>

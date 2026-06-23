@@ -69,8 +69,11 @@ export const processOrderSettlement = async (orderId: string): Promise<void> => 
       }
 
       const orderData = orderSnap.data();
-      if (orderData.status !== 'delivered') {
-        throw new Error('Order must be delivered to generate revenue.');
+      if (orderData.paymentMethod === 'cash_on_delivery' && orderData.status !== 'delivered') {
+        throw new Error('COD orders must be delivered to generate revenue.');
+      }
+      if (orderData.paymentMethod !== 'cash_on_delivery' && orderData.paymentStatus !== 'paid') {
+        throw new Error('Non-COD orders must be paid to generate revenue.');
       }
       
       if (orderData.financialProcessed) {
