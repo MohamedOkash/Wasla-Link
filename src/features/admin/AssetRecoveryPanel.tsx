@@ -7,6 +7,7 @@ import { useApp } from '../../contexts/AppContext';
 import { Shield, Play, Loader2, CheckCircle, AlertTriangle, ListFilter, History } from 'lucide-react';
 
 export const AssetRecoveryPanel: React.FC = () => {
+  const { t } = useTranslation();
   const { isRTL, showToast } = useApp();
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState<{ scanned: number; repaired: number } | null>(null);

@@ -9,6 +9,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 export const LogisticsCenter: React.FC = () => {
+  const { t } = useTranslation();
   const { isRTL, drivers, orders, showToast } = useApp();
   const [locations, setLocations] = useState<Record<string, any>>({});
   const [searchQuery, setSearchQuery] = useState('');

@@ -11,6 +11,7 @@ interface CustomerOrdersProps {
 }
 
 export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate }) => {
+  const { t } = useTranslation();
   const { 
     orders,  
     isRTL, 

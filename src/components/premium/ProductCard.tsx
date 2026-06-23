@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React from 'react';
 import { Heart, Plus, Minus, Star, Zap } from 'lucide-react';
 import { Product } from '../../types/product.types';
@@ -27,6 +28,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   isFavorite,
   onToggleFavorite,
   isRTL }) => {
+  const { t } = useTranslation();
   const discountedPrice = calculateDiscountedPrice(product, 1);
   const hasDiscount = discountedPrice < product.price;
   const promoLabel = getPromoLabel(product, isRTL);

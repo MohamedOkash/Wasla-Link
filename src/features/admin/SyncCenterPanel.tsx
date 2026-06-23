@@ -8,6 +8,7 @@ import { useApp } from '../../contexts/AppContext';
 import { RefreshCw, Play, Loader2, CheckCircle, AlertTriangle, Layers, Info } from 'lucide-react';
 
 export const SyncCenterPanel: React.FC = () => {
+  const { t } = useTranslation();
   const { isRTL, showToast } = useApp();
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);

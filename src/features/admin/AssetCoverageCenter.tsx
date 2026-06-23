@@ -8,6 +8,7 @@ import { useStores } from '../../hooks/useStores';
 import { useProducts } from '../../hooks/useProducts';
 
 export const AssetCoverageCenter: React.FC = () => {
+  const { t } = useTranslation();
   const { isRTL } = useApp();
   const { stores } = useStores();
   const { products } = useProducts();;

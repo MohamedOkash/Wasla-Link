@@ -8,6 +8,7 @@ import { ProductImport } from './ProductImport';
 import { mediaService } from '../../services/media.service';
 
 export const VendorProducts: React.FC = () => {
+  const { t } = useTranslation();
   const { showToast, stockMovements, addStockMovement, isRTL } = useApp();
   const { products, setProducts } = useProducts();
   const [activeSubTab, setActiveSubTab] = useState<'inventory' | 'movements'>('inventory');

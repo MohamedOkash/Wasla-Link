@@ -4,6 +4,7 @@ import { AlertCircle } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 
 export const CartConflictModal: React.FC = () => {
+  const { t } = useTranslation();
   const { cartConflictAlert, cancelCartConflict, confirmClearCartAndAdd, isRTL } = useApp();
 
   if (!cartConflictAlert || !cartConflictAlert.isOpen) return null;

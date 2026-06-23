@@ -5,6 +5,7 @@ import { useApp } from '../../contexts/AppContext';
 import { useStores } from '../../hooks/useStores';
 
 export const StoreApprovals: React.FC = () => {
+  const { t } = useTranslation();
   const { showToast } = useApp();
   const { setStores } = useStores();;
   const { stores } = useStores();;

@@ -6,6 +6,7 @@ import { mediaService } from '../../services/media.service';
 import { useStores } from '../../hooks/useStores';
 
 export const VendorOffers: React.FC = () => {
+  const { t } = useTranslation();
   const { showToast, triggerOfferBroadcast, isRTL } = useApp();
   const { stores, setStores } = useStores();
   const [editing, setEditing] = useState(false);

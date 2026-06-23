@@ -21,6 +21,7 @@ import { PremiumInput } from '../../components/premium/PremiumInput';
 import { PremiumBadge } from '../../components/premium/PremiumBadge';
 
 export const CatalogManagement: React.FC = () => {
+  const { t } = useTranslation();
   const { categories, setCategories, lang, isRTL, showToast } = useApp();
   const [activeTab, setActiveTab] = useState<'categories' | 'brands' | 'templates' | 'excel'>('categories');
 
@@ -206,21 +207,21 @@ export const CatalogManagement: React.FC = () => {
     setShowAddTemplate(true);
   };
 
-  const handleOpenEditTemplate = (t: Product) => {
-    setEditingTemplate(t);
-    setTempNameAr(t.nameAr || t.name || '');
-    setTempNameEn(t.nameEn || t.name || '');
-    setTempCategoryId(t.categoryId || 'grocery');
-    setTempSubCat(t.cat || t.categoryName || '');
-    setTempBrand(t.brand || '');
-    setTempBarcode(t.barcode || '');
-    setTempSku(t.sku || '');
-    setTempUnit(t.unit || 'قطعة');
-    setTempWeight(t.weight || '');
-    setTempCostPrice(t.costPrice || 0);
-    setTempSellingPrice(t.sellingPrice || t.price || 0);
-    setTempDesc(t.description || t.desc || '');
-    setTempImgUrl(t.imageUrl || t.imgUrl || 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=300&q=80');
+  const handleOpenEditTemplate = (template: Product) => {
+    setEditingTemplate(template);
+    setTempNameAr(template.nameAr || template.name || '');
+    setTempNameEn(template.nameEn || template.name || '');
+    setTempCategoryId(template.categoryId || 'grocery');
+    setTempSubCat(template.cat || template.categoryName || '');
+    setTempBrand(template.brand || '');
+    setTempBarcode(template.barcode || '');
+    setTempSku(template.sku || '');
+    setTempUnit(template.unit || 'قطعة');
+    setTempWeight(template.weight || '');
+    setTempCostPrice(template.costPrice || 0);
+    setTempSellingPrice(template.sellingPrice || template.price || 0);
+    setTempDesc(template.description || template.desc || '');
+    setTempImgUrl(template.imageUrl || template.imgUrl || 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=300&q=80');
     setShowAddTemplate(true);
   };
 
@@ -272,7 +273,7 @@ export const CatalogManagement: React.FC = () => {
     try {
       await setDoc(doc(db, 'productTemplates', tempId), payload);
       if (editingTemplate) {
-        setTemplates(prev => prev.map(t => t.id === tempId ? payload : t));
+        setTemplates(prev => prev.map(item => item.id === tempId ? payload : item));
         showToast(t('str_443'));
       } else {
         setTemplates(prev => [...prev, payload]);
@@ -288,7 +289,7 @@ export const CatalogManagement: React.FC = () => {
     if (!window.confirm(t('str_445'))) return;
     try {
       await deleteDoc(doc(db, 'productTemplates', id));
-      setTemplates(prev => prev.filter(t => t.id !== id));
+      setTemplates(prev => prev.filter(item => item.id !== id));
       showToast(t('str_446'));
     } catch (err) {
       console.error(err);
@@ -384,8 +385,8 @@ export const CatalogManagement: React.FC = () => {
       { id: 'sellingPrice', title: 'Selling Price' }
     ];
 
-    const rows = templates.map(t => [
-      t.id, t.nameAr, t.nameEn, t.categoryId, t.categoryName, t.brand, t.barcode, t.sku, t.unit, t.weight, t.costPrice, t.sellingPrice
+    const rows = templates.map(template => [
+      template.id, template.nameAr, template.nameEn, template.categoryId, template.categoryName, template.brand, template.barcode, template.sku, template.unit, template.weight, template.costPrice, template.sellingPrice
     ]);
 
     const worksheet = XLSX.utils.aoa_to_sheet([headers.map(h => h.title), ...rows]);
@@ -414,7 +415,7 @@ export const CatalogManagement: React.FC = () => {
         return;
       }
 
-      const templatesMap = new Map(templates.map(t => [t.id, t]));
+      const templatesMap = new Map(templates.map(template => [template.id, template]));
       const batchLimit = 400;
       let count = 0;
 
@@ -452,12 +453,12 @@ export const CatalogManagement: React.FC = () => {
     }
   };
 
-  const filteredTemplates = templates.filter(t => {
-    const matchesSearch = (t.nameAr || t.name || '').toLowerCase().includes((searchQuery || '').toLowerCase()) || 
-                          (t.nameEn || '').toLowerCase().includes((searchQuery || '').toLowerCase()) || 
-                          (t.brand || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
-                          (t.barcode || '').includes(searchQuery);
-    const matchesCategory = filterCategory === 'all' || t.categoryId === filterCategory;
+  const filteredTemplates = templates.filter(template => {
+    const matchesSearch = (template.nameAr || template.name || '').toLowerCase().includes((searchQuery || '').toLowerCase()) || 
+                          (template.nameEn || '').toLowerCase().includes((searchQuery || '').toLowerCase()) || 
+                          (template.brand || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
+                          (template.barcode || '').includes(searchQuery);
+    const matchesCategory = filterCategory === 'all' || template.categoryId === filterCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -640,28 +641,28 @@ export const CatalogManagement: React.FC = () => {
             ) : filteredTemplates.length === 0 ? (
               <p className="text-center text-xs text-theme-muted py-8 font-bold">{t('str_480')}</p>
             ) : (
-              filteredTemplates.map(t => (
-                <PremiumCard key={t.id} hoverable={false} className="p-4 flex items-center justify-between gap-3">
+              filteredTemplates.map(template => (
+                <PremiumCard key={template.id} hoverable={false} className="p-4 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3.5 flex-1 min-w-0">
-                    <img src={t.imageUrl || t.imgUrl} className="w-12 h-12 rounded-xl object-cover border border-theme-border/40" alt={t.nameAr} />
+                    <img src={template.imageUrl || template.imgUrl} className="w-12 h-12 rounded-xl object-cover border border-theme-border/40" alt={template.nameAr} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-black text-xs text-theme-text truncate">{lang === 'ar' ? t.nameAr : t.nameEn}</h4>
-                        <PremiumBadge variant="neutral">{t.brand}</PremiumBadge>
-                        <PremiumBadge variant="primary">{t.categoryId}</PremiumBadge>
+                        <h4 className="font-black text-xs text-theme-text truncate">{lang === 'ar' ? template.nameAr : template.nameEn}</h4>
+                        <PremiumBadge variant="neutral">{template.brand}</PremiumBadge>
+                        <PremiumBadge variant="primary">{template.categoryId}</PremiumBadge>
                       </div>
                       <div className="flex gap-4 text-[9px] text-theme-muted font-bold mt-1">
-                        <span>Barcode: {t.barcode}</span>
-                        <span>SKU: {t.sku}</span>
+                        <span>Barcode: {template.barcode}</span>
+                        <span>SKU: {template.sku}</span>
                         <span>{t('str_481')}</span>
                       </div>
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <PremiumButton variant="outline" size="sm" className="p-2 h-8 w-8 rounded-lg" onClick={() => handleOpenEditTemplate(t)}>
+                    <PremiumButton variant="outline" size="sm" className="p-2 h-8 w-8 rounded-lg" onClick={() => handleOpenEditTemplate(template)}>
                       <Edit size={12} />
                     </PremiumButton>
-                    <PremiumButton variant="danger" size="sm" className="p-2 h-8 w-8 rounded-lg bg-red-500/10 border-red-500/25 text-red-500 hover:bg-red-500/20" onClick={() => handleDeleteTemplate(t.id)}>
+                    <PremiumButton variant="danger" size="sm" className="p-2 h-8 w-8 rounded-lg bg-red-500/10 border-red-500/25 text-red-500 hover:bg-red-500/20" onClick={() => handleDeleteTemplate(template.id)}>
                       <Trash2 size={12} />
                     </PremiumButton>
                   </div>

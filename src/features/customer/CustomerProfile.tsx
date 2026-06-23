@@ -24,6 +24,7 @@ interface CustomerProfileProps {
 }
 
 export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) => {
+  const { t } = useTranslation();
   const { 
     currentUser, 
     setCurrentUser,

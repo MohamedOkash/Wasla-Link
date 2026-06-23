@@ -4,6 +4,7 @@ import { Award, Shield, Sparkles, Flame } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 
 export const RewardsCard: React.FC = () => {
+  const { t } = useTranslation();
   const { currentUser, isRTL } = useApp();
   const points = currentUser?.points || 0;
 

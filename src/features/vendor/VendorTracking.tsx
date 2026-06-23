@@ -12,6 +12,7 @@ interface VendorTrackingProps {
 }
 
 export const VendorTracking: React.FC<VendorTrackingProps> = ({ order }) => {
+  const { t } = useTranslation();
   const { isRTL, drivers } = useApp();
   const [driverLocation, setDriverLocation] = useState<{lat: number, lng: number} | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);

@@ -5,6 +5,7 @@ import { useApp } from '../../contexts/AppContext';
 import { useReviews } from '../../hooks/useReviews';
 
 export const DriverProfile: React.FC = () => {
+  const { t } = useTranslation();
   const { currentUser, setCurrentUser, setRole, goHome, orders, lang, isRTL } = useApp();
   const { reviews } = useReviews();;
   const [phone, setPhone] = useState(currentUser?.phone || '01022334455');

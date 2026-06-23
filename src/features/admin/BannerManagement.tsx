@@ -4,6 +4,7 @@ import { Tag, Edit, Plus, Trash2, X, Check } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 
 export const BannerManagement: React.FC = () => {
+  const { t } = useTranslation();
   const { banners, setBanners, showToast } = useApp();
 
   // Modals

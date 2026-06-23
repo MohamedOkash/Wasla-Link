@@ -14,6 +14,7 @@ interface DriverRegistrationProps {
 }
 
 export const DriverRegistration: React.FC<DriverRegistrationProps> = ({ onBack }) => {
+  const { t } = useTranslation();
   const { currentUser, showToast, isRTL } = useApp();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);

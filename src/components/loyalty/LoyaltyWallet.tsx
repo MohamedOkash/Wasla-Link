@@ -6,6 +6,7 @@ import { RewardsCard } from './RewardsCard';
 import { PointsHistory } from './PointsHistory';
 
 export const LoyaltyWallet: React.FC = () => {
+  const { t } = useTranslation();
   const { currentUser, isRTL } = useApp();
   const points = currentUser?.points || 0;
   const cashValue = Math.floor(points / 100) * 5; // 100 Points = 5 EGP

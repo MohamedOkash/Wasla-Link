@@ -16,6 +16,7 @@ import {
 import { tokens } from '../../design/tokens';
 
 export const ProductAssetManager: React.FC = () => {
+  const { t } = useTranslation();
   const { isRTL, showToast } = useApp();
   const [templates, setTemplates] = useState<Product[]>([]);
   const [vendorProducts, setVendorProducts] = useState<Product[]>([]);

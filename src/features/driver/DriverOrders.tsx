@@ -10,6 +10,7 @@ interface DriverOrdersProps {
 }
 
 export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
+  const { t } = useTranslation();
   const { orders, isRTL, showToast } = useApp();
 
   // Filters based on phase 14 order statuses

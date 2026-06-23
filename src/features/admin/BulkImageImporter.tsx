@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 
 export const BulkImageImporter: React.FC = () => {
+  const { t } = useTranslation();
   const { isRTL, showToast } = useApp();
   const [templates, setTemplates] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);

@@ -12,6 +12,7 @@ interface ProductImportProps {
 }
 
 export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
+  const { t } = useTranslation();
   const { addStockMovement, isRTL, showToast } = useApp();
   const { products, setProducts } = useProducts();
   

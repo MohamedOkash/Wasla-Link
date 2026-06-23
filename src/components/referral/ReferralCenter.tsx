@@ -5,6 +5,7 @@ import { useApp } from '../../contexts/AppContext';
 import { ReferralHistory } from './ReferralHistory';
 
 export const ReferralCenter: React.FC = () => {
+  const { t } = useTranslation();
   const { currentUser, referrals, isRTL, showToast } = useApp();
   const [copied, setCopied] = useState(false);
 

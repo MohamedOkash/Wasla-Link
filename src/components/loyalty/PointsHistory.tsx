@@ -4,6 +4,7 @@ import { ArrowUpRight, ArrowDownLeft, Gift, ShoppingCart, UserCheck } from 'luci
 import { useApp } from '../../contexts/AppContext';
 
 export const PointsHistory: React.FC = () => {
+  const { t } = useTranslation();
   const { pointsHistory, isRTL } = useApp();
 
   const getTransactionDetails = (type: string, pts: number) => {

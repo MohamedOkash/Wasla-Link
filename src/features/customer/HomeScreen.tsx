@@ -23,6 +23,7 @@ interface HomeScreenProps {
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigate, openSearch, openMap }) => {
+  const { t } = useTranslation();
   const { isRTL, categories, banners, favoriteStores, toggleFavoriteStore, favoriteProducts, toggleFavoriteProduct, setShowNotifications, orders, cart, setCart, addToCartGlobal, showToast } = useApp();
   const { stores } = useStores();
   const { products } = useProducts();;

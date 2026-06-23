@@ -1,5 +1,6 @@
 import { db } from './firebase';
-import { doc, getDoc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, runTransaction, serverTimestamp, collection, setDoc, query, where, getDocs } from 'firebase/firestore';
+import { PlatformSettings, LedgerTransaction } from '../types/financial';
 
 export interface RevenueBreakdown {
   orderTotal: number;
@@ -12,24 +13,43 @@ export interface RevenueBreakdown {
   platformTotalRevenue: number;
 }
 
+export const getPlatformSettings = async (): Promise<PlatformSettings> => {
+  const snap = await getDoc(doc(db, 'platformSettings', 'default'));
+  if (snap.exists()) {
+    return snap.data() as PlatformSettings;
+  }
+  return {
+    commissionPercent: 10,
+    driverBonusPercent: 0,
+    freeDeliveryEnabled: false,
+    promotionSubsidyEnabled: false,
+    maintenanceRevenueLock: false
+  };
+};
+
 export const calculateRevenueBreakdown = (
   subtotal: number, 
   deliveryFee: number, 
-  commissionRate: number = 0.10 // 10% default
+  settings: PlatformSettings
 ): RevenueBreakdown => {
+  const commissionRate = settings.commissionPercent / 100;
   const platformCommissionAmount = subtotal * commissionRate;
   const vendorNetAmount = subtotal - platformCommissionAmount;
-  const driverEarnings = deliveryFee;
-  // Platform keeps commission + delivery fee (if platform driver, but normally driver gets it).
-  // In this marketplace, we assume platform collects commission only, or delivery fee is split.
-  // The specs say: "Platform Revenue = Commission + Delivery Fee (if Platform driver)"
-  // We'll return the base commission as revenue.
-  const platformTotalRevenue = platformCommissionAmount;
+  
+  let actualDeliveryFee = deliveryFee;
+  if (settings.freeDeliveryEnabled) {
+    actualDeliveryFee = 0; // Or platform subsidizes it
+  }
+  
+  const driverBonus = settings.driverBonusPercent > 0 ? (actualDeliveryFee * (settings.driverBonusPercent / 100)) : 0;
+  const driverEarnings = actualDeliveryFee + driverBonus;
+  
+  const platformTotalRevenue = platformCommissionAmount; // Minus subsidies if any, but simplified here
 
   return {
-    orderTotal: subtotal + deliveryFee,
+    orderTotal: subtotal + actualDeliveryFee,
     subtotal,
-    deliveryFee,
+    deliveryFee: actualDeliveryFee,
     platformCommissionRate: commissionRate,
     platformCommissionAmount,
     vendorNetAmount,
@@ -50,62 +70,210 @@ export const processOrderSettlement = async (orderId: string): Promise<void> => 
 
       const orderData = orderSnap.data();
       if (orderData.status !== 'delivered') {
-        throw new Error('Order must be delivered to process settlement');
+        throw new Error('Order must be delivered to generate revenue.');
       }
       
-      if (orderData.settled) {
-        throw new Error('Order is already settled');
+      if (orderData.financialProcessed) {
+        throw new Error('Order revenue is already processed.');
       }
 
-      const breakdown = calculateRevenueBreakdown(orderData.subtotal || 0, orderData.deliveryFee || 0);
+      const settingsRef = doc(db, 'platformSettings', 'default');
+      const settingsSnap = await transaction.get(settingsRef);
+      const settings = settingsSnap.exists() ? (settingsSnap.data() as PlatformSettings) : {
+        commissionPercent: 10,
+        driverBonusPercent: 0,
+        freeDeliveryEnabled: false,
+        promotionSubsidyEnabled: false,
+        maintenanceRevenueLock: false
+      };
+
+      if (settings.maintenanceRevenueLock) {
+        throw new Error('Financial operations are temporarily locked for maintenance.');
+      }
+
+      const breakdown = calculateRevenueBreakdown(orderData.subtotal || 0, orderData.deliveryFee || 0, settings);
 
       // 1. Update Vendor Wallet
       const vendorWalletRef = doc(db, 'vendorWallets', orderData.storeId);
       const vendorWalletSnap = await transaction.get(vendorWalletRef);
-      const newVendorBalance = (vendorWalletSnap.exists() ? vendorWalletSnap.data().balance : 0) + breakdown.vendorNetAmount;
-      transaction.set(vendorWalletRef, { balance: newVendorBalance, updatedAt: serverTimestamp() }, { merge: true });
+      const currentVendorBal = vendorWalletSnap.exists() ? vendorWalletSnap.data().balance || 0 : 0;
+      const currentVendorPending = vendorWalletSnap.exists() ? vendorWalletSnap.data().pendingBalance || 0 : 0;
+      const currentVendorPaid = vendorWalletSnap.exists() ? vendorWalletSnap.data().paidBalance || 0 : 0;
+      
+      transaction.set(vendorWalletRef, { 
+        balance: currentVendorBal + breakdown.vendorNetAmount,
+        pendingBalance: currentVendorPending,
+        paidBalance: currentVendorPaid,
+        updatedAt: serverTimestamp() 
+      }, { merge: true });
 
-      // 2. Record Vendor Transaction
+      // 2. Record Vendor Ledger Transaction
       const vendorTxRef = doc(collection(db, 'vendorTransactions'));
       transaction.set(vendorTxRef, {
-        storeId: orderData.storeId,
+        id: vendorTxRef.id,
+        type: 'vendor_revenue',
+        referenceId: orderId,
         orderId,
+        vendorId: orderData.storeId,
         amount: breakdown.vendorNetAmount,
-        type: 'credit',
-        description: `Order ${orderId} Revenue`,
-        timestamp: serverTimestamp()
-      });
+        currency: 'EGP',
+        status: 'completed',
+        createdAt: serverTimestamp(),
+        metadata: { subtotal: orderData.subtotal, commission: breakdown.platformCommissionAmount }
+      } as LedgerTransaction);
 
       // 3. Update Driver Wallet (if driver assigned)
       if (orderData.driverId) {
         const driverWalletRef = doc(db, 'driverWallets', orderData.driverId);
         const driverWalletSnap = await transaction.get(driverWalletRef);
-        const newDriverBalance = (driverWalletSnap.exists() ? driverWalletSnap.data().balance : 0) + breakdown.driverEarnings;
-        transaction.set(driverWalletRef, { balance: newDriverBalance, updatedAt: serverTimestamp() }, { merge: true });
+        const currentDriverBal = driverWalletSnap.exists() ? driverWalletSnap.data().balance || 0 : 0;
+        const currentDriverPending = driverWalletSnap.exists() ? driverWalletSnap.data().pendingBalance || 0 : 0;
+        const currentDriverPaid = driverWalletSnap.exists() ? driverWalletSnap.data().paidBalance || 0 : 0;
 
-        // 4. Record Driver Transaction
+        transaction.set(driverWalletRef, { 
+          balance: currentDriverBal + breakdown.driverEarnings,
+          pendingBalance: currentDriverPending,
+          paidBalance: currentDriverPaid,
+          updatedAt: serverTimestamp() 
+        }, { merge: true });
+
+        // 4. Record Driver Ledger Transaction
         const driverTxRef = doc(collection(db, 'driverTransactions'));
         transaction.set(driverTxRef, {
-          driverId: orderData.driverId,
+          id: driverTxRef.id,
+          type: 'driver_earning',
+          referenceId: orderId,
           orderId,
+          driverId: orderData.driverId,
           amount: breakdown.driverEarnings,
-          type: 'credit',
-          description: `Order ${orderId} Delivery Fee`,
-          timestamp: serverTimestamp()
-        });
+          currency: 'EGP',
+          status: 'completed',
+          createdAt: serverTimestamp(),
+          metadata: { deliveryFee: breakdown.deliveryFee }
+        } as LedgerTransaction);
       }
 
-      // 5. Update Platform Ledger
+      // 5. Update Platform Ledger & Transactions
       const platformRef = doc(db, 'platformLedger', 'master');
       const platformSnap = await transaction.get(platformRef);
       const newPlatformRevenue = (platformSnap.exists() ? platformSnap.data().totalRevenue : 0) + breakdown.platformTotalRevenue;
       transaction.set(platformRef, { totalRevenue: newPlatformRevenue, updatedAt: serverTimestamp() }, { merge: true });
 
+      const platformTxRef = doc(collection(db, 'platformTransactions'));
+      transaction.set(platformTxRef, {
+        id: platformTxRef.id,
+        type: 'platform_commission',
+        referenceId: orderId,
+        orderId,
+        amount: breakdown.platformCommissionAmount,
+        currency: 'EGP',
+        status: 'completed',
+        createdAt: serverTimestamp(),
+        metadata: { rate: breakdown.platformCommissionRate }
+      } as LedgerTransaction);
+
       // 6. Mark Order Settled
-      transaction.update(orderRef, { settled: true, revenueBreakdown: breakdown });
+      transaction.update(orderRef, { 
+        settled: true, 
+        revenueBreakdown: breakdown,
+        financialProcessed: true,
+        financialProcessedAt: serverTimestamp()
+      });
     });
   } catch (error) {
     console.error('Settlement Failed:', error);
+    throw error;
+  }
+};
+
+// Reversals
+export const processOrderReversal = async (orderId: string, reason: string): Promise<void> => {
+  try {
+    await runTransaction(db, async (transaction) => {
+      const orderRef = doc(db, 'orders', orderId);
+      const orderSnap = await transaction.get(orderRef);
+
+      if (!orderSnap.exists()) throw new Error('Order does not exist!');
+      const orderData = orderSnap.data();
+      
+      if (!orderData.financialProcessed || !orderData.revenueBreakdown) {
+        throw new Error('Order has no financial record to reverse.');
+      }
+      if (orderData.financialReversed) {
+        throw new Error('Order is already reversed.');
+      }
+
+      const breakdown: RevenueBreakdown = orderData.revenueBreakdown;
+
+      // 1. Reverse Vendor
+      const vendorWalletRef = doc(db, 'vendorWallets', orderData.storeId);
+      const vendorWalletSnap = await transaction.get(vendorWalletRef);
+      const vendorBal = vendorWalletSnap.exists() ? vendorWalletSnap.data().balance || 0 : 0;
+      transaction.update(vendorWalletRef, { balance: vendorBal - breakdown.vendorNetAmount, updatedAt: serverTimestamp() });
+      
+      const vendorTxRef = doc(collection(db, 'vendorTransactions'));
+      transaction.set(vendorTxRef, {
+        id: vendorTxRef.id,
+        type: 'refund',
+        referenceId: orderId,
+        orderId,
+        vendorId: orderData.storeId,
+        amount: -breakdown.vendorNetAmount,
+        currency: 'EGP',
+        status: 'completed',
+        createdAt: serverTimestamp(),
+        metadata: { reason }
+      } as LedgerTransaction);
+
+      // 2. Reverse Driver (Optional based on policy, but doing it here)
+      if (orderData.driverId) {
+        const driverWalletRef = doc(db, 'driverWallets', orderData.driverId);
+        const driverWalletSnap = await transaction.get(driverWalletRef);
+        const driverBal = driverWalletSnap.exists() ? driverWalletSnap.data().balance || 0 : 0;
+        transaction.update(driverWalletRef, { balance: driverBal - breakdown.driverEarnings, updatedAt: serverTimestamp() });
+
+        const driverTxRef = doc(collection(db, 'driverTransactions'));
+        transaction.set(driverTxRef, {
+          id: driverTxRef.id,
+          type: 'refund',
+          referenceId: orderId,
+          orderId,
+          driverId: orderData.driverId,
+          amount: -breakdown.driverEarnings,
+          currency: 'EGP',
+          status: 'completed',
+          createdAt: serverTimestamp(),
+          metadata: { reason }
+        } as LedgerTransaction);
+      }
+
+      // 3. Reverse Platform
+      const platformRef = doc(db, 'platformLedger', 'master');
+      const platformSnap = await transaction.get(platformRef);
+      const platBal = platformSnap.exists() ? platformSnap.data().totalRevenue || 0 : 0;
+      transaction.update(platformRef, { totalRevenue: platBal - breakdown.platformTotalRevenue, updatedAt: serverTimestamp() });
+
+      const platformTxRef = doc(collection(db, 'platformTransactions'));
+      transaction.set(platformTxRef, {
+        id: platformTxRef.id,
+        type: 'refund',
+        referenceId: orderId,
+        orderId,
+        amount: -breakdown.platformCommissionAmount,
+        currency: 'EGP',
+        status: 'completed',
+        createdAt: serverTimestamp(),
+        metadata: { reason }
+      } as LedgerTransaction);
+
+      // 4. Mark Order Reversed
+      transaction.update(orderRef, { 
+        financialReversed: true,
+        financialReversedAt: serverTimestamp()
+      });
+    });
+  } catch (error) {
+    console.error('Reversal Failed:', error);
     throw error;
   }
 };

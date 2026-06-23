@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 
 export const ImageHealthDashboard: React.FC = () => {
+  const { t } = useTranslation();
   const { isRTL, showToast } = useApp();
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({

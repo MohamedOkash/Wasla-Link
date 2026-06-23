@@ -1,43 +1,103 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../services/firebase';
-import { collection, query, getDocs, doc, updateDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { collection, query, getDocs, doc, updateDoc, writeBatch, serverTimestamp, getDoc } from 'firebase/firestore';
+import { SettlementRequest, LedgerTransaction } from '../../types/financial';
 
 export function SettlementRequests() {
-  const [requests, setRequests] = useState<any[]>([]);
+  const [requests, setRequests] = useState<SettlementRequest[]>([]);
 
   useEffect(() => {
     async function fetchRequests() {
       const snap = await getDocs(query(collection(db, 'settlementRequests')));
-      setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const reqs: SettlementRequest[] = [];
+      snap.forEach(d => reqs.push({ id: d.id, ...d.data() } as SettlementRequest));
+      setRequests(reqs.sort((a, b) => b.requestedAt - a.requestedAt));
     }
     fetchRequests();
   }, []);
 
-  const handleApprove = async (req: any) => {
-    const batch = writeBatch(db);
-    // Deduct from wallet
-    const walletRef = doc(db, 'vendorWallets', req.storeId);
-    batch.update(walletRef, {
-      balance: 0 // assuming full withdrawal
-    });
-    // Update req
-    const reqRef = doc(db, 'settlementRequests', req.id);
-    batch.update(reqRef, {
-      status: 'paid',
-      paidAt: serverTimestamp()
-    });
-    await batch.commit();
-    setRequests(requests.map(r => r.id === req.id ? { ...r, status: 'paid' } : r));
+  const handleAction = async (req: SettlementRequest, action: 'approved' | 'rejected' | 'paid') => {
+    try {
+      const batch = writeBatch(db);
+      
+      const isVendor = req.userType === 'vendor';
+      const walletCollection = isVendor ? 'vendorWallets' : 'driverWallets';
+      const txCollection = isVendor ? 'vendorTransactions' : 'driverTransactions';
+
+      const walletRef = doc(db, walletCollection, req.userId);
+      const walletSnap = await getDoc(walletRef);
+      const wData = walletSnap.exists() ? walletSnap.data() : { balance: 0, pendingBalance: 0, paidBalance: 0 };
+      
+      let newBalance = wData.balance || 0;
+      let newPending = wData.pendingBalance || 0;
+      let newPaid = wData.paidBalance || 0;
+
+      if (action === 'approved') {
+        newPending += req.amount;
+        newBalance -= req.amount;
+      } else if (action === 'rejected') {
+        // If it was previously approved, we need to return from pending to balance.
+        // Assuming rejection from 'pending' state
+        if (req.status === 'approved') {
+          newPending -= req.amount;
+          newBalance += req.amount;
+        }
+      } else if (action === 'paid') {
+        // If it was approved, deduct from pending. Otherwise deduct from balance directly if skipped approval.
+        if (req.status === 'approved') {
+          newPending -= req.amount;
+        } else {
+          newBalance -= req.amount;
+        }
+        newPaid += req.amount;
+
+        // Create transaction
+        const txRef = doc(collection(db, txCollection));
+        batch.set(txRef, {
+          id: txRef.id,
+          type: isVendor ? 'vendor_settlement' : 'driver_withdrawal',
+          referenceId: req.id,
+          [isVendor ? 'vendorId' : 'driverId']: req.userId,
+          amount: -req.amount,
+          currency: 'EGP',
+          status: 'completed',
+          createdAt: serverTimestamp(),
+          metadata: { note: 'Settlement Paid' }
+        } as LedgerTransaction);
+      }
+
+      batch.set(walletRef, {
+        balance: newBalance,
+        pendingBalance: newPending,
+        paidBalance: newPaid,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      const reqRef = doc(db, 'settlementRequests', req.id);
+      batch.update(reqRef, {
+        status: action,
+        processedAt: serverTimestamp(),
+        processedBy: 'admin'
+      });
+
+      await batch.commit();
+      
+      setRequests(prev => prev.map(r => r.id === req.id ? { ...r, status: action } : r));
+    } catch (err) {
+      console.error(err);
+      alert('Action failed');
+    }
   };
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Settlement Requests</h1>
+      <h1 className="text-2xl font-bold mb-6">Settlement Processing</h1>
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <table className="w-full text-left">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
-              <th className="p-4 font-medium text-gray-500">Store ID</th>
+              <th className="p-4 font-medium text-gray-500">User ID</th>
+              <th className="p-4 font-medium text-gray-500">Type</th>
               <th className="p-4 font-medium text-gray-500">Amount</th>
               <th className="p-4 font-medium text-gray-500">Status</th>
               <th className="p-4 font-medium text-gray-500">Actions</th>
@@ -46,18 +106,28 @@ export function SettlementRequests() {
           <tbody className="divide-y divide-gray-50">
             {requests.map(req => (
               <tr key={req.id}>
-                <td className="p-4">{req.storeId}</td>
-                <td className="p-4 font-medium">{req.amount.toFixed(2)} EGP</td>
+                <td className="p-4 font-mono text-sm">{req.userId || (req as any).storeId}</td>
+                <td className="p-4 capitalize">{req.userType || 'vendor'}</td>
+                <td className="p-4 font-bold">{req.amount.toFixed(2)} EGP</td>
                 <td className="p-4">
-                  <span className={`px-2 py-1 rounded-full text-xs ${req.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase
+                    ${req.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : ''}
+                    ${req.status === 'approved' ? 'bg-blue-100 text-blue-700' : ''}
+                    ${req.status === 'paid' ? 'bg-green-100 text-green-700' : ''}
+                    ${req.status === 'rejected' ? 'bg-red-100 text-red-700' : ''}
+                  `}>
                     {req.status}
                   </span>
                 </td>
-                <td className="p-4">
+                <td className="p-4 flex gap-2">
                   {req.status === 'pending' && (
-                    <button onClick={() => handleApprove(req)} className="text-sm bg-theme-primary text-white px-3 py-1 rounded">
-                      Mark Paid
-                    </button>
+                    <>
+                      <button onClick={() => handleAction(req, 'approved')} className="text-sm bg-blue-500 text-white px-3 py-1 rounded">Approve</button>
+                      <button onClick={() => handleAction(req, 'rejected')} className="text-sm bg-red-500 text-white px-3 py-1 rounded">Reject</button>
+                    </>
+                  )}
+                  {(req.status === 'pending' || req.status === 'approved') && (
+                    <button onClick={() => handleAction(req, 'paid')} className="text-sm bg-green-500 text-white px-3 py-1 rounded">Mark Paid</button>
                   )}
                 </td>
               </tr>

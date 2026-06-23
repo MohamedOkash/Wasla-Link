@@ -21,6 +21,7 @@ import { PremiumInput } from '../../components/premium/PremiumInput';
 import { useProducts } from '../../hooks/useProducts';
 
 export const VendorDashboard: React.FC = () => {
+  const { t } = useTranslation();
   const { goHome,  orders, theme, isRTL, walletTransactions, walletSettlements, addSettlement, returnRequests, updateReturnStatus, showToast } = useApp();
   const { products } = useProducts();;
   const [activeTab, setActiveTab] = useState<'dashboard' | 'catalog_builder' | 'orders' | 'products' | 'offers' | 'campaigns' | 'reports' | 'wallet' | 'settings' | 'returns' | 'reviews'>('dashboard');

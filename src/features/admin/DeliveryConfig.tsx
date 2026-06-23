@@ -4,6 +4,7 @@ import { useApp } from '../../contexts/AppContext';
 import { Save, Plus, Trash2, MapPin } from 'lucide-react';
 
 export const DeliveryConfig: React.FC = () => {
+  const { t } = useTranslation();
   const { isRTL, deliveryFeeConfig, updateDeliveryFeeConfig, showToast } = useApp();
 
   const [sameFee, setSameFee] = useState(5);

@@ -8,6 +8,7 @@ interface DriverEarningsProps {
 }
 
 export const DriverEarnings: React.FC<DriverEarningsProps> = ({ driver }) => {
+  const { t } = useTranslation();
   const { isRTL } = useApp();
 
   const earnings = driver.totalEarnings || 0;

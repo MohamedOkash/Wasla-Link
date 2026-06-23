@@ -18,6 +18,7 @@ export const PremiumHeader: React.FC<PremiumHeaderProps> = ({
   openCart,
   onLogoClick
 }) => {
+  const { t } = useTranslation();
   const { location,  notifications, isRTL, currentUser, cart } = useApp();
 
   const unreadCount = notifications.filter(n => !n.isRead).length;

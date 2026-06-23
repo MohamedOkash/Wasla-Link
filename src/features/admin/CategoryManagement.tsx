@@ -4,6 +4,7 @@ import { Plus, Trash2, Edit, X, Check, FolderOpen } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 
 export const CategoryManagement: React.FC = () => {
+  const { t } = useTranslation();
   const { categories, setCategories, showToast } = useApp();
   
   // Modals

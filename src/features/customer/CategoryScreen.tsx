@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState } from 'react';
 import { ChevronRight, Search, Filter, Star, Clock, Heart } from 'lucide-react';
 import { getStoreStatus } from '../../utils/storeUtils';
@@ -12,6 +13,7 @@ interface CategoryScreenProps {
 }
 
 export const CategoryScreen: React.FC<CategoryScreenProps> = ({ catId, navigate, goBack, openSearch }) => {
+  const { t } = useTranslation();
   const { categories,  isRTL, favoriteStores, toggleFavoriteStore } = useApp();
   const { stores } = useStores();;
   const category = categories.find(c => c.id === catId);

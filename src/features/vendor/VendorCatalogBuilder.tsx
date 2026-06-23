@@ -11,6 +11,7 @@ import { PremiumInput } from '../../components/premium/PremiumInput';
 import { PremiumBadge } from '../../components/premium/PremiumBadge';
 
 export const VendorCatalogBuilder: React.FC = () => {
+  const { t } = useTranslation();
   const { currentUser, isRTL, showToast } = useApp();
   const [activeTab, setActiveTab] = useState<'categories' | 'subCategories' | 'brands'>('categories');
   

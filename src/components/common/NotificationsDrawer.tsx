@@ -11,6 +11,7 @@ interface NotificationsDrawerProps {
 }
 
 export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({ onClose, navigate }) => {
+  const { t } = useTranslation();
   const { notifications, markNotificationRead, markAllNotificationsRead, deleteNotification, clearAllNotifications,  isRTL } = useApp();
   const { stores } = useStores();
   const { products } = useProducts();;

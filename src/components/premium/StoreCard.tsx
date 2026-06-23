@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React from 'react';
 import { Star, Clock, Heart } from 'lucide-react';
 import { Store } from '../../types/store.types';
@@ -21,6 +22,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   avgRating,
   openStatus,
   isRTL }) => {
+  const { t } = useTranslation();
   return (
     <div 
       onClick={onClick}

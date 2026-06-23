@@ -26,6 +26,7 @@ interface ProductModalProps {
 }
 
 export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProduct, shop: initialShop, goBack }) => {
+  const { t } = useTranslation();
   const { cart, setCart, addToCartGlobal,  isRTL, favoriteProducts, toggleFavoriteProduct, orders, showToast } = useApp();
   const { stores } = useStores();
   const { products } = useProducts();;

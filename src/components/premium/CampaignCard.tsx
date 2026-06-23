@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React from 'react';
 import { Banner } from '../../types/banner.types';
 
@@ -10,6 +11,7 @@ interface CampaignCardProps {
 export const CampaignCard: React.FC<CampaignCardProps> = ({
   banner,
   onClick }) => {
+  const { t } = useTranslation();
   const titleText = banner.title && typeof banner.title === 'object'
     ? (banner.title as any).ar || (banner.title as any).en
     : banner.title;

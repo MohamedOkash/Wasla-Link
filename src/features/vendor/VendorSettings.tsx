@@ -8,6 +8,7 @@ import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 
 import { useStores } from '../../hooks/useStores';
 
 export const VendorSettings: React.FC = () => {
+  const { t } = useTranslation();
   const { showToast, isRTL } = useApp();
   const { stores, setStores } = useStores();
 

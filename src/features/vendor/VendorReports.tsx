@@ -10,6 +10,7 @@ import { PremiumBadge } from '../../components/premium/PremiumBadge';
 import { useProducts } from '../../hooks/useProducts';
 
 export const VendorReports: React.FC = () => {
+  const { t } = useTranslation();
   const { orders,  isRTL } = useApp();
   const { products } = useProducts();;
   const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly'>('daily');

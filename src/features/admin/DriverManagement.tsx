@@ -6,6 +6,7 @@ import { collection, query, onSnapshot, doc, updateDoc, writeBatch } from 'fireb
 import { db } from '../../services/firebase';
 
 export const DriverManagement: React.FC = () => {
+  const { t } = useTranslation();
   const { isRTL, showToast, currentUser } = useApp();
   const [activeFilter, setActiveFilter] = useState<'approved' | 'pending' | 'suspended' | 'rejected'>('approved');
   const [drivers, setDrivers] = useState<any[]>([]);

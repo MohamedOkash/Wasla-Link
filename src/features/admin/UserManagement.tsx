@@ -7,6 +7,7 @@ import { auth, db } from '../../services/firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
 
 export const UserManagement: React.FC = () => {
+  const { t } = useTranslation();
   const { showToast, currentUser } = useApp();
   const [activeTab, setActiveTab] = useState<'customer' | 'vendor' | 'admin'>('customer');
 

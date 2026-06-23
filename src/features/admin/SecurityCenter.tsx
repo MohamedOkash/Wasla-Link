@@ -8,6 +8,7 @@ import { PremiumInput } from '../../components/premium/PremiumInput';
 import { getAuth, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 
 export const SecurityCenter = () => {
+  const { t } = useTranslation();
   const {} = useTranslation();
 
   const { lang, showToast } = useApp();

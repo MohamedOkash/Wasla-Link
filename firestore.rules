@@ -334,5 +334,35 @@ service cloud.firestore {
     match /securityLogs/{logId} {
       allow read, write: if isAdmin();
     }
+    // 31. Financial Ledger Collections
+    match /platformTransactions/{txId} {
+      allow read, write: if isAdmin();
+    }
+    match /vendorTransactions/{txId} {
+      allow read: if isAdmin() || (isVendor() && resource.data.vendorId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+    match /driverTransactions/{txId} {
+      allow read: if isAdmin() || (isDriver() && resource.data.driverId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+    match /settlementRequests/{reqId} {
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create: if signedIn();
+      allow update, delete: if isAdmin();
+    }
+    match /platformSettings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    // 32. Vendor and Driver Wallets
+    match /vendorWallets/{walletId} {
+      allow read: if isAdmin() || (isVendor() && walletId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+    match /driverWallets/{walletId} {
+      allow read: if isAdmin() || (isDriver() && walletId == request.auth.uid);
+      allow write: if isAdmin();
+    }
   }
 }

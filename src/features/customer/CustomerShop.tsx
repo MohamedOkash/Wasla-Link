@@ -26,6 +26,7 @@ interface CustomerShopProps {
 }
 
 export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBack, openSearch }) => {
+  const { t } = useTranslation();
   const { cart, setCart, addToCartGlobal,  isRTL, favoriteProducts, toggleFavoriteProduct, favoriteStores, toggleFavoriteStore, followedStores, toggleFollowStore, location, orders, showToast } = useApp();
   const { products } = useProducts();
   const { reviews } = useReviews();;

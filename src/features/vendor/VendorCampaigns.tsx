@@ -24,6 +24,7 @@ export interface Campaign {
 }
 
 export const VendorCampaigns: React.FC = () => {
+  const { t } = useTranslation();
   const { isRTL, showToast, notifications, setNotifications } = useApp();
 
   const [campaignsList, setCampaignsList] = useState<Campaign[]>([

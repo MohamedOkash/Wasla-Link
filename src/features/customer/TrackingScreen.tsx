@@ -18,6 +18,7 @@ interface TrackingScreenProps {
 }
 
 export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack }) => {
+  const { t } = useTranslation();
   const { isRTL, location, orders } = useApp();
   const { stores } = useStores();;
   const [trackingState, setTrackingState] = useState<TrackingState | null>(null);

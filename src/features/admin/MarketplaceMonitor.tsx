@@ -4,6 +4,7 @@ import { ClipboardList, Clock, CheckCircle2, MapPin, Bike, ShieldAlert, ThumbsUp
 import { useApp } from '../../contexts/AppContext';
 
 export const MarketplaceMonitor: React.FC = () => {
+  const { t } = useTranslation();
   const { orders, updateOrderStatus, isRTL, showToast } = useApp();
 
   // Active marketplace orders (excluding delivered and cancelled)

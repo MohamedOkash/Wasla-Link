@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, X, Search, History, Sparkles, Folder } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -11,6 +12,7 @@ interface GlobalSearchProps {
 }
 
 export const GlobalSearch: React.FC<GlobalSearchProps> = ({ closeSearch, navigate }) => {
+  const { t } = useTranslation();
   const { categories,  isRTL } = useApp();
   const { stores } = useStores();
   const { products } = useProducts();;

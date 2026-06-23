@@ -4,6 +4,7 @@ import { UserCheck, Clock, Award } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 
 export const ReferralHistory: React.FC = () => {
+  const { t } = useTranslation();
   const { referrals, isRTL } = useApp();
 
   return (

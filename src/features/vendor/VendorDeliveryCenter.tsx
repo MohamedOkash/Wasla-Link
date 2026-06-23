@@ -13,6 +13,7 @@ interface VendorDeliveryCenterProps {
 }
 
 export const VendorDeliveryCenter: React.FC<VendorDeliveryCenterProps> = ({ order, storeLocation }) => {
+  const { t } = useTranslation();
   const { isRTL } = useApp();
   const [driverLoc, setDriverLoc] = useState<{lat: number, lng: number} | null>(null);
   const [events, setEvents] = useState<any[]>([]);

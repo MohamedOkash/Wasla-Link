@@ -10,6 +10,7 @@ import { VendorDeliveryCenter } from './VendorDeliveryCenter';
 import { useStores } from '../../hooks/useStores';
 
 export const VendorOrders: React.FC = () => {
+  const { t } = useTranslation();
   // Filter orders for Store g_1 (أسواق الخير)
   const { orders, updateOrderStatus, showToast, isRTL, currentUser } = useApp();
   const { stores } = useStores();

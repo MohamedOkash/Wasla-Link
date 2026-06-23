@@ -47,6 +47,7 @@ const EGYPT_REGIONS: Record<string, { cities: Record<string, string[]> }> = {
 };
 
 export const AuthScreen: React.FC = () => {
+  const { t } = useTranslation();
   const { setRole, setCurrentUser, lang, setLang,  categories, showToast } = useApp();
   const [view, setView] = useState<'login' | 'register' | 'vendor_register' | 'forgot_password'>('login');
   
@@ -364,7 +365,7 @@ export const AuthScreen: React.FC = () => {
 
       {/* LOGIN VIEW */}
       {view === 'login' && (
-        <form onSubmit={handleLogin} className="w-full max-w-sm space-y-4">
+        <form onSubmit={handleEmailLogin} className="w-full max-w-sm space-y-4">
           <PremiumInput 
             type="email" 
             placeholder={t('email')} 

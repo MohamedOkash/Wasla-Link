@@ -25,6 +25,7 @@ interface CustomerCheckoutProps {
 }
 
 export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, placeOrder }) => {
+  const { t } = useTranslation();
   const { cart, setCart, location, showToast,  isRTL, activeCoupon, setActiveCoupon, savedAddresses, addAddress, currentUser, deliveryFeeConfig } = useApp();
   const { stores } = useStores();
   const { products } = useProducts();;

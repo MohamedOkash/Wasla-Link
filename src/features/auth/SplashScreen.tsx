@@ -1,8 +1,10 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React from 'react';
 import { Store } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 
 export const SplashScreen: React.FC = () => {
+  const { t } = useTranslation();
   const {} = useApp();
   
   return (

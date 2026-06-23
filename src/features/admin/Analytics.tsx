@@ -12,6 +12,7 @@ import { User } from '../../types/user.types';
 import { useStores } from '../../hooks/useStores';
 
 export const Analytics: React.FC = () => {
+  const { t } = useTranslation();
   const { orders, isRTL } = useApp();
   const { stores } = useStores();;
   const [users, setUsers] = useState<User[]>([]);

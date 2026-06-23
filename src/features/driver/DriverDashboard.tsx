@@ -10,6 +10,7 @@ import { DriverEarnings } from './DriverEarnings';
 import { geoService, GpsStatus, LocationData } from '../../services/geolocation.service';
 
 export const DriverDashboard: React.FC = () => {
+  const { t } = useTranslation();
   const { goHome, currentUser, isRTL, showToast } = useApp();
   const [activeTab, setActiveTab] = useState<'summary' | 'orders' | 'earnings' | 'profile'>('summary');
   const [driver, setDriver] = useState<any>(null);
