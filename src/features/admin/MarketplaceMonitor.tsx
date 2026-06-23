@@ -78,7 +78,7 @@ export const MarketplaceMonitor: React.FC = () => {
           { label: isRTL ? 'الطلبات النشطة' : 'Active Orders', value: activeOrders.length, color: 'text-primary' },
           { label: isRTL ? 'بانتظار الموافقة' : 'Pending Confirmation', value: activeOrders.filter(o => o.status === 'pending').length, color: 'text-amber-500' },
           { label: isRTL ? 'جاري تحضيرها' : 'In Preparation', value: activeOrders.filter(o => o.status === 'preparing').length, color: 'text-blue-500' },
-          { label: isRTL ? 'جاهزة للتوصيل' : 'Ready for Pickup', value: activeOrders.filter(o => o.status === 'readyForPickup').length, color: 'text-cyan-500' }
+          { label: isRTL ? 'جاهزة للتوصيل' : 'Ready for Pickup', value: activeOrders.filter(o => o.status === 'ready_for_delivery').length, color: 'text-cyan-500' }
         ].map((stat, i) => (
           <div key={i} className="bg-theme-card border border-theme-border rounded-2xl p-4 shadow-sm text-center theme-transition">
             <span className="text-[10px] text-theme-muted font-bold block">{stat.label}</span>

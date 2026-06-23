@@ -20,6 +20,10 @@ export interface Store {
   promoBanner?: string;
   status: 'pending' | 'approved' | 'rejected' | 'suspended';
   followersCount?: number;
+  offerBanner?: string;
+  offerMobileBanner?: string;
+  offerThumbnail?: string;
+  offerGallery?: string[];
   paymentInfo?: {
     vodafone?: string;
     instapay?: string;
@@ -43,6 +47,7 @@ export interface Store {
   holidayMode?: boolean;
   vacationMode?: boolean;
   village?: string;
+  location?: { lat: number; lng: number } | { latitude: number; longitude: number };
 
   // Phase 12C: Unified Offers Engine
   offers?: Array<{

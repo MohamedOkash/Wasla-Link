@@ -232,7 +232,7 @@ class AnalyticsService {
     let validDeliveryOrders = 0;
     deliveredOrders.forEach(o => {
       const created = new Date(o.createdAt).getTime();
-      const completed = new Date(o.completedAt || o.updatedAt).getTime();
+      const completed = new Date(o.completedAt || o.updatedAt || o.createdAt).getTime();
       if (completed > created) {
         totalDeliveryTime += (completed - created) / (1000 * 60); // minutes
         validDeliveryOrders++;
@@ -336,7 +336,7 @@ class AnalyticsService {
           deliveries++;
           earnings += o.deliveryFee || 0; // simplistic earning calc
           const created = new Date(o.createdAt).getTime();
-          const completed = new Date(o.completedAt || o.updatedAt).getTime();
+          const completed = new Date(o.completedAt || o.updatedAt || o.createdAt).getTime();
           totalDeliveryTime += (completed - created) / (1000 * 60);
         }
       } else if (o.rejectedBy?.includes(driverId)) {

@@ -12,8 +12,8 @@ export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
   const { orders, isRTL, showToast } = useApp();
 
   // Filters based on phase 14 order statuses
-  const availableOrders = orders.filter(o => o.status === 'ready_for_pickup' && !o.driverId);
-  const activeOrders = orders.filter(o => o.driverId === driver.id && ['accepted', 'picked_up', 'delivering'].includes(o.status));
+  const availableOrders = orders.filter(o => o.status === 'ready_for_delivery' && !o.driverId);
+  const activeOrders = orders.filter(o => o.driverId === driver.id && ['accepted', 'picked_up', 'on_the_way'].includes(o.status));
   const completedOrders = orders.filter(o => o.driverId === driver.id && o.status === 'delivered');
 
   const handleAcceptOrder = async (orderId: string) => {
@@ -136,7 +136,7 @@ export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
                   >
                     {order.status === 'accepted' && (isRTL ? 'استلمت الطلب من المتجر' : 'Picked up from store')}
                     {order.status === 'picked_up' && (isRTL ? 'بدء التوصيل للعميل' : 'Start Delivery')}
-                    {order.status === 'delivering' && (isRTL ? 'إكمال الطلب وتسليم العميل' : 'Complete Delivery')}
+                    {order.status === 'on_the_way' && (isRTL ? 'إكمال الطلب وتسليم العميل' : 'Complete Delivery')}
                     <ArrowRight size={16} className={isRTL ? 'rotate-180' : ''} />
                   </button>
                 </div>

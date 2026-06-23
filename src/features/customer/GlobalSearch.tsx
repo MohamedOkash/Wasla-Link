@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ChevronRight, X, Search, History, Sparkles, Folder } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { searchProductsAndStores } from '../../services/search.service';
+import { useStores } from '../../hooks/useStores';
+import { useProducts } from '../../hooks/useProducts';
 
 interface GlobalSearchProps {
   closeSearch: () => void;
@@ -9,7 +11,9 @@ interface GlobalSearchProps {
 }
 
 export const GlobalSearch: React.FC<GlobalSearchProps> = ({ closeSearch, navigate }) => {
-  const { stores, products, categories, t, isRTL } = useApp();
+  const { categories, t, isRTL } = useApp();
+  const { stores } = useStores();
+  const { products } = useProducts();;
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<{ shops: any[]; products: any[]; categories: any[] }>({ shops: [], products: [], categories: [] });
   const [sortBy, setSortBy] = useState<'relevance' | 'sales' | 'views' | 'favorites'>('relevance');

@@ -15,6 +15,8 @@ import { PremiumSection } from '../../components/premium/PremiumSection';
 import { PremiumBadge } from '../../components/premium/PremiumBadge';
 import { PremiumButton } from '../../components/premium/PremiumButton';
 import { PremiumCard } from '../../components/premium/PremiumCard';
+import { useStores } from '../../hooks/useStores';
+import { useProducts } from '../../hooks/useProducts';
 
 interface ProductModalProps {
   product: Product;
@@ -23,7 +25,9 @@ interface ProductModalProps {
 }
 
 export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProduct, shop: initialShop, goBack }) => {
-  const { cart, setCart, addToCartGlobal, t, isRTL, favoriteProducts, toggleFavoriteProduct, products, orders, stores, showToast } = useApp();
+  const { cart, setCart, addToCartGlobal, t, isRTL, favoriteProducts, toggleFavoriteProduct, orders, showToast } = useApp();
+  const { stores } = useStores();
+  const { products } = useProducts();;
   
   const [product, setProduct] = useState(initialProduct);
   const [shop, setShop] = useState(initialShop);

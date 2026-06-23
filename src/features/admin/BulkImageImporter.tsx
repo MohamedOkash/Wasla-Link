@@ -7,7 +7,7 @@ import { useApp } from '../../contexts/AppContext';
 import * as XLSX from 'xlsx';
 import { 
   Upload, FileSpreadsheet, Plus, X, Play, Loader2, AlertTriangle, 
-  CheckCircle, Database, HelpCircle, ArrowRight, Download 
+  CheckCircle, Database, HelpCircle, ArrowRight, Download, Image as ImageIcon 
 } from 'lucide-react';
 
 export const BulkImageImporter: React.FC = () => {

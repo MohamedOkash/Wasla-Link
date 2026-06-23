@@ -12,6 +12,8 @@ import { StoreCard } from '../../components/premium/StoreCard';
 import { CampaignCard } from '../../components/premium/CampaignCard';
 import { PremiumSection } from '../../components/premium/PremiumSection';
 import { PremiumSkeleton } from '../../components/premium/PremiumSkeleton';
+import { useStores } from '../../hooks/useStores';
+import { useProducts } from '../../hooks/useProducts';
 
 interface HomeScreenProps {
   navigate: (name: string, params?: any) => void;
@@ -20,24 +22,9 @@ interface HomeScreenProps {
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigate, openSearch, openMap }) => {
-  const { 
-    t, 
-    isRTL,
-    categories, 
-    stores, 
-    banners, 
-    favoriteStores, 
-    toggleFavoriteStore,
-    favoriteProducts,
-    toggleFavoriteProduct,
-    setShowNotifications,
-    products,
-    orders,
-    cart,
-    setCart,
-    addToCartGlobal,
-    showToast
-  } = useApp();
+  const { t, isRTL, categories, banners, favoriteStores, toggleFavoriteStore, favoriteProducts, toggleFavoriteProduct, setShowNotifications, orders, cart, setCart, addToCartGlobal, showToast } = useApp();
+  const { stores } = useStores();
+  const { products } = useProducts();;
 
   const [currentBanner, setCurrentBanner] = useState(0);
   const [isLoading, setIsLoading] = useState(true);

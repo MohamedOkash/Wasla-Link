@@ -9,6 +9,7 @@ import 'leaflet/dist/leaflet.css';
 import { PremiumCard } from '../../components/premium/PremiumCard';
 import { PremiumBadge } from '../../components/premium/PremiumBadge';
 import { PremiumButton } from '../../components/premium/PremiumButton';
+import { useStores } from '../../hooks/useStores';
 
 interface TrackingScreenProps {
   orderId: string;
@@ -16,7 +17,8 @@ interface TrackingScreenProps {
 }
 
 export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack }) => {
-  const { t, isRTL, location, orders, stores } = useApp();
+  const { t, isRTL, location, orders } = useApp();
+  const { stores } = useStores();;
   const [trackingState, setTrackingState] = useState<TrackingState | null>(null);
   
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -230,7 +232,7 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
                 ? (isRTL ? 'قيد التعبئة' : 'Preparing') 
                 : trackingState.status === 'on_the_way'
                 ? (isRTL ? 'على الطريق' : 'En Route')
-                : trackingState.status === 'on_the_way'
+                : trackingState.status === 'arrived'
                 ? (isRTL ? 'وصل المندوب' : 'Arrived')
                 : (isRTL ? 'تم التسليم' : 'Delivered')
               }

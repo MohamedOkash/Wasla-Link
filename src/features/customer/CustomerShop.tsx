@@ -14,6 +14,8 @@ import { PremiumBadge } from '../../components/premium/PremiumBadge';
 import { PremiumInput } from '../../components/premium/PremiumInput';
 
 import { getStoreStatus } from '../../utils/storeUtils';
+import { useProducts } from '../../hooks/useProducts';
+import { useReviews } from '../../hooks/useReviews';
 
 interface CustomerShopProps {
   shop: Store;
@@ -23,24 +25,9 @@ interface CustomerShopProps {
 }
 
 export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBack, openSearch }) => {
-  const { 
-    products, 
-    cart, 
-    setCart, 
-    addToCartGlobal,
-    t, 
-    isRTL, 
-    favoriteProducts, 
-    toggleFavoriteProduct,
-    favoriteStores,
-    toggleFavoriteStore,
-    followedStores,
-    toggleFollowStore,
-    location,
-    reviews,
-    orders,
-    showToast
-  } = useApp();
+  const { cart, setCart, addToCartGlobal, t, isRTL, favoriteProducts, toggleFavoriteProduct, favoriteStores, toggleFavoriteStore, followedStores, toggleFollowStore, location, orders, showToast } = useApp();
+  const { products } = useProducts();
+  const { reviews } = useReviews();;
 
   const [selectedSubCat, setSelectedSubCat] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');

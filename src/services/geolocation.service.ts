@@ -1,5 +1,6 @@
 import { doc, setDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
+import * as geofire from 'geofire-common';
 
 export type GpsStatus = 'gps_disabled' | 'permission_denied' | 'weak_signal' | 'offline' | 'online';
 
@@ -147,26 +148,45 @@ class GeolocationService {
     }
   }
 
-  private async syncToFirestore(loc: LocationData) {
+  public async forceSyncEvent(event: 'Shift Start' | 'Pickup' | 'Delivery' | 'Shift End' | 'Emergency Disconnect') {
+    if (this.lastLat && this.lastLng) {
+      await this.syncToFirestore({
+        lat: this.lastLat,
+        lng: this.lastLng,
+        heading: null,
+        speed: null,
+        accuracy: 0,
+        lastUpdated: Date.now(),
+        status: 'online'
+      }, event);
+    }
+  }
+
+  private async syncToFirestore(loc: LocationData, event?: 'Shift Start' | 'Pickup' | 'Delivery' | 'Shift End' | 'Emergency Disconnect') {
     if (!this.driverId) return;
 
     try {
-      // 1. Update Current Location
+      // 1. Update Current Location with Geohash
+      const hash = geofire.geohashForLocation([loc.lat, loc.lng]);
       const locRef = doc(db, 'driverLocations', this.driverId);
       await setDoc(locRef, {
         driverId: this.driverId,
-        ...loc
+        ...loc,
+        geohash: hash
       }, { merge: true });
 
-      // 2. Append to History
-      const historyRef = collection(db, `driverLocationHistory/${this.driverId}/points`);
-      await addDoc(historyRef, {
-        lat: loc.lat,
-        lng: loc.lng,
-        speed: loc.speed,
-        heading: loc.heading,
-        timestamp: serverTimestamp()
-      });
+      // 2. Append to History ONLY if it's a specific event
+      if (event) {
+        const historyRef = collection(db, `driverLocationHistory/${this.driverId}/points`);
+        await addDoc(historyRef, {
+          lat: loc.lat,
+          lng: loc.lng,
+          speed: loc.speed,
+          heading: loc.heading,
+          event,
+          timestamp: serverTimestamp()
+        });
+      }
     } catch (e) {
       console.error("Failed to sync location to firestore", e);
     }

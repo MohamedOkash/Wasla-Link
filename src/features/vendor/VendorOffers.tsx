@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Tag, Save, X, Edit, Plus, Trash2, Upload, Image as ImageIcon, Loader2, Check } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { mediaService } from '../../services/media.service';
+import { useStores } from '../../hooks/useStores';
 
 export const VendorOffers: React.FC = () => {
-  const { stores, setStores, showToast, triggerOfferBroadcast, isRTL } = useApp();
+  const { showToast, triggerOfferBroadcast, isRTL } = useApp();
+  const { stores, setStores } = useStores();
   const [editing, setEditing] = useState(false);
   const [promoText, setPromoText] = useState('');
 

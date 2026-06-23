@@ -18,5 +18,7 @@ export interface User {
   referralCode?: string;
   referredBy?: string | null;
   fcmToken?: string | null;
+  isOnline?: boolean;
+  currentOrderId?: string;
 }
 

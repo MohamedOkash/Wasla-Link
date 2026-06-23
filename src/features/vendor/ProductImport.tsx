@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Download, Upload, AlertCircle, CheckCircle, HelpCircle, FileText, ChevronDown, Check, X, ShieldAlert } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
+import { useProducts } from '../../hooks/useProducts';
 import { excelImportService, ImportSummaryData, ImportResultRow } from '../../services/excelImport.service';
 import { Product } from '../../types/product.types';
 import { StockMovement } from '../../contexts/AppContext';
@@ -10,7 +11,8 @@ interface ProductImportProps {
 }
 
 export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
-  const { products, setProducts, addStockMovement, isRTL, showToast } = useApp();
+  const { addStockMovement, isRTL, showToast } = useApp();
+  const { products, setProducts } = useProducts();
   
   const [file, setFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -86,6 +88,7 @@ export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
   };
 
   // Perform actual import and write changes to AppContext
+
   const handleCommitImport = () => {
     if (!summary) return;
 

@@ -6,9 +6,11 @@ import { PremiumCard } from '../../components/premium/PremiumCard';
 import { PremiumStatCard } from '../../components/premium/PremiumStatCard';
 import { PremiumButton } from '../../components/premium/PremiumButton';
 import { PremiumBadge } from '../../components/premium/PremiumBadge';
+import { useProducts } from '../../hooks/useProducts';
 
 export const VendorReports: React.FC = () => {
-  const { orders, products, t, isRTL } = useApp();
+  const { orders, t, isRTL } = useApp();
+  const { products } = useProducts();;
   const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
   // Filter vendor reports using store g_1 (Al-Khair Markets)

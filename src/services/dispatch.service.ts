@@ -2,6 +2,7 @@ import { db } from './firebase';
 import { collection, query, where, getDocs, doc, runTransaction, getDoc } from 'firebase/firestore';
 import { Order } from '../types/order.types';
 import etaService from './eta.service';
+import * as geofire from 'geofire-common';
 
 export interface DriverAssignmentCandidate {
   id: string;
@@ -13,46 +14,53 @@ export interface DriverAssignmentCandidate {
 class DispatchService {
   private readonly MAX_ASSIGNMENT_ATTEMPTS = 3;
 
-  async getAvailableDrivers(storeLat: number, storeLng: number, rejectedBy: string[] = []): Promise<DriverAssignmentCandidate[]> {
-    // 1. Get all drivers who are online, available, and have enough battery
-    const driversRef = collection(db, 'users');
-    const q = query(
-      driversRef, 
-      where('role', '==', 'driver'),
-      where('isOnline', '==', true),
-      where('status', '==', 'approved')
-    );
+  async getAvailableDrivers(storeLat: number, storeLng: number, rejectedBy: string[] = [], radiusKm: number = 5): Promise<DriverAssignmentCandidate[]> {
+    const radiusInMeters = radiusKm * 1000;
+    const center: [number, number] = [storeLat, storeLng];
+    const bounds = geofire.geohashQueryBounds(center, radiusInMeters);
+    const promises = [];
+
+    // 1. Get drivers within geohash bounds
+    for (const b of bounds) {
+      const q = query(
+        collection(db, 'driverLocations'),
+        where('geohash', '>=', b[0]),
+        where('geohash', '<=', b[1])
+      );
+      promises.push(getDocs(q));
+    }
     
-    const driverDocs = await getDocs(q);
+    const snapshots = await Promise.all(promises);
     const candidates: DriverAssignmentCandidate[] = [];
 
-    // 2. We need to check their locations
-    for (const d of driverDocs.docs) {
-      const driverId = d.id;
-      const driverData = d.data();
+    // 2. We need to check their locations and availability
+    for (const snap of snapshots) {
+      for (const docSnap of snap.docs) {
+        const locData = docSnap.data();
+        const driverId = locData.driverId || docSnap.id;
+        
+        if (locData.status !== 'online') continue;
+        if (rejectedBy.includes(driverId)) continue;
 
-      // Skip if they already rejected this order
-      if (rejectedBy.includes(driverId)) continue;
-      
-      // In a real app, 'available' might be a separate flag updated by Driver Dashboard
-      // Here we assume if currentOrderId is missing/null, they are available.
-      if (driverData.currentOrderId) continue;
+        // Double check exact distance (geohash boxes are larger than the circle)
+        const distance = etaService.calculateDistance(storeLat, storeLng, locData.lat, locData.lng);
+        if (distance > radiusInMeters) continue;
 
-      // Check battery level if available
-      if (driverData.batteryLevel !== undefined && driverData.batteryLevel < 15) continue;
+        // Check user document for availability
+        const driverDoc = await getDoc(doc(db, 'users', driverId));
+        if (!driverDoc.exists()) continue;
+        
+        const driverData = driverDoc.data();
+        if (driverData.role !== 'driver' || !driverData.isOnline || driverData.status !== 'approved') continue;
+        if (driverData.currentOrderId) continue;
+        if (driverData.batteryLevel !== undefined && driverData.batteryLevel < 15) continue;
 
-      const locDoc = await getDoc(doc(db, 'driverLocations', driverId));
-      if (locDoc.exists()) {
-        const locData = locDoc.data();
-        if (locData.status === 'online') {
-          const distance = etaService.calculateDistance(storeLat, storeLng, locData.lat, locData.lng);
-          candidates.push({
-            id: driverId,
-            lat: locData.lat,
-            lng: locData.lng,
-            distance: distance
-          });
-        }
+        candidates.push({
+          id: driverId,
+          lat: locData.lat,
+          lng: locData.lng,
+          distance: distance
+        });
       }
     }
 
@@ -92,8 +100,16 @@ class DispatchService {
           return false;
         }
 
-        // Find nearest available driver
-        const candidates = await this.getAvailableDrivers(storeLat, storeLng, rejectedBy);
+        // Find nearest available driver with expanding radius
+        const radiusLevels = [5, 10, 20];
+        let candidates: DriverAssignmentCandidate[] = [];
+        
+        for (const radius of radiusLevels) {
+          candidates = await this.getAvailableDrivers(storeLat, storeLng, rejectedBy, radius);
+          if (candidates.length > 0) {
+            break; // Found drivers, stop expanding radius
+          }
+        }
         
         if (candidates.length === 0) {
           // No drivers available right now

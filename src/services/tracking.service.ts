@@ -6,7 +6,7 @@ export interface TrackingState {
   driverLocation: { lat: number; lng: number } | null;
   customerLocation: { lat: number; lng: number };
   storeLocation: { lat: number; lng: number };
-  status: 'preparing' | 'ready_for_pickup' | 'accepted' | 'picked_up' | 'delivering' | 'delivered' | 'arrived';
+  status: 'preparing' | 'ready_for_delivery' | 'accepted' | 'picked_up' | 'on_the_way' | 'delivered' | 'arrived';
   eta: number; // in minutes
   route: [number, number][]; // static straight line or mock route for now
 }

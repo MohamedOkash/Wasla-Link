@@ -1,12 +1,15 @@
 import React from 'react';
 import { AppProvider, useApp } from './contexts/AppContext';
+import { LanguageProvider } from './context/LanguageProvider';
+import { useTranslation } from './hooks/useTranslation';
 import { AppRoutes } from './routes/AppRoutes';
 import { ToastManager } from './components/premium/toast/ToastManager';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { CartConflictModal } from './components/premium/CartConflictModal';
 
 function AppContent() {
-  const { isRTL, role, theme } = useApp();
+  const { role, theme } = useApp();
+  const { isRTL } = useTranslation();
   const isDesktop = role === 'vendor' || role === 'admin';
   
   return (
@@ -29,8 +32,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    <LanguageProvider>
+      <AppProvider>
+        <AppContent />
+      </AppProvider>
+    </LanguageProvider>
   );
 }

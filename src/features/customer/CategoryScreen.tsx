@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ChevronRight, Search, Filter, Star, Clock, Heart } from 'lucide-react';
 import { getStoreStatus } from '../../utils/storeUtils';
 import { useApp } from '../../contexts/AppContext';
+import { useStores } from '../../hooks/useStores';
 
 interface CategoryScreenProps {
   catId: string;
@@ -11,7 +12,8 @@ interface CategoryScreenProps {
 }
 
 export const CategoryScreen: React.FC<CategoryScreenProps> = ({ catId, navigate, goBack, openSearch }) => {
-  const { categories, stores, t, isRTL, favoriteStores, toggleFavoriteStore } = useApp();
+  const { categories, t, isRTL, favoriteStores, toggleFavoriteStore } = useApp();
+  const { stores } = useStores();;
   const category = categories.find(c => c.id === catId);
   const [filter, setFilter] = useState('all'); // all, top, fast, free, open
 

@@ -28,10 +28,12 @@ import {
   addDoc,
   deleteDoc,
   writeBatch,
-  increment
+  increment,
+  getDocs
 } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth, db } from '../services/firebase';
+import { cacheService } from '../services/cache.service';
 
 export interface CartItem {
   id: string;
@@ -104,6 +106,7 @@ export interface DriverDetail {
   rating: number;
   isOnline: boolean;
   status: 'approved' | 'suspended' | 'pending';
+  availability?: 'available' | 'busy' | 'offline';
 }
 
 interface AppContextType {
@@ -115,10 +118,6 @@ interface AppContextType {
   setRole: (role: string) => void;
   currentUser: User | null;
   setCurrentUser: (u: User | null) => void;
-  stores: Store[];
-  setStores: React.Dispatch<React.SetStateAction<Store[]>>;
-  products: Product[];
-  setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
   categories: any[];
   setCategories: React.Dispatch<React.SetStateAction<any[]>>;
   banners: Banner[];
@@ -205,7 +204,6 @@ interface AppContextType {
   walletSettlements: WalletSettlement[];
   addSettlement: (amount: number, method: WalletSettlement['method'], details: string) => void;
 
-  reviews: Review[];
   addReview: (orderId: string, storeId: string, driverId: string, ratingStore: number, ratingDriver: number, ratingProducts: number, comment?: string) => void;
 
   campaigns: any[];
@@ -224,8 +222,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   
   // Real-time Firestore synchronised states
-  const [stores, setStoresState] = useState<Store[]>([]);
-  const [products, setProductsState] = useState<Product[]>([]);
   const [categories, setCategoriesState] = useState<any[]>([]);
   const [banners, setBannersState] = useState<Banner[]>([]);
   const [orders, setOrdersState] = useState<Order[]>([]);
@@ -234,7 +230,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [notifications, setNotificationsState] = useState<Notification[]>([]);
   const [walletTransactions, setWalletTransactionsState] = useState<WalletTransaction[]>([]);
   const [walletSettlements, setWalletSettlementsState] = useState<WalletSettlement[]>([]);
-  const [reviews, setReviewsState] = useState<Review[]>([]);
   const [drivers, setDriversState] = useState<DriverDetail[]>([]);
   const [campaigns, setCampaignsState] = useState<any[]>([]);
   const [driverMetrics, setDriverMetricsState] = useState<Record<string, DriverMetrics>>({});
@@ -467,8 +462,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Expose wrappers
-  const setStores = createFirestoreSyncWrapper<Store>('stores', stores);
-  const setProducts = createFirestoreSyncWrapper<Product>('products', products);
+
   const setCategories = createFirestoreSyncWrapper<any>('categories', categories);
   const setBanners = createFirestoreSyncWrapper<Banner>('banners', banners);
   const setOrders = createFirestoreSyncWrapper<Order>('orders', orders);
@@ -534,66 +528,49 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // --- Real-time Listeners for public marketplace collections ---
+  // --- Cached Public Collections (No Real-Time Listeners to Save Reads) ---
   useEffect(() => {
-    try {
-      const unsubCat = onSnapshot(collection(db, 'categories'), snap => {
-        setCategoriesState(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      }, err => console.error('Categories listener error:', err));
-      const unsubBanners = onSnapshot(collection(db, 'banners'), snap => {
-        setBannersState(snap.docs.map(d => ({ id: isNaN(Number(d.id)) ? d.id : Number(d.id), ...d.data() } as any)));
-      }, err => console.error('Banners listener error:', err));
-      const unsubStores = onSnapshot(collection(db, 'stores'), snap => {
-        setStoresState(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
-      }, err => console.error('Stores listener error:', err));
-      const unsubProducts = onSnapshot(collection(db, 'products'), snap => {
-        setProductsState(snap.docs.map(d => {
-          const data = d.data();
-          return {
-            id: d.id,
-            ...data,
-            name: data.name || '',
-            description: data.description || '',
-            imageUrl: data.imageUrl || '',
-            galleryImages: data.galleryImages || [],
-            category: data.category || '',
-            price: data.price || 0,
-            stock: data.stock || 0,
-            tags: data.tags || ''
-          } as any;
-        }));
-      }, err => console.error('Products listener error:', err));
-      const unsubCoupons = onSnapshot(collection(db, 'coupons'), snap => {
-        setCouponsState(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
-      }, err => console.error('Coupons listener error:', err));
-      const unsubReviews = onSnapshot(collection(db, 'reviews'), snap => {
-        setReviewsState(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
-      }, err => console.error('Reviews listener error:', err));
-      const unsubCampaigns = onSnapshot(collection(db, 'campaigns'), snap => {
-        setCampaignsState(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      }, err => console.error('Campaigns listener error:', err));
-      const unsubFees = onSnapshot(doc(db, 'config', 'deliveryFees'), snap => {
-        if (snap.exists()) {
-          setDeliveryFeeConfig(snap.data() as DeliveryFeeConfig);
-        } else {
-          setDeliveryFeeConfig(DEFAULT_DELIVERY_FEE_CONFIG);
-        }
-      }, err => console.error('DeliveryFees listener error:', err));
+    let mounted = true;
+    
+    const fetchPublicData = async () => {
+      try {
+        // 24 Hours TTL
+        cacheService.fetchWithCache('categories', async () => {
+          const snap = await getDocs(collection(db, 'categories'));
+          return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        }, 24 * 60 * 60 * 1000).then(data => mounted && setCategoriesState(data));
 
-      return () => {
-        unsubCat();
-        unsubBanners();
-        unsubStores();
-        unsubProducts();
-        unsubCoupons();
-        unsubReviews();
-        unsubCampaigns();
-        unsubFees();
-      };
-    } catch (err) {
-      console.error('Error setting up public listeners:', err);
-      return () => {};
-    }
+        // 12 Hours TTL
+        cacheService.fetchWithCache('banners', async () => {
+          const snap = await getDocs(collection(db, 'banners'));
+          return snap.docs.map(d => ({ id: isNaN(Number(d.id)) ? d.id : Number(d.id), ...d.data() } as any));
+        }, 12 * 60 * 60 * 1000).then(data => mounted && setBannersState(data));
+
+        // 12 Hours TTL
+        cacheService.fetchWithCache('deliveryFees', async () => {
+          const snap = await getDoc(doc(db, 'config', 'deliveryFees'));
+          return snap.exists() ? snap.data() as DeliveryFeeConfig : DEFAULT_DELIVERY_FEE_CONFIG;
+        }, 12 * 60 * 60 * 1000).then(data => mounted && setDeliveryFeeConfig(data));
+
+        // 12 Hours TTL
+        cacheService.fetchWithCache('campaigns', async () => {
+          const snap = await getDocs(collection(db, 'campaigns'));
+          return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        }, 12 * 60 * 60 * 1000).then(data => mounted && setCampaignsState(data));
+
+        // 12 Hours TTL
+        cacheService.fetchWithCache('coupons', async () => {
+          const snap = await getDocs(collection(db, 'coupons'));
+          return snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+        }, 12 * 60 * 60 * 1000).then(data => mounted && setCouponsState(data));
+
+      } catch (err) {
+        console.error('Error fetching public cached data:', err);
+      }
+    };
+
+    fetchPublicData();
+    return () => { mounted = false; };
   }, []);
 
   // --- Real-time Listeners for role-dependent collections ---
@@ -1150,15 +1127,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const triggerOfferBroadcast = async (storeId: string, offerText: string, productId?: string) => {
-    const store = stores.find(s => s.id === storeId);
-    if (!store) return;
-
     try {
+      const storeRef = doc(db, 'stores', storeId);
+      const storeDoc = await getDoc(storeRef);
+      if (!storeDoc.exists()) return;
+      const store = storeDoc.data();
+
       const campaignId = `camp_${Date.now()}`;
       await setDoc(doc(db, 'campaigns', campaignId), {
         id: campaignId,
         storeId,
-        storeName: store.name,
+        storeName: store.name || storeId,
         offerText,
         productId: productId || null,
         status: 'active',
@@ -1316,7 +1295,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             batch.update(prodRef, { currentStock, reservedStock, availabilityStatus: availStatus });
           }
         }
-      } else if (status === 'picked_up' || status === 'pickedUp') {
+      } else if (status === 'picked_up') {
         for (const item of order.items) {
           const prodRef = doc(db, 'products', item.id);
           const prodSnap = await getDoc(prodRef);
@@ -1379,7 +1358,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         // Driver Earnings Calculation
         if (order.driverId || driverId) {
-          const actualDriverId = order.driverId || driverId;
+          const actualDriverId = (order.driverId || driverId) as string;
           const distance = order.assignmentDistance || 5; // Default to 5km if missing
           let fee = 15;
           if (distance > 12) fee = 50;
@@ -1462,10 +1441,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setRole,
         currentUser,
         setCurrentUser,
-        stores,
-        setStores,
-        products,
-        setProducts,
         categories,
         setCategories,
         banners,
@@ -1552,7 +1527,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         walletSettlements,
         addSettlement,
 
-        reviews,
         addReview,
 
         campaigns,

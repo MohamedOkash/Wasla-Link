@@ -72,7 +72,7 @@ export const DriverDashboard: React.FC = () => {
       const orderRef = doc(db, 'orders', orderId);
       const { runTransaction } = require('firebase/firestore');
       
-      await runTransaction(db, async (transaction) => {
+      await runTransaction(db, async (transaction: any) => {
         const docSnap = await transaction.get(orderRef);
         if (!docSnap.exists()) return;
         const o = docSnap.data();
@@ -423,7 +423,7 @@ export const DriverDashboard: React.FC = () => {
 
         {activeTab === 'orders' && <DriverOrders driver={driver} />}
         {activeTab === 'earnings' && <DriverEarnings driver={driver} />}
-        {activeTab === 'profile' && <DriverProfile driver={driver} />}
+        {activeTab === 'profile' && <DriverProfile />}
         {/* Incoming Order Modal */}
         {incomingOrder && (
           <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">

@@ -1,9 +1,12 @@
 import React from 'react';
 import { Check, X, Store as StoreIcon, AlertCircle, Trash2, Ban, RefreshCw } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
+import { useStores } from '../../hooks/useStores';
 
 export const StoreApprovals: React.FC = () => {
-  const { stores, setStores, showToast } = useApp();
+  const { showToast } = useApp();
+  const { setStores } = useStores();;
+  const { stores } = useStores();;
 
   // Filter pending, approved, and suspended stores
   const pendingStores = stores.filter(s => s.status === 'pending');

@@ -38,4 +38,7 @@ export interface Order {
   ratingDriver?: number;
   ratingProducts?: number;
   ratingComment?: string;
+  storeLocation?: { lat: number; lng: number };
+  completedAt?: string;
+  updatedAt?: string;
 }

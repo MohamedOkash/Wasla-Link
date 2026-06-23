@@ -11,7 +11,7 @@ export const LogisticsCenter: React.FC = () => {
   const { isRTL, drivers, orders, showToast } = useApp();
   const [locations, setLocations] = useState<Record<string, any>>({});
   const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<'all' | 'online' | 'busy' | 'offline'>('all');
+  const [filter, setFilter] = useState<'all' | 'available' | 'busy' | 'offline'>('all');
   const [selectedDriverId, setSelectedDriverId] = useState<string | null>(null);
   const [assignOrderId, setAssignOrderId] = useState<string>('');
   
@@ -92,8 +92,7 @@ export const LogisticsCenter: React.FC = () => {
     Object.keys(locations).forEach(driverId => {
       const loc = locations[driverId];
       const driverInfo = drivers.find(d => d.id === driverId);
-      
-      const isOnline = driverInfo?.availability === 'online' || driverInfo?.availability === 'busy';
+      const isOnline = driverInfo?.availability === 'available' || driverInfo?.availability === 'busy';
       const isBusy = driverInfo?.availability === 'busy';
       const hasError = loc.status === 'gps_disabled' || loc.status === 'permission_denied';
 
@@ -125,7 +124,7 @@ export const LogisticsCenter: React.FC = () => {
 
   const stats = {
     total: drivers.length,
-    online: drivers.filter(d => d.availability === 'online').length,
+    online: drivers.filter(d => d.availability === 'available').length,
     busy: drivers.filter(d => d.availability === 'busy').length,
     offline: drivers.filter(d => d.availability === 'offline' || !d.availability).length,
     errors: Object.values(locations).filter(l => l.status === 'gps_disabled' || l.status === 'permission_denied').length,
@@ -150,7 +149,7 @@ export const LogisticsCenter: React.FC = () => {
           <span className="text-[10px] text-theme-muted font-black block">{isRTL ? 'إجمالي المناديب' : 'Total Drivers'}</span>
           <span className="text-xl font-black text-theme-text mt-1">{stats.total}</span>
         </div>
-        <div className="bg-theme-card border border-green-500/30 p-4 rounded-2xl shadow-sm cursor-pointer" onClick={() => setFilter('online')}>
+        <div className="bg-theme-card border border-green-500/30 p-4 rounded-2xl shadow-sm cursor-pointer" onClick={() => setFilter('available')}>
           <span className="text-[10px] text-green-500 font-black block">{isRTL ? 'متاح (Online)' : 'Online'}</span>
           <span className="text-xl font-black text-theme-text mt-1">{stats.online}</span>
         </div>
@@ -205,7 +204,7 @@ export const LogisticsCenter: React.FC = () => {
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <span className={`text-[9px] font-black px-2 py-0.5 rounded-md ${
-                      d.availability === 'online' ? 'bg-green-500/10 text-green-500' :
+                      d.availability === 'available' ? 'bg-green-500/10 text-green-500' :
                       d.availability === 'busy' ? 'bg-amber-500/10 text-amber-500' :
                       'bg-theme-border text-theme-muted'
                     }`}>

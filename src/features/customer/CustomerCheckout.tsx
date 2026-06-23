@@ -15,6 +15,8 @@ import { PremiumInput } from '../../components/premium/PremiumInput';
 import { PremiumCard } from '../../components/premium/PremiumCard';
 import { PremiumBadge } from '../../components/premium/PremiumBadge';
 import { getStoreStatus } from '../../utils/storeUtils';
+import { useStores } from '../../hooks/useStores';
+import { useProducts } from '../../hooks/useProducts';
 
 interface CustomerCheckoutProps {
   goBack: () => void;
@@ -22,22 +24,9 @@ interface CustomerCheckoutProps {
 }
 
 export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, placeOrder }) => {
-  const { 
-    cart, 
-    setCart, 
-    location, 
-    stores, 
-    showToast, 
-    t, 
-    isRTL, 
-    products, 
-    activeCoupon, 
-    setActiveCoupon, 
-    savedAddresses, 
-    addAddress, 
-    currentUser,
-    deliveryFeeConfig
-  } = useApp();
+  const { cart, setCart, location, showToast, t, isRTL, activeCoupon, setActiveCoupon, savedAddresses, addAddress, currentUser, deliveryFeeConfig } = useApp();
+  const { stores } = useStores();
+  const { products } = useProducts();;
 
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'vodafone' | 'instapay'>('cash');
   const [receiptImage, setReceiptImage] = useState<string | null>(null);

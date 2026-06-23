@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { VendorSettings as VendorSettingsIcon, Save, Wallet, Bike, Clock, ToggleLeft, ToggleRight, AlertTriangle, Upload, Globe, Facebook, Instagram, PhoneCall, Link, ShieldCheck } from 'lucide-react';
+import { Settings as VendorSettingsIcon, Settings, Save, Wallet, Bike, Clock, ToggleLeft, ToggleRight, AlertTriangle, Upload, Globe, Facebook, Instagram, PhoneCall, Link, ShieldCheck } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { mediaService } from '../../services/media.service';
 import { auth } from '../../services/firebase';
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { useStores } from '../../hooks/useStores';
 
 export const VendorSettings: React.FC = () => {
-  const { stores, setStores, showToast, isRTL } = useApp();
+  const { showToast, isRTL } = useApp();
+  const { stores, setStores } = useStores();
 
   // Find store g_1 (أسواق الخير)
   const store = stores.find(s => s.id === 'g_1');

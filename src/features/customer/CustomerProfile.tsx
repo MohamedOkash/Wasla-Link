@@ -52,7 +52,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
 
   // Navigation sub-states (to open specific edit forms)
-  const [activeSection, setActiveSection] = useState<'root' | 'info' | 'addresses' | 'security' | 'support' | 'loyalty' | 'referral'>('root');
+  const [activeSection, setActiveSection] = useState<'root' | 'info' | 'addresses' | 'security' | 'support' | 'loyalty' | 'referral' | 'driver_registration'>('root');
 
   // Account Info states
   const [name, setName] = useState(currentUser?.name || 'أحمد محمود');
@@ -79,6 +79,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotStep, setForgotStep] = useState(1);
+  const [loading, setLoading] = useState(false);
 
   const handleLanguageToggle = () => {
     setLang(lang === 'ar' ? 'en' : 'ar');
@@ -824,7 +825,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
             </div>
             
             {forgotStep === 1 ? (
-              <form onSubmit={handleSendResetEmail} className="space-y-4">
+              <form onSubmit={handleForgotPassword} className="space-y-4">
                 <p className="text-[11px] text-theme-muted font-bold leading-relaxed">
                   {isRTL 
                     ? 'أدخل بريدك الإلكتروني المسجل وسنقوم بإرسال رابط إعادة تعيين كلمة المرور التجريبي.' 

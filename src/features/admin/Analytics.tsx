@@ -8,9 +8,11 @@ import { PremiumBadge } from '../../components/premium/PremiumBadge';
 import { collection, getDocs, query } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { User } from '../../types/user.types';
+import { useStores } from '../../hooks/useStores';
 
 export const Analytics: React.FC = () => {
-  const { stores, orders, isRTL } = useApp();
+  const { orders, isRTL } = useApp();
+  const { stores } = useStores();;
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -47,13 +49,13 @@ export const Analytics: React.FC = () => {
 
   // Driver Leaderboard
   const driverPerformances = drivers.map(d => {
-    const perf = analyticsService.getDriverPerformance(d.id, orders);
+    const perf = analyticsService.getDriverPerformance(d.id || '', orders);
     return { ...d, ...perf };
   }).sort((a, b) => b.driverScore - a.driverScore).slice(0, 10);
 
   // Customer Leaderboard
   const customerPerformances = customers.map(c => {
-    const perf = analyticsService.getCustomerAnalytics(c.id, orders);
+    const perf = analyticsService.getCustomerAnalytics(c.id || c.uid, orders);
     return { ...c, ...perf };
   }).sort((a, b) => b.totalSpending - a.totalSpending).slice(0, 10);
 

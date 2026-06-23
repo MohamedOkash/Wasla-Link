@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Edit, Save, X, ClipboardList, Check, TrendingUp, History, Archive, AlertTriangle, Layers, FileSpreadsheet, Image as ImageIcon, Trash, ChevronDown, Loader2 } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
+import { useProducts } from '../../hooks/useProducts';
 import { Product } from '../../types/product.types';
 import { ProductImport } from './ProductImport';
 import { mediaService } from '../../services/media.service';
 
 export const VendorProducts: React.FC = () => {
-  const { products, setProducts, showToast, stockMovements, addStockMovement, isRTL } = useApp();
+  const { showToast, stockMovements, addStockMovement, isRTL } = useApp();
+  const { products, setProducts } = useProducts();
   const [activeSubTab, setActiveSubTab] = useState<'inventory' | 'movements'>('inventory');
   
   // Modals state
@@ -33,6 +35,17 @@ export const VendorProducts: React.FC = () => {
   const [productImages, setProductImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [activeFormTab, setActiveFormTab] = useState<'info' | 'media'>('info');
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleImageUpload({ target: { files: e.dataTransfer.files } } as any);
+    }
+  };
 
 
   // Stock Adjustment Form states

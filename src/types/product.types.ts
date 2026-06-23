@@ -6,6 +6,7 @@ export interface Product {
   name: string; // Left for backward compatibility (maps to nameAr/nameEn)
   desc: string; // Left for backward compatibility (maps to description)
   price: number; // Left for backward compatibility (maps to sellingPrice)
+  discountPrice?: number;
   imgUrl: string; // Left for backward compatibility (maps to imageUrl)
 
   // Universal Product Schema fields (Phase 12A)

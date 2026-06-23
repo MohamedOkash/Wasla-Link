@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { User, Phone, Bike, Star, DollarSign, LogOut, ShieldAlert } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
+import { useReviews } from '../../hooks/useReviews';
 
 export const DriverProfile: React.FC = () => {
-  const { currentUser, setCurrentUser, setRole, goHome, orders, lang, isRTL, reviews } = useApp();
+  const { currentUser, setCurrentUser, setRole, goHome, orders, lang, isRTL } = useApp();
+  const { reviews } = useReviews();;
   const [phone, setPhone] = useState(currentUser?.phone || '01022334455');
   const [vehicle, setVehicle] = useState(currentUser?.vehicleType || 'سكوتر دايون');
 

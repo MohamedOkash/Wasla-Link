@@ -2,22 +2,17 @@ import React, { useState } from 'react';
 import { Heart, Store as StoreIcon, ShoppingBag, Clock, Star } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { CustomerHeader } from '../../components/common/CustomerHeader';
+import { useStores } from '../../hooks/useStores';
+import { useProducts } from '../../hooks/useProducts';
 
 interface FavoritesScreenProps {
   navigate: (name: string, params?: any) => void;
 }
 
 export const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigate }) => {
-  const { 
-    stores, 
-    products, 
-    favoriteStores, 
-    favoriteProducts, 
-    toggleFavoriteStore, 
-    toggleFavoriteProduct, 
-    t, 
-    isRTL 
-  } = useApp();
+  const { favoriteStores, favoriteProducts, toggleFavoriteStore, toggleFavoriteProduct, t, isRTL } = useApp();
+  const { stores } = useStores();
+  const { products } = useProducts();;
 
   const [activeTab, setActiveTab] = useState<'stores' | 'products'>('stores');
 

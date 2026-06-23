@@ -6,10 +6,12 @@ import { invoiceService } from '../../services/invoice.service';
 import { dispatchService } from '../../services/dispatch.service';
 import { VendorTracking } from './VendorTracking';
 import { VendorDeliveryCenter } from './VendorDeliveryCenter';
+import { useStores } from '../../hooks/useStores';
 
 export const VendorOrders: React.FC = () => {
   // Filter orders for Store g_1 (أسواق الخير)
-  const { orders, updateOrderStatus, showToast, isRTL } = useApp();
+  const { orders, updateOrderStatus, showToast, isRTL, currentUser } = useApp();
+  const { stores } = useStores();
   const [activeReceipt, setActiveReceipt] = useState<string | null>(null);
   const [activeInvoice, setActiveInvoice] = useState<Order | null>(null);
   const [invoiceQRCode, setInvoiceQRCode] = useState<string | null>(null);
@@ -425,7 +427,7 @@ export const VendorOrders: React.FC = () => {
                   <div className="mt-4 pt-4 border-t border-theme-border">
                     <VendorDeliveryCenter 
                       order={order} 
-                      storeLocation={stores.find(s => s.id === currentUser?.storeId)?.location || { lat: 30.0444, lng: 31.2357 }} 
+                      storeLocation={(stores.find(s => s.id === currentUser?.storeId)?.location as { lat: number, lng: number }) || { lat: 30.0444, lng: 31.2357 }} 
                     />
                     {order.status === 'on_the_way' && <VendorTracking order={order} />}
                   </div>

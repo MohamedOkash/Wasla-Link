@@ -11,6 +11,8 @@ import { PremiumInput } from '../../components/premium/PremiumInput';
 import { PremiumCard } from '../../components/premium/PremiumCard';
 import { PremiumBadge } from '../../components/premium/PremiumBadge';
 import { PremiumEmptyState } from '../../components/premium/PremiumEmptyState';
+import { useStores } from '../../hooks/useStores';
+import { useProducts } from '../../hooks/useProducts';
 
 interface CustomerCartProps {
   goBack: () => void;
@@ -18,7 +20,9 @@ interface CustomerCartProps {
 }
 
 export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout }) => {
-  const { cart, setCart, stores, t, isRTL, products, coupons, activeCoupon, setActiveCoupon, currentUser, orders, showToast } = useApp();
+  const { cart, setCart, t, isRTL, coupons, activeCoupon, setActiveCoupon, currentUser, orders, showToast } = useApp();
+  const { stores } = useStores();
+  const { products } = useProducts();;
 
   const handleIncrement = (id: string) => {
     setCart(prev => {

@@ -12,7 +12,8 @@ import {
   Truck, 
   BarChart3,
   Image as ImageIcon,
-  Shield
+  Shield,
+  Navigation
 } from 'lucide-react';
 
 import PremiumButton from '../../components/premium/PremiumButton';

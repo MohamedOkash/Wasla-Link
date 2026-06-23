@@ -3,9 +3,13 @@ import { useApp } from '../../contexts/AppContext';
 import { PremiumCard } from '../../components/premium/PremiumCard';
 import { PremiumStatCard } from '../../components/premium/PremiumStatCard';
 import { Image, AlertTriangle, Layers, Percent } from 'lucide-react';
+import { useStores } from '../../hooks/useStores';
+import { useProducts } from '../../hooks/useProducts';
 
 export const AssetCoverageCenter: React.FC = () => {
-  const { products, stores, isRTL } = useApp();
+  const { isRTL } = useApp();
+  const { stores } = useStores();
+  const { products } = useProducts();;
 
   const stats = useMemo(() => {
     // Products calculations

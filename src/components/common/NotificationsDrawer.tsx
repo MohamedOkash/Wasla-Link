@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { X, Bell, Check, Trash2, ShoppingBag, Tag, Info, ShieldAlert, ArrowRightLeft } from 'lucide-react';
 import { useApp, Notification } from '../../contexts/AppContext';
+import { useStores } from '../../hooks/useStores';
+import { useProducts } from '../../hooks/useProducts';
 
 interface NotificationsDrawerProps {
   onClose: () => void;
@@ -8,17 +10,9 @@ interface NotificationsDrawerProps {
 }
 
 export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({ onClose, navigate }) => {
-  const { 
-    notifications, 
-    markNotificationRead, 
-    markAllNotificationsRead, 
-    deleteNotification, 
-    clearAllNotifications, 
-    t, 
-    isRTL,
-    products,
-    stores
-  } = useApp();
+  const { notifications, markNotificationRead, markAllNotificationsRead, deleteNotification, clearAllNotifications, t, isRTL } = useApp();
+  const { stores } = useStores();
+  const { products } = useProducts();;
 
   type TabType = 'all' | 'unread' | 'offer' | 'order' | 'promotion' | 'system';
   const [activeTab, setActiveTab] = useState<TabType>('all');

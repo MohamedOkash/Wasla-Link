@@ -17,9 +17,11 @@ import { PremiumStatCard } from '../../components/premium/PremiumStatCard';
 import { PremiumButton } from '../../components/premium/PremiumButton';
 import { PremiumBadge } from '../../components/premium/PremiumBadge';
 import { PremiumInput } from '../../components/premium/PremiumInput';
+import { useProducts } from '../../hooks/useProducts';
 
 export const VendorDashboard: React.FC = () => {
-  const { goHome, t, orders, products, theme, isRTL, walletTransactions, walletSettlements, addSettlement, returnRequests, updateReturnStatus, showToast } = useApp();
+  const { goHome, t, orders, theme, isRTL, walletTransactions, walletSettlements, addSettlement, returnRequests, updateReturnStatus, showToast } = useApp();
+  const { products } = useProducts();;
   const [activeTab, setActiveTab] = useState<'dashboard' | 'catalog_builder' | 'orders' | 'products' | 'offers' | 'campaigns' | 'reports' | 'wallet' | 'settings' | 'returns' | 'reviews'>('dashboard');
 
   const [withdrawAmount, setWithdrawAmount] = useState('');
