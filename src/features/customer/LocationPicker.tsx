@@ -13,8 +13,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({ closeMap }) => {
     addAddress, 
     deleteAddress, 
     setDefaultAddress, 
-    showToast, 
-    t, 
+    showToast,  
     isRTL 
   } = useApp();
 

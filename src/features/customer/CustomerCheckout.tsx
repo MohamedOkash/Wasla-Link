@@ -25,7 +25,7 @@ interface CustomerCheckoutProps {
 }
 
 export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, placeOrder }) => {
-  const { cart, setCart, location, showToast, t, isRTL, activeCoupon, setActiveCoupon, savedAddresses, addAddress, currentUser, deliveryFeeConfig } = useApp();
+  const { cart, setCart, location, showToast,  isRTL, activeCoupon, setActiveCoupon, savedAddresses, addAddress, currentUser, deliveryFeeConfig } = useApp();
   const { stores } = useStores();
   const { products } = useProducts();;
 
@@ -107,7 +107,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
   const total = Math.max(0, subtotal - discountAmount - pointsDiscount) + deliveryFee;
 
   const handleReceiptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const { t } = useTranslation();
+  const {} = useTranslation();
 
     const file = e.target.files?.[0];
     if (file) {

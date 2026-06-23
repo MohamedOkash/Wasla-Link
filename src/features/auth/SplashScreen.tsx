@@ -3,7 +3,7 @@ import { Store } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 
 export const SplashScreen: React.FC = () => {
-  const { t } = useApp();
+  const {} = useApp();
   
   return (
     <div className="flex-1 bg-orange-500 flex flex-col items-center justify-center animate-fade-in relative overflow-hidden">

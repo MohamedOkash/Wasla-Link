@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React from 'react';
 import { Wallet, TrendingUp, Calendar, Clock, DollarSign, ArrowUpRight } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -28,17 +29,17 @@ export const DriverEarnings: React.FC<DriverEarningsProps> = ({ driver }) => {
         <div>
           <span className="text-xs font-bold uppercase tracking-wider opacity-80 flex items-center gap-2">
             <Wallet size={16} />
-            {isRTL ? 'إجمالي الأرباح المتاحة' : 'Total Available Earnings'}
+            {t('str_1111')}
           </span>
           <div className="mt-3 flex items-end gap-2">
             <h2 className="text-4xl font-black">{earnings}</h2>
-            <span className="text-lg font-bold opacity-80 mb-1">ج.م</span>
+            <span className="text-lg font-bold opacity-80 mb-1">{t('str_1110')}</span>
           </div>
         </div>
         
         <div className="flex items-center gap-2 text-xs font-bold bg-white/10 w-fit px-3 py-1.5 rounded-xl backdrop-blur-md">
           <ArrowUpRight size={14} />
-          {isRTL ? 'جاهزة للسحب في التحديث القادم' : 'Ready for withdrawal in next update'}
+          {t('str_1112')}
         </div>
       </div>
 
@@ -50,8 +51,8 @@ export const DriverEarnings: React.FC<DriverEarningsProps> = ({ driver }) => {
           <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center mb-3">
             <Clock size={20} />
           </div>
-          <span className="text-[10px] text-theme-muted font-black block">{isRTL ? 'أرباح اليوم' : 'Today'}</span>
-          <span className="text-xl font-black text-theme-text mt-1 block">{today} <span className="text-[10px] text-theme-muted font-bold">ج.م</span></span>
+          <span className="text-[10px] text-theme-muted font-black block">{t('str_1113')}</span>
+          <span className="text-xl font-black text-theme-text mt-1 block">{today} <span className="text-[10px] text-theme-muted font-bold">{t('str_1110')}</span></span>
         </div>
 
         {/* Weekly */}
@@ -59,8 +60,8 @@ export const DriverEarnings: React.FC<DriverEarningsProps> = ({ driver }) => {
           <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-3">
             <TrendingUp size={20} />
           </div>
-          <span className="text-[10px] text-theme-muted font-black block">{isRTL ? 'هذا الأسبوع' : 'This Week'}</span>
-          <span className="text-xl font-black text-theme-text mt-1 block">{weekly} <span className="text-[10px] text-theme-muted font-bold">ج.م</span></span>
+          <span className="text-[10px] text-theme-muted font-black block">{t('str_1114')}</span>
+          <span className="text-xl font-black text-theme-text mt-1 block">{weekly} <span className="text-[10px] text-theme-muted font-bold">{t('str_1110')}</span></span>
         </div>
 
         {/* Monthly */}
@@ -70,8 +71,8 @@ export const DriverEarnings: React.FC<DriverEarningsProps> = ({ driver }) => {
               <Calendar size={24} />
             </div>
             <div>
-              <span className="text-[10px] text-theme-muted font-black block">{isRTL ? 'هذا الشهر' : 'This Month'}</span>
-              <span className="text-2xl font-black text-theme-text mt-0.5 block">{monthly} <span className="text-xs text-theme-muted font-bold">ج.م</span></span>
+              <span className="text-[10px] text-theme-muted font-black block">{t('str_1115')}</span>
+              <span className="text-2xl font-black text-theme-text mt-0.5 block">{monthly} <span className="text-xs text-theme-muted font-bold">{t('str_1110')}</span></span>
             </div>
           </div>
         </div>

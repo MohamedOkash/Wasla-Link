@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -18,7 +19,7 @@ export const CartConflictModal: React.FC = () => {
             <AlertCircle size={24} />
           </div>
           <h2 className="text-lg font-black text-theme-text uppercase">
-            {isRTL ? 'متجر مختلف' : 'Different Store'}
+            {t('str_1198')}
           </h2>
         </div>
 
@@ -33,13 +34,13 @@ export const CartConflictModal: React.FC = () => {
             onClick={cancelCartConflict}
             className="flex-1 py-3 px-4 rounded-xl border border-theme-border font-bold text-theme-text/80 hover:bg-theme-bg-alt transition-colors"
           >
-            {isRTL ? 'إلغاء' : 'Cancel'}
+            {t('str_56')}
           </button>
           <button 
             onClick={confirmClearCartAndAdd}
             className="flex-1 py-3 px-4 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-colors"
           >
-            {isRTL ? 'إفراغ السلة والمتابعة' : 'Clear & Continue'}
+            {t('str_1199')}
           </button>
         </div>
       </div>

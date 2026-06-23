@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { Save, Plus, Trash2, MapPin } from 'lucide-react';
@@ -46,13 +47,15 @@ export const DeliveryConfig: React.FC = () => {
   };
 
   const handleAddVillage = () => {
+  const {} = useTranslation();
+
     if (!newVillage.trim()) return;
     setClassifications(prev => ({
       ...prev,
       [newVillage.trim()]: newClass
     }));
     setNewVillage('');
-    showToast(isRTL ? 'تمت إضافة تصنيف القرية مؤقتاً. يرجى الحفظ للتأكيد.' : 'Village added temporarily. Please save to confirm.');
+    showToast(t('str_515'));
   };
 
   const handleRemoveVillage = (village: string) => {
@@ -61,14 +64,14 @@ export const DeliveryConfig: React.FC = () => {
       delete next[village];
       return next;
     });
-    showToast(isRTL ? 'تمت إزالة تصنيف القرية مؤقتاً. يرجى الحفظ للتأكيد.' : 'Village removed temporarily. Please save to confirm.');
+    showToast(t('str_516'));
   };
 
   return (
     <div className="space-y-6 text-theme-text animate-fade-in pb-10">
       <div className="bg-theme-card p-5 rounded-[28px] border border-theme-border shadow-sm theme-transition">
         <h3 className="font-black text-theme-text text-sm mb-1">
-          {isRTL ? 'إعدادات تسعير التوصيل الذكي' : 'Smart Delivery Rate Configurator'}
+          {t('str_517')}
         </h3>
         <p className="text-[10px] text-theme-muted font-bold mb-6">
           {isRTL 
@@ -82,11 +85,11 @@ export const DeliveryConfig: React.FC = () => {
             <div className="p-4 bg-theme-bg/30 border border-theme-border/60 rounded-2xl space-y-4">
               <h4 className="font-black text-xs text-primary flex items-center gap-1.5">
                 <MapPin size={14} />
-                {isRTL ? 'نفس القرية (داخلي)' : 'Same Village (Internal)'}
+                {t('str_518')}
               </h4>
               <div className="space-y-3">
                 <div>
-                  <label className="text-[9px] font-black text-theme-muted block mb-1">{isRTL ? 'تكلفة التوصيل (ج.م)' : 'Delivery Fee (EGP)'}</label>
+                  <label className="text-[9px] font-black text-theme-muted block mb-1">{t('str_519')}</label>
                   <input
                     type="number"
                     value={sameFee}
@@ -96,7 +99,7 @@ export const DeliveryConfig: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-[9px] font-black text-theme-muted block mb-1">{isRTL ? 'الوقت المتوقع للتوصيل' : 'Estimated Delivery Time (ETA)'}</label>
+                  <label className="text-[9px] font-black text-theme-muted block mb-1">{t('str_520')}</label>
                   <input
                     type="text"
                     value={sameEta}
@@ -112,11 +115,11 @@ export const DeliveryConfig: React.FC = () => {
             <div className="p-4 bg-theme-bg/30 border border-theme-border/60 rounded-2xl space-y-4">
               <h4 className="font-black text-xs text-green-500 flex items-center gap-1.5">
                 <MapPin size={14} />
-                {isRTL ? 'قرية قريبة' : 'Near Village'}
+                {t('str_521')}
               </h4>
               <div className="space-y-3">
                 <div>
-                  <label className="text-[9px] font-black text-theme-muted block mb-1">{isRTL ? 'تكلفة التوصيل (ج.م)' : 'Delivery Fee (EGP)'}</label>
+                  <label className="text-[9px] font-black text-theme-muted block mb-1">{t('str_519')}</label>
                   <input
                     type="number"
                     value={nearFee}
@@ -126,7 +129,7 @@ export const DeliveryConfig: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-[9px] font-black text-theme-muted block mb-1">{isRTL ? 'الوقت المتوقع للتوصيل' : 'Estimated Delivery Time (ETA)'}</label>
+                  <label className="text-[9px] font-black text-theme-muted block mb-1">{t('str_520')}</label>
                   <input
                     type="text"
                     value={nearEta}
@@ -142,11 +145,11 @@ export const DeliveryConfig: React.FC = () => {
             <div className="p-4 bg-theme-bg/30 border border-theme-border/60 rounded-2xl space-y-4">
               <h4 className="font-black text-xs text-amber-500 flex items-center gap-1.5">
                 <MapPin size={14} />
-                {isRTL ? 'قرية بعيدة' : 'Far Village'}
+                {t('str_522')}
               </h4>
               <div className="space-y-3">
                 <div>
-                  <label className="text-[9px] font-black text-theme-muted block mb-1">{isRTL ? 'تكلفة التوصيل (ج.م)' : 'Delivery Fee (EGP)'}</label>
+                  <label className="text-[9px] font-black text-theme-muted block mb-1">{t('str_519')}</label>
                   <input
                     type="number"
                     value={farFee}
@@ -156,7 +159,7 @@ export const DeliveryConfig: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-[9px] font-black text-theme-muted block mb-1">{isRTL ? 'الوقت المتوقع للتوصيل' : 'Estimated Delivery Time (ETA)'}</label>
+                  <label className="text-[9px] font-black text-theme-muted block mb-1">{t('str_520')}</label>
                   <input
                     type="text"
                     value={farEta}
@@ -175,7 +178,7 @@ export const DeliveryConfig: React.FC = () => {
               className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white font-black text-xs px-5 py-3 rounded-2xl shadow transition"
             >
               <Save size={16} />
-              {isRTL ? 'حفظ إعدادات التسعير' : 'Save Tariffs Config'}
+              {t('str_523')}
             </button>
           </div>
         </form>
@@ -184,7 +187,7 @@ export const DeliveryConfig: React.FC = () => {
       {/* Classifications Manager */}
       <div className="bg-theme-card p-5 rounded-[28px] border border-theme-border shadow-sm theme-transition">
         <h3 className="font-black text-theme-text text-sm mb-4">
-          {isRTL ? 'إدارة تصنيفات القرى الجغرافية' : 'Village Geographic Classification Map'}
+          {t('str_524')}
         </h3>
 
         {/* Add village form */}
@@ -192,7 +195,7 @@ export const DeliveryConfig: React.FC = () => {
           <div className="flex-1">
             <input
               type="text"
-              placeholder={isRTL ? 'اسم القرية (مثال: ميت غراب)' : 'Enter village name...'}
+              placeholder={t('str_525')}
               value={newVillage}
               onChange={(e) => setNewVillage(e.target.value)}
               className="w-full bg-theme-card border border-theme-border rounded-xl px-3 py-2.5 text-xs font-bold focus:border-primary outline-none text-theme-text"
@@ -204,9 +207,9 @@ export const DeliveryConfig: React.FC = () => {
               onChange={(e) => setNewClass(e.target.value as any)}
               className="w-full bg-theme-card border border-theme-border rounded-xl px-3 py-2.5 text-xs font-bold focus:border-primary outline-none text-theme-text"
             >
-              <option value="same">{isRTL ? 'نفس القرية' : 'Same Village'}</option>
-              <option value="near">{isRTL ? 'قرية قريبة' : 'Near Village'}</option>
-              <option value="far">{isRTL ? 'قرية بعيدة' : 'Far Village'}</option>
+              <option value="same">{t('str_526')}</option>
+              <option value="near">{t('str_521')}</option>
+              <option value="far">{t('str_522')}</option>
             </select>
           </div>
           <button
@@ -215,7 +218,7 @@ export const DeliveryConfig: React.FC = () => {
             className="flex items-center justify-center gap-1.5 bg-primary hover:bg-primary-hover text-white font-black text-xs px-5 py-2.5 rounded-xl transition"
           >
             <Plus size={15} />
-            {isRTL ? 'إضافة قرية' : 'Add Village'}
+            {t('str_527')}
           </button>
         </div>
 
@@ -224,16 +227,16 @@ export const DeliveryConfig: React.FC = () => {
           <table className="w-full border-collapse text-right text-xs">
             <thead>
               <tr className="border-b border-theme-border/60 text-theme-muted font-black text-[10px]">
-                <th className="py-2.5 px-3">{isRTL ? 'القرية' : 'Village'}</th>
-                <th className="py-2.5 px-3">{isRTL ? 'التصنيف الجغرافي' : 'Geographic Class'}</th>
-                <th className="py-2.5 px-3 w-16 text-center">{isRTL ? 'إجراءات' : 'Actions'}</th>
+                <th className="py-2.5 px-3">{t('str_528')}</th>
+                <th className="py-2.5 px-3">{t('str_529')}</th>
+                <th className="py-2.5 px-3 w-16 text-center">{t('str_530')}</th>
               </tr>
             </thead>
             <tbody>
               {Object.keys(classifications).length === 0 ? (
                 <tr>
                   <td colSpan={3} className="text-center py-6 font-bold text-theme-muted">
-                    {isRTL ? 'لا توجد قرى مصنفة حالياً.' : 'No villages classified yet.'}
+                    {t('str_531')}
                   </td>
                 </tr>
               ) : (
@@ -246,9 +249,9 @@ export const DeliveryConfig: React.FC = () => {
                         classVal === 'near' ? 'bg-green-500/10 text-green-500' :
                         'bg-amber-500/10 text-amber-500'
                       }`}>
-                        {classVal === 'same' ? (isRTL ? 'نفس القرية' : 'Same') :
-                         classVal === 'near' ? (isRTL ? 'قريبة' : 'Near') :
-                         (isRTL ? 'بعيدة' : 'Far')}
+                        {classVal === 'same' ? (t('str_526')) :
+                         classVal === 'near' ? (t('str_532')) :
+                         (t('str_533'))}
                       </span>
                     </td>
                     <td className="py-3 px-3 text-center">

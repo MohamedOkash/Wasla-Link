@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState } from 'react';
 import { Download, Printer, Calendar, ArrowUpRight, TrendingUp, DollarSign, ShoppingBag, MapPin, ClipboardList, Eye } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -9,7 +10,7 @@ import { PremiumBadge } from '../../components/premium/PremiumBadge';
 import { useProducts } from '../../hooks/useProducts';
 
 export const VendorReports: React.FC = () => {
-  const { orders, t, isRTL } = useApp();
+  const { orders,  isRTL } = useApp();
   const { products } = useProducts();;
   const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
@@ -18,6 +19,8 @@ export const VendorReports: React.FC = () => {
 
   // Export handlers
   const handleExportCSV = () => {
+  const {} = useTranslation();
+
     const headers = ['رقم الطلب', 'تاريخ الطلب', 'قيمة المجموع الفرعي', 'رسوم التوصيل', 'إجمالي الطلب', 'طريقة الدفع', 'الحالة'];
     const rows = orders.filter(o => o.shopId === 'g_1').map(o => [
       o.id,
@@ -77,10 +80,10 @@ export const VendorReports: React.FC = () => {
           <div className="space-y-1">
             <h4 className="font-black text-theme-text text-sm flex items-center gap-2">
               <TrendingUp size={16} className="text-primary" />
-              {isRTL ? 'مخطط المبيعات اليومي (7 أيام الماضية)' : 'Daily Sales Trend (Last 7 Days)'}
+              {t('str_992')}
             </h4>
             <p className="text-[10px] text-theme-muted font-bold">
-              {isRTL ? 'إحصائيات الإيرادات الإجمالية بناءً على المعاملات المكتملة' : 'Gross revenue metrics derived from completed orders'}
+              {t('str_993')}
             </p>
           </div>
           <PremiumBadge variant="primary" pill>Live</PremiumBadge>
@@ -89,11 +92,11 @@ export const VendorReports: React.FC = () => {
         <div className="flex justify-between items-baseline mb-4 text-[10px] font-black text-theme-muted bg-theme-bg border border-theme-border/40 px-3 py-1.5 rounded-lg">
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-            {isRTL ? `أعلى مبيعات: ${max} ج.م` : `Peak: ${max} EGP`}
+            {t('str_994')}
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
-            {isRTL ? `أدنى مبيعات: ${min} ج.م` : `Low: ${min} EGP`}
+            {t('str_995')}
           </span>
         </div>
 
@@ -163,9 +166,9 @@ export const VendorReports: React.FC = () => {
           </svg>
         </div>
         <div className="flex justify-between text-[9px] font-black text-theme-muted mt-3 border-t border-theme-border/50 pt-2.5">
-          <span>{isRTL ? 'منذ 6 أيام' : '6 days ago'}</span>
-          <span>{isRTL ? 'منذ 3 أيام' : '3 days ago'}</span>
-          <span>{isRTL ? 'اليوم' : 'Today'}</span>
+          <span>{t('str_996')}</span>
+          <span>{t('str_997')}</span>
+          <span>{t('str_998')}</span>
         </div>
       </PremiumCard>
     );
@@ -176,9 +179,9 @@ export const VendorReports: React.FC = () => {
       {/* Selector */}
       <div className="bg-theme-card p-1.5 rounded-2xl border border-theme-border/60 shadow-sm flex justify-between items-center gap-1 theme-transition">
         {[
-          { id: 'daily', label: isRTL ? 'التقرير اليومي' : 'Daily' },
-          { id: 'weekly', label: isRTL ? 'التقرير الأسبوعي' : 'Weekly' },
-          { id: 'monthly', label: isRTL ? 'التقرير الشهري' : 'Monthly' },
+          { id: 'daily', label: t('str_999') },
+          { id: 'weekly', label: t('str_1000') },
+          { id: 'monthly', label: t('str_1001') },
         ].map(r => (
           <button
             key={r.id}
@@ -197,17 +200,17 @@ export const VendorReports: React.FC = () => {
       {/* Overview Cards */}
       <div className="grid grid-cols-2 gap-4">
         <PremiumStatCard
-          title={isRTL ? 'إيرادات المبيعات' : 'Gross Sales'}
+          title={t('str_1002')}
           value={`${kpi.totalSales} ج.م`}
-          change={isRTL ? '+12.4% متزايد' : '+12.4%'}
+          change={t('str_1003')}
           changeType="positive"
           icon={<DollarSign size={16} />}
         />
 
         <PremiumStatCard
-          title={isRTL ? 'صافي أرباح المتجر' : 'Net Profits'}
+          title={t('str_1004')}
           value={`${kpi.totalProfit} ج.م`}
-          change={isRTL ? 'هامش ممتاز' : 'Healthy margins'}
+          change={t('str_1005')}
           changeType="positive"
           icon={<TrendingUp size={16} />}
         />
@@ -220,39 +223,39 @@ export const VendorReports: React.FC = () => {
       <PremiumCard hoverable={false} className="p-6">
         <h4 className="font-black text-theme-text text-sm mb-5 flex items-center gap-2">
           <ClipboardList size={16} className="text-primary" />
-          {isRTL ? 'تحليلات الأرباح والتكلفة الكلية' : 'Cost of Goods & Profit Margins'}
+          {t('str_1006')}
         </h4>
         <div className="space-y-4">
           {[
             {
-              label: isRTL ? 'إجمالي المبيعات المستلمة' : 'Completed Sales Revenue',
+              label: t('str_1007'),
               val: `${kpi.totalSales} ج.م`,
               highlight: false,
             },
             {
-              label: isRTL ? 'صافي الأرباح المقدرة للفرع' : 'Net Gross Margin EGP',
+              label: t('str_1008'),
               val: `${kpi.totalProfit} ج.م`,
               highlight: true,
               color: 'text-green-500',
             },
             {
-              label: isRTL ? 'نسبة هامش الربح الإجمالي' : 'Gross Margin Ratio',
+              label: t('str_1009'),
               val: `%${kpi.totalSales > 0 ? Math.round((kpi.totalProfit / kpi.totalSales) * 100) : 0}`,
               highlight: true,
               color: 'text-green-500',
             },
             {
-              label: isRTL ? 'متوسط قيمة الطلبات المستلمة' : 'Average Order Value (AOV)',
+              label: t('str_1010'),
               val: `${kpi.avgOrderValue} ج.م`,
               highlight: false,
             },
             {
-              label: isRTL ? 'طلبات مكتملة / ملغاة' : 'Delivered / Cancelled Orders',
+              label: t('str_1011'),
               val: `${kpi.deliveredOrdersCount} / ${kpi.cancelledOrdersCount}`,
               highlight: false,
             },
             {
-              label: isRTL ? 'تاريخ إصدار التقرير' : 'Report Timestamp',
+              label: t('str_1012'),
               val: new Date().toLocaleDateString(isRTL ? 'ar-EG' : 'en-US'),
               highlight: false,
               icon: <Calendar size={12} className="inline mr-1 opacity-70" />,
@@ -273,11 +276,11 @@ export const VendorReports: React.FC = () => {
       <PremiumCard hoverable={false} className="p-6">
         <h4 className="font-black text-theme-text text-sm mb-5 flex items-center gap-2">
           <MapPin size={16} className="text-primary" />
-          {isRTL ? 'التوزيع الديموغرافي للمبيعات بالقرى' : 'Sales Distribution by Village'}
+          {t('str_1013')}
         </h4>
         {kpi.villageDemographics.length === 0 ? (
           <p className="text-xs text-theme-muted text-center py-4 font-bold">
-            {isRTL ? 'لا تتوفر مبيعات جغرافية بعد' : 'No geographic sales data recorded.'}
+            {t('str_1014')}
           </p>
         ) : (
           <div className="space-y-4">
@@ -289,7 +292,7 @@ export const VendorReports: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-4">
                   <PremiumBadge variant="neutral" pill>
-                    {village.orders} {isRTL ? 'طلب' : 'orders'}
+                    {village.orders} {t('str_550')}
                   </PremiumBadge>
                   <span className="text-theme-text font-black">{village.sales} ج.م</span>
                 </div>
@@ -303,11 +306,11 @@ export const VendorReports: React.FC = () => {
       <PremiumCard hoverable={false} className="p-6">
         <h4 className="font-black text-theme-text text-sm mb-5 flex items-center gap-2">
           <ShoppingBag size={16} className="text-primary" />
-          {isRTL ? 'أكثر السلع طلباً ومبيعاً بالفرع' : 'Top Selling Products (Catalog)'}
+          {t('str_1015')}
         </h4>
         {kpi.topProducts.length === 0 ? (
           <p className="text-xs text-theme-muted text-center py-4 font-bold">
-            {isRTL ? 'لا تتوفر مبيعات سلع لعرض المنتجات' : 'No product sales logs.'}
+            {t('str_1016')}
           </p>
         ) : (
           <div className="space-y-4">
@@ -321,7 +324,7 @@ export const VendorReports: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-4">
                   <PremiumBadge variant="success" pill>
-                    {prod.qty} {isRTL ? 'مبيعة' : 'sold'}
+                    {prod.qty} {t('str_783')}
                   </PremiumBadge>
                   <span className="text-theme-text font-black">{prod.sales} ج.م</span>
                 </div>
@@ -334,7 +337,7 @@ export const VendorReports: React.FC = () => {
       {/* Export Options */}
       <PremiumCard hoverable={false} className="p-6 space-y-4">
         <h4 className="font-black text-theme-text text-sm">
-          {isRTL ? 'تصدير التقارير وسجلات الشحن' : 'Export Reports'}
+          {t('str_1017')}
         </h4>
         <div className="grid grid-cols-2 gap-3">
           <PremiumButton
@@ -342,14 +345,14 @@ export const VendorReports: React.FC = () => {
             onClick={handleExportCSV}
             leftIcon={<Download size={14} />}
           >
-            {isRTL ? 'تصدير CSV' : 'Export CSV'}
+            {t('str_1018')}
           </PremiumButton>
           <PremiumButton
             variant="outline"
             onClick={handleExportExcel}
             leftIcon={<Download size={14} />}
           >
-            {isRTL ? 'تصدير Excel' : 'Export Excel'}
+            {t('str_1019')}
           </PremiumButton>
         </div>
         <PremiumButton
@@ -358,7 +361,7 @@ export const VendorReports: React.FC = () => {
           className="w-full"
           leftIcon={<Printer size={15} />}
         >
-          {isRTL ? 'طباعة التقرير الكامل' : 'Print Invoice Ledger'}
+          {t('str_1020')}
         </PremiumButton>
       </PremiumCard>
     </div>

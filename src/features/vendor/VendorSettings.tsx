@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState } from 'react';
 import { Settings as VendorSettingsIcon, Settings, Save, Wallet, Bike, Clock, ToggleLeft, ToggleRight, AlertTriangle, Upload, Globe, Facebook, Instagram, PhoneCall, Link, ShieldCheck } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -37,7 +38,7 @@ export const VendorSettings: React.FC = () => {
 
   const handleUpdatePassword = async () => {
     if (!vendorOldPass || !vendorNewPass) {
-      showToast(isRTL ? 'الرجاء إدخال كلمة المرور الحالية والجديدة' : 'Enter current and new passwords');
+      showToast(t('str_1021'));
       return;
     }
     const user = auth.currentUser;
@@ -47,12 +48,12 @@ export const VendorSettings: React.FC = () => {
       const credential = EmailAuthProvider.credential(user.email, vendorOldPass);
       await reauthenticateWithCredential(user, credential);
       await updatePassword(user, vendorNewPass);
-      showToast(isRTL ? 'تم تغيير كلمة المرور بنجاح' : 'Password updated successfully');
+      showToast(t('str_648'));
       setVendorOldPass('');
       setVendorNewPass('');
     } catch (error) {
       console.error(error);
-      showToast(isRTL ? 'كلمة المرور الحالية غير صحيحة' : 'Current password incorrect');
+      showToast(t('str_224'));
     }
   };
 
@@ -132,6 +133,8 @@ export const VendorSettings: React.FC = () => {
   };
 
   const handleZoneChange = (id: string, field: 'fee' | 'eta', value: any) => {
+  const {} = useTranslation();
+
     setZones(prev => prev.map(z => {
       if (z.id === id) {
         return {
@@ -194,24 +197,22 @@ export const VendorSettings: React.FC = () => {
       {/* Store Identity (Logo & Cover) */}
       <div className="bg-theme-card rounded-[30px] border border-theme-border p-5 shadow-sm space-y-4 theme-transition">
         <h4 className="font-black text-sm text-theme-text flex items-center gap-2 border-b border-theme-border pb-2">
-          <Settings size={16} className="text-primary" /> هوية المتجر البصرية
-        </h4>
+          <Settings size={16} className="text-primary" />{t('str_1026')}</h4>
         <div className="space-y-4">
           {/* Cover image upload */}
           <div>
-            <label className="text-[10px] font-black text-theme-muted block mb-1.5">غلاف المتجر (Cover Image)</label>
+            <label className="text-[10px] font-black text-theme-muted block mb-1.5">{t('str_1027')}</label>
             <div className="relative border-2 border-dashed border-theme-border hover:border-primary/40 transition rounded-2xl h-36 flex flex-col items-center justify-center overflow-hidden bg-theme-bg cursor-pointer">
               {cover ? (
                 <>
                   <img src={cover} className="w-full h-full object-cover" alt="Cover" />
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition text-white text-[10px] font-black gap-1.5">
-                    <Upload size={14} /> تغيير صورة الغلاف
-                  </div>
+                    <Upload size={14} />{t('str_1028')}</div>
                 </>
               ) : (
                 <div className="text-center p-4">
                   <Upload size={24} className="text-theme-muted mx-auto mb-1.5" />
-                  <p className="text-xs font-black text-theme-text">تحميل صورة الغلاف</p>
+                  <p className="text-xs font-black text-theme-text">{t('str_1029')}</p>
                   <p className="text-[9px] text-theme-muted mt-0.5">PNG, JPG, WEBP (max 5MB)</p>
                 </div>
               )}
@@ -222,7 +223,7 @@ export const VendorSettings: React.FC = () => {
                 className="absolute inset-0 opacity-0 cursor-pointer" 
               />
             </div>
-            {uploadingCover && <p className="text-[9px] text-primary font-bold mt-1 animate-pulse">جاري رفع وتجهيز الغلاف...</p>}
+            {uploadingCover && <p className="text-[9px] text-primary font-bold mt-1 animate-pulse">{t('str_1030')}</p>}
           </div>
 
           {/* Logo upload */}
@@ -231,14 +232,12 @@ export const VendorSettings: React.FC = () => {
               {logo ? (
                 <>
                   <img src={logo} className="w-full h-full object-cover" alt="Logo" />
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition text-white text-[8px] font-black">
-                    تغيير
-                  </div>
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition text-white text-[8px] font-black">{t('str_848')}</div>
                 </>
               ) : (
                 <div className="text-center p-2">
                   <Upload size={16} className="text-theme-muted mx-auto mb-1" />
-                  <span className="text-[9px] font-black text-theme-text">الشعار</span>
+                  <span className="text-[9px] font-black text-theme-text">{t('str_1031')}</span>
                 </div>
               )}
               <input 
@@ -249,27 +248,27 @@ export const VendorSettings: React.FC = () => {
               />
             </div>
             <div className="flex-1">
-              <h5 className="text-xs font-black text-theme-text">شعار المتجر (Logo)</h5>
-              <p className="text-[9px] text-theme-muted font-bold mt-0.5">يظهر للعملاء في نتائج البحث وصفحة المتجر الرئيسية. يفضل أن تكون الأبعاد مربعة.</p>
-              {uploadingLogo && <p className="text-[9px] text-primary font-bold mt-1 animate-pulse">جاري رفع وتجهيز الشعار...</p>}
+              <h5 className="text-xs font-black text-theme-text">{t('str_1032')}</h5>
+              <p className="text-[9px] text-theme-muted font-bold mt-0.5">{t('str_1033')}</p>
+              {uploadingLogo && <p className="text-[9px] text-primary font-bold mt-1 animate-pulse">{t('str_1034')}</p>}
             </div>
           </div>
 
           {/* Banner upload */}
           <div>
-            <label className="text-[10px] font-black text-theme-muted block mb-1.5">{isRTL ? 'بانر المتجر الترويجي (Promo Banner)' : 'Store Promo Banner'}</label>
+            <label className="text-[10px] font-black text-theme-muted block mb-1.5">{t('str_1022')}</label>
             <div className="relative border-2 border-dashed border-theme-border hover:border-primary/40 transition rounded-2xl h-24 flex flex-col items-center justify-center overflow-hidden bg-theme-bg cursor-pointer">
               {banner ? (
                 <>
                   <img src={banner} className="w-full h-full object-cover" alt="Banner" />
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition text-white text-[10px] font-black gap-1.5">
-                    <Upload size={14} /> {isRTL ? 'تغيير صورة البانر' : 'Change Banner Image'}
+                    <Upload size={14} /> {t('str_1023')}
                   </div>
                 </>
               ) : (
                 <div className="text-center p-4">
                   <Upload size={20} className="text-theme-muted mx-auto mb-1" />
-                  <p className="text-xs font-black text-theme-text">{isRTL ? 'تحميل بانر ترويجي عريض للمتجر' : 'Upload Store Promo Banner'}</p>
+                  <p className="text-xs font-black text-theme-text">{t('str_1024')}</p>
                   <p className="text-[9px] text-theme-muted mt-0.5">PNG, JPG, WEBP (max 5MB)</p>
                 </div>
               )}
@@ -280,7 +279,7 @@ export const VendorSettings: React.FC = () => {
                 className="absolute inset-0 opacity-0 cursor-pointer" 
               />
             </div>
-            {uploadingBanner && <p className="text-[9px] text-primary font-bold mt-1 animate-pulse">{isRTL ? 'جاري رفع وتجهيز البانر...' : 'Uploading banner...'}</p>}
+            {uploadingBanner && <p className="text-[9px] text-primary font-bold mt-1 animate-pulse">{t('str_1025')}</p>}
           </div>
         </div>
       </div>
@@ -288,11 +287,10 @@ export const VendorSettings: React.FC = () => {
       {/* Social Media Links */}
       <div className="bg-theme-card rounded-[30px] border border-theme-border p-5 shadow-sm space-y-4 theme-transition">
         <h4 className="font-black text-sm text-theme-text flex items-center gap-2 border-b border-theme-border pb-2">
-          <Globe size={16} className="text-primary" /> روابط التواصل الاجتماعي للمتجر
-        </h4>
+          <Globe size={16} className="text-primary" />{t('str_1035')}</h4>
         <div className="space-y-3">
           <div>
-            <label className="text-[10px] font-black text-theme-muted block mb-1">صفحة فيسبوك (Facebook)</label>
+            <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_1036')}</label>
             <div className="relative">
               <span className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-theme-muted pointer-events-none">
                 <Facebook size={14} />
@@ -308,7 +306,7 @@ export const VendorSettings: React.FC = () => {
           </div>
 
           <div>
-            <label className="text-[10px] font-black text-theme-muted block mb-1">حساب إنستغرام (Instagram)</label>
+            <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_1037')}</label>
             <div className="relative">
               <span className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-theme-muted pointer-events-none">
                 <Instagram size={14} />
@@ -324,7 +322,7 @@ export const VendorSettings: React.FC = () => {
           </div>
 
           <div>
-            <label className="text-[10px] font-black text-theme-muted block mb-1">رقم واتساب للمتجر (WhatsApp)</label>
+            <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_1038')}</label>
             <div className="relative">
               <span className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-theme-muted pointer-events-none">
                 <PhoneCall size={14} />
@@ -340,7 +338,7 @@ export const VendorSettings: React.FC = () => {
           </div>
 
           <div>
-            <label className="text-[10px] font-black text-theme-muted block mb-1">حساب تيك توك (TikTok)</label>
+            <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_1039')}</label>
             <div className="relative">
               <span className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-theme-muted pointer-events-none">
                 <Globe size={14} />
@@ -356,7 +354,7 @@ export const VendorSettings: React.FC = () => {
           </div>
 
           <div>
-            <label className="text-[10px] font-black text-theme-muted block mb-1">الموقع الإلكتروني (Website)</label>
+            <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_1040')}</label>
             <div className="relative">
               <span className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-theme-muted pointer-events-none">
                 <Link size={14} />
@@ -378,7 +376,7 @@ export const VendorSettings: React.FC = () => {
       <div className="bg-theme-card rounded-[30px] border border-theme-border p-5 shadow-sm space-y-4 theme-transition">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="font-black text-sm text-theme-text">حالة استقبال الطلبات</h4>
+            <h4 className="font-black text-sm text-theme-text">{t('str_1041')}</h4>
             <p className="text-[10px] text-theme-muted font-bold mt-1">
               {isOpen ? 'متجرك مفتوح الآن ويستقبل طلبات العملاء' : 'متجرك مغلق حالياً ولن يتمكن العملاء من الطلب'}
             </p>
@@ -395,12 +393,8 @@ export const VendorSettings: React.FC = () => {
         <div className="flex items-center justify-between border-t border-theme-border/60 pt-3">
           <div>
             <h4 className="font-black text-sm text-theme-text flex items-center gap-1">
-              <AlertTriangle size={15} className="text-red-500" />
-              إغلاق مؤقت للمتجر
-            </h4>
-            <p className="text-[10px] text-theme-muted font-bold mt-1">
-              تعطيل البيع لظروف طارئة (سيظهر للعملاء مغلق مؤقتاً)
-            </p>
+              <AlertTriangle size={15} className="text-red-500" />{t('str_1042')}</h4>
+            <p className="text-[10px] text-theme-muted font-bold mt-1">{t('str_1043')}</p>
           </div>
           <button 
             type="button"
@@ -414,12 +408,8 @@ export const VendorSettings: React.FC = () => {
         <div className="flex items-center justify-between border-t border-theme-border/60 pt-3">
           <div>
             <h4 className="font-black text-sm text-theme-text flex items-center gap-1">
-              <AlertTriangle size={15} className="text-purple-500" />
-              وضع الإجازة
-            </h4>
-            <p className="text-[10px] text-theme-muted font-bold mt-1">
-              إغلاق المتجر لفترة طويلة (يمكن للعملاء جدولة الطلبات)
-            </p>
+              <AlertTriangle size={15} className="text-purple-500" />{t('str_1044')}</h4>
+            <p className="text-[10px] text-theme-muted font-bold mt-1">{t('str_1045')}</p>
           </div>
           <button 
             type="button"
@@ -434,11 +424,10 @@ export const VendorSettings: React.FC = () => {
       {/* Business Hours */}
       <div className="bg-theme-card rounded-[30px] border border-theme-border p-5 shadow-sm space-y-4 theme-transition">
         <h4 className="font-black text-sm text-theme-text flex items-center gap-2 border-b border-theme-border pb-2">
-          <Clock size={16} className="text-primary" /> مواعيد ساعات العمل اليومية
-        </h4>
+          <Clock size={16} className="text-primary" />{t('str_1046')}</h4>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-[10px] font-black text-theme-muted block mb-1">وقت فتح المحل</label>
+            <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_1047')}</label>
             <input 
               type="text"
               value={openingHours}
@@ -448,7 +437,7 @@ export const VendorSettings: React.FC = () => {
             />
           </div>
           <div>
-            <label className="text-[10px] font-black text-theme-muted block mb-1">وقت إغلاق المحل</label>
+            <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_1048')}</label>
             <input 
               type="text"
               value={closingHours}
@@ -462,10 +451,8 @@ export const VendorSettings: React.FC = () => {
         {/* Holiday Mode Toggle */}
         <div className="flex items-center justify-between border-t border-theme-border/60 pt-3 mt-3">
           <div>
-            <h5 className="font-black text-xs text-theme-text">وضع العطلة الرسمية (Holiday Mode)</h5>
-            <p className="text-[9px] text-theme-muted font-bold mt-0.5">
-              تفعيل وضع الإجازة يغلق المتجر طوال اليوم
-            </p>
+            <h5 className="font-black text-xs text-theme-text">{t('str_1049')}</h5>
+            <p className="text-[9px] text-theme-muted font-bold mt-0.5">{t('str_1050')}</p>
           </div>
           <button 
             type="button"
@@ -480,8 +467,8 @@ export const VendorSettings: React.FC = () => {
         <div className="border-t border-theme-border/60 pt-3 mt-3 space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h5 className="font-black text-xs text-theme-text">العمل يوم الجمعة</h5>
-              <p className="text-[9px] text-theme-muted font-bold mt-0.5">تحديد مواعيد العمل الخاصة بيوم الجمعة</p>
+              <h5 className="font-black text-xs text-theme-text">{t('str_1051')}</h5>
+              <p className="text-[9px] text-theme-muted font-bold mt-0.5">{t('str_1052')}</p>
             </div>
             <button 
               type="button"
@@ -494,7 +481,7 @@ export const VendorSettings: React.FC = () => {
           {fridayOpen && (
             <div className="grid grid-cols-2 gap-4 animate-fade-in">
               <div>
-                <label className="text-[9px] font-black text-theme-muted block mb-1">وقت فتح يوم الجمعة</label>
+                <label className="text-[9px] font-black text-theme-muted block mb-1">{t('str_1053')}</label>
                 <input 
                   type="text"
                   value={fridayOpenTime}
@@ -504,7 +491,7 @@ export const VendorSettings: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-[9px] font-black text-theme-muted block mb-1">وقت إغلاق يوم الجمعة</label>
+                <label className="text-[9px] font-black text-theme-muted block mb-1">{t('str_1054')}</label>
                 <input 
                   type="text"
                   value={fridayCloseTime}
@@ -520,7 +507,7 @@ export const VendorSettings: React.FC = () => {
         {/* Break Intervals list */}
         <div className="border-t border-theme-border/60 pt-3 mt-3 space-y-3">
           <div className="flex items-center justify-between">
-            <h5 className="font-black text-xs text-theme-text">فترات الراحة (Breaks)</h5>
+            <h5 className="font-black text-xs text-theme-text">{t('str_1055')}</h5>
             <button
               type="button"
               onClick={() => setBreaks(prev => [...prev, { start: '14:00', end: '16:00' }])}
@@ -542,7 +529,7 @@ export const VendorSettings: React.FC = () => {
                   className="w-1/3 bg-theme-bg border border-theme-border rounded-xl p-2 text-xs outline-none font-bold text-theme-text text-center animate-pop-in"
                   placeholder="من: 14:00"
                 />
-                <span className="text-theme-muted text-xs">إلى</span>
+                <span className="text-theme-muted text-xs">{t('str_1056')}</span>
                 <input 
                   type="text"
                   value={brk.end}
@@ -557,9 +544,7 @@ export const VendorSettings: React.FC = () => {
                   type="button"
                   onClick={() => setBreaks(prev => prev.filter((_, i) => i !== idx))}
                   className="text-red-500 hover:text-red-600 font-bold text-xs px-2"
-                >
-                  حذف
-                </button>
+                >{t('str_514')}</button>
               </div>
             ))}
           </div>
@@ -569,8 +554,7 @@ export const VendorSettings: React.FC = () => {
       {/* Delivery Zones */}
       <div className="bg-theme-card rounded-[30px] border border-theme-border p-5 shadow-sm space-y-4 theme-transition">
         <h4 className="font-black text-sm text-theme-text flex items-center gap-2 border-b border-theme-border pb-2">
-          <Bike size={16} className="text-primary" /> تحديد تسعيرة وأوقات توصيل المناطق
-        </h4>
+          <Bike size={16} className="text-primary" />{t('str_1057')}</h4>
 
         {/* Add Zone inline Form */}
         <div className="bg-theme-bg p-3.5 rounded-2xl border border-theme-border space-y-2.5">
@@ -578,21 +562,21 @@ export const VendorSettings: React.FC = () => {
           <div className="grid grid-cols-3 gap-2">
             <input 
               type="text" 
-              placeholder="اسم القرية"
+              placeholder={t('str_1069')}
               value={newZoneName}
               onChange={e => setNewZoneName(e.target.value)}
               className="bg-theme-card border border-theme-border rounded-lg p-2 text-xs outline-none text-theme-text font-bold"
             />
             <input 
               type="number" 
-              placeholder="الرسوم"
+              placeholder={t('str_1070')}
               value={newZoneFee}
               onChange={e => setNewZoneFee(e.target.value)}
               className="bg-theme-card border border-theme-border rounded-lg p-2 text-xs outline-none text-theme-text font-bold"
             />
             <input 
               type="text" 
-              placeholder="وقت التوصيل"
+              placeholder={t('str_17')}
               value={newZoneEta}
               onChange={e => setNewZoneEta(e.target.value)}
               className="bg-theme-card border border-theme-border rounded-lg p-2 text-xs outline-none text-theme-text font-bold"
@@ -627,7 +611,7 @@ export const VendorSettings: React.FC = () => {
             <div key={zone.id} className="grid grid-cols-4 gap-2 items-center border-b border-theme-border/60 pb-3 last:border-0 last:pb-0">
               <span className="text-xs font-black text-theme-text col-span-1 truncate">{zone.name}</span>
               <div>
-                <label className="text-[8px] text-theme-muted block mb-0.5">الرسوم (ج.م)</label>
+                <label className="text-[8px] text-theme-muted block mb-0.5">{t('str_1058')}</label>
                 <input 
                   type="number"
                   value={zone.fee}
@@ -636,7 +620,7 @@ export const VendorSettings: React.FC = () => {
                 />
               </div>
               <div className="col-span-1">
-                <label className="text-[8px] text-theme-muted block mb-0.5">مدة التوصيل</label>
+                <label className="text-[8px] text-theme-muted block mb-0.5">{t('str_1059')}</label>
                 <input 
                   type="text"
                   value={zone.eta}
@@ -649,9 +633,7 @@ export const VendorSettings: React.FC = () => {
                   type="button"
                   onClick={() => setZones(prev => prev.filter(z => z.id !== zone.id))}
                   className="text-red-500 hover:text-red-600 font-bold text-xs"
-                >
-                  حذف
-                </button>
+                >{t('str_514')}</button>
               </div>
             </div>
           ))}
@@ -661,12 +643,11 @@ export const VendorSettings: React.FC = () => {
       {/* Payment details */}
       <div className="bg-theme-card rounded-[30px] border border-theme-border p-5 shadow-sm space-y-4 theme-transition">
         <h4 className="font-black text-sm text-theme-text flex items-center gap-2 border-b border-theme-border pb-2">
-          <Wallet size={16} className="text-primary" /> المحافظ والتحصيل الإلكتروني
-        </h4>
+          <Wallet size={16} className="text-primary" />{t('str_1060')}</h4>
 
         <div className="space-y-3">
           <div>
-            <label className="text-[10px] font-black text-theme-muted block mb-1">رقم فودافون كاش للمتجر</label>
+            <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_1061')}</label>
             <input 
               type="text"
               value={vodafone}
@@ -676,7 +657,7 @@ export const VendorSettings: React.FC = () => {
             />
           </div>
           <div>
-            <label className="text-[10px] font-black text-theme-muted block mb-1">عنوان الدفع إنستاباي (InstaPay IPA)</label>
+            <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_1062')}</label>
             <input 
               type="text"
               value={instapay}
@@ -691,12 +672,11 @@ export const VendorSettings: React.FC = () => {
       {/* Delivery parameters */}
       <div className="bg-theme-card rounded-[30px] border border-theme-border p-5 shadow-sm space-y-4 theme-transition">
         <h4 className="font-black text-sm text-theme-text flex items-center gap-2 border-b border-theme-border pb-2">
-          <Bike size={16} className="text-primary" /> معايير الطلب الافتراضية
-        </h4>
+          <Bike size={16} className="text-primary" />{t('str_1063')}</h4>
 
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="text-[10px] font-black text-theme-muted block mb-1">حد أدنى (ج.م)</label>
+            <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_1064')}</label>
             <input 
               type="number"
               value={minOrder}
@@ -705,7 +685,7 @@ export const VendorSettings: React.FC = () => {
             />
           </div>
           <div>
-            <label className="text-[10px] font-black text-theme-muted block mb-1">الرسوم العامة</label>
+            <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_1065')}</label>
             <input 
               type="number"
               value={deliveryFee}
@@ -714,7 +694,7 @@ export const VendorSettings: React.FC = () => {
             />
           </div>
           <div>
-            <label className="text-[10px] font-black text-theme-muted block mb-1">الوقت الافتراضي (د)</label>
+            <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_1066')}</label>
             <input 
               type="number"
               value={deliveryTime}
@@ -728,11 +708,10 @@ export const VendorSettings: React.FC = () => {
       {/* Account Security */}
       <div className="bg-theme-card rounded-[30px] border border-theme-border p-5 shadow-sm space-y-4 theme-transition">
         <h4 className="font-black text-sm text-theme-text flex items-center gap-2 border-b border-theme-border pb-2">
-          <ShieldCheck size={16} className="text-primary" /> أمان الحساب وتغيير كلمة المرور
-        </h4>
+          <ShieldCheck size={16} className="text-primary" />{t('str_1067')}</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
           <div>
-            <label className="block text-[10px] font-black text-theme-muted mb-1">{isRTL ? 'كلمة المرور الحالية' : 'Current Password'}</label>
+            <label className="block text-[10px] font-black text-theme-muted mb-1">{t('str_247')}</label>
             <input 
               type="password"
               value={vendorOldPass}
@@ -741,7 +720,7 @@ export const VendorSettings: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-[10px] font-black text-theme-muted mb-1">{isRTL ? 'كلمة المرور الجديدة' : 'New Password'}</label>
+            <label className="block text-[10px] font-black text-theme-muted mb-1">{t('str_248')}</label>
             <input 
               type="password"
               value={vendorNewPass}
@@ -753,9 +732,7 @@ export const VendorSettings: React.FC = () => {
             type="button"
             onClick={handleUpdatePassword}
             className="w-full md:w-auto md:col-span-2 bg-theme-bg border border-primary text-primary hover:bg-primary/10 font-black py-3 rounded-xl transition flex items-center justify-center gap-2"
-          >
-            تحديث كلمة المرور
-          </button>
+          >{t('str_652')}</button>
         </div>
       </div>
 
@@ -764,8 +741,7 @@ export const VendorSettings: React.FC = () => {
         type="submit"
         className="w-full bg-primary hover:bg-primary-hover text-white font-black py-4 rounded-2xl shadow-lg transition flex items-center justify-center gap-2"
       >
-        <Save size={16} /> حفظ التعديلات وإعدادات المتجر
-      </button>
+        <Save size={16} />{t('str_1068')}</button>
     </form>
   );
 };

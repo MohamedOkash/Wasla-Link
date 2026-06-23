@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState, useEffect } from 'react';
 import { db } from '../../services/firebase';
 import { collection, getDocs, Timestamp, query, where, orderBy, limit } from 'firebase/firestore';
@@ -35,7 +36,7 @@ export const AssetRecoveryPanel: React.FC = () => {
     try {
       const res = await assetRecoveryService.runRecoveryScan();
       setScanResult({ scanned: res.totalScanned, repaired: res.totalRepaired });
-      showToast(isRTL ? 'اكتمل فحص واسترداد الصور' : 'Recovery scan completed successfully');
+      showToast(t('str_392'));
       await fetchLogs();
     } catch (err) {
       console.error(err);
@@ -49,17 +50,17 @@ export const AssetRecoveryPanel: React.FC = () => {
       <div>
         <h3 className="font-black text-theme-text text-sm flex items-center gap-2 border-b border-theme-border pb-2">
           <Shield size={18} className="text-indigo-600" />
-          {isRTL ? 'منصة استرداد وإصلاح الأصول البصرية' : 'Automated Asset Recovery & Healing Hub'}
+          {t('str_393')}
         </h3>
         <p className="text-[10px] text-theme-muted font-bold mt-1 uppercase tracking-wider">
-          {isRTL ? 'فحص تلقائي للصور المكسورة والروابط التالفة واستبدالها بقوالب ملونة' : 'Continuous healing scanner for broken image URLs'}
+          {t('str_394')}
         </p>
       </div>
 
       <div className="bg-theme-bg p-5 rounded-2xl border border-theme-border/60 flex flex-col md:flex-row gap-5 justify-between items-center">
         <div className="space-y-1 text-xs font-bold text-theme-muted text-center md:text-right">
-          <p className="text-theme-text font-black text-sm">{isRTL ? 'بدء فحص النظام التلقائي' : 'Initialize Global System Scan'}</p>
-          <p>{isRTL ? 'سيقوم الفحص بفلترة روابط الصور المكسورة واستردادها بقوالب فئة ذكية.' : 'System scans master templates and vendor copies to resolve 404 image errors.'}</p>
+          <p className="text-theme-text font-black text-sm">{t('str_395')}</p>
+          <p>{t('str_396')}</p>
         </div>
         
         <button 
@@ -68,7 +69,7 @@ export const AssetRecoveryPanel: React.FC = () => {
           className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-black px-6 py-3.5 rounded-xl text-xs flex items-center gap-1.5 shadow transition shrink-0"
         >
           {scanning ? <Loader2 className="animate-spin" size={14} /> : <Play size={14} />}
-          {scanning ? (isRTL ? 'جاري فحص الصور...' : 'Scanning...') : (isRTL ? 'بدء الفحص والإصلاح' : 'Start Healing Scan')}
+          {scanning ? (t('str_397')) : (t('str_398'))}
         </button>
       </div>
 
@@ -76,7 +77,7 @@ export const AssetRecoveryPanel: React.FC = () => {
         <div className="bg-green-500/10 border border-green-500/20 p-4.5 rounded-2xl flex items-center gap-3 animate-fade-in text-xs font-bold text-green-600">
           <CheckCircle size={20} className="shrink-0" />
           <div>
-            <p className="font-black">{isRTL ? 'اكتمل الفحص والإصلاح التلقائي!' : 'Self-Healing Cycle Complete!'}</p>
+            <p className="font-black">{t('str_399')}</p>
             <p className="mt-0.5 text-[11px] text-theme-muted">
               {isRTL 
                 ? `تم فحص عدد ${scanResult.scanned} أصل صورة بنجاح، وإصلاح ${scanResult.repaired} صورة تالفة ومكسورة.` 
@@ -91,16 +92,16 @@ export const AssetRecoveryPanel: React.FC = () => {
       <div className="space-y-3">
         <h4 className="font-black text-xs text-theme-text flex items-center gap-1.5">
           <History size={14} className="text-theme-muted" />
-          {isRTL ? 'سجل العمليات الأخيرة للأصول' : 'Latest Asset Modification & Recovery Log'}
+          {t('str_400')}
         </h4>
 
         {loadingLogs ? (
           <div className="text-center py-6 text-theme-muted font-bold animate-pulse text-xs">
-            {isRTL ? 'جاري تحميل سجل الأصول...' : 'Loading history logs...'}
+            {t('str_401')}
           </div>
         ) : logs.length === 0 ? (
           <div className="text-center py-6 border border-dashed border-theme-border/60 rounded-2xl text-theme-muted text-xs font-bold">
-            {isRTL ? 'لا توجد سجلات تعديل أصول مسجلة حالياً.' : 'No asset changes recorded yet.'}
+            {t('str_402')}
           </div>
         ) : (
           <div className="border border-theme-border/60 rounded-3xl overflow-hidden divide-y divide-theme-border/40 bg-theme-bg/10 theme-transition">
@@ -110,10 +111,10 @@ export const AssetRecoveryPanel: React.FC = () => {
                   <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${log.uploadedBy === 'system_recovery' ? 'bg-indigo-500' : 'bg-primary'}`} />
                   <div className="min-w-0">
                     <span className="text-theme-text block truncate max-w-64">
-                      {log.description || (isRTL ? 'تعديل أو مزامنة أصل صورة' : 'Asset updated')}
+                      {log.description || (t('str_403'))}
                     </span>
                     <span className="text-[9px] text-theme-muted font-bold block mt-0.5">
-                      {isRTL ? `المعرف: ${log.productTemplateId || log.productId}` : `ID: ${log.productTemplateId || log.productId}`} • v{log.version}
+                      {t('str_404')} • v{log.version}
                     </span>
                   </div>
                 </div>

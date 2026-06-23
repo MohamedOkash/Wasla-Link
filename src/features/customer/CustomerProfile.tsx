@@ -29,8 +29,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
     setCurrentUser,
     setRole,
     lang, 
-    setLang, 
-    t, 
+    setLang,  
     isRTL, 
     goHome,
     theme,
@@ -45,7 +44,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
   } = useApp();
 
   const handleLogout = () => {
-  const { t } = useTranslation();
+  const {} = useTranslation();
 
     setCurrentUser(null);
     setRole('login');

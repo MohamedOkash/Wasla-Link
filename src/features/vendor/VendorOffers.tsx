@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState } from 'react';
 import { Tag, Save, X, Edit, Plus, Trash2, Upload, Image as ImageIcon, Loader2, Check } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -32,7 +33,7 @@ export const VendorOffers: React.FC = () => {
       } else if (key === 'thumb') {
         setOfferThumbnail(url);
       }
-      showToast(isRTL ? 'تم رفع الملف بنجاح إلى /offers' : 'Uploaded to /offers successfully');
+      showToast(t('str_824'));
     } catch (err: any) {
       alert(err.message);
     } finally {
@@ -41,6 +42,8 @@ export const VendorOffers: React.FC = () => {
   };
 
   const handleSavePromo = (e: React.FormEvent) => {
+  const {} = useTranslation();
+
     e.preventDefault();
     setStores(prev => prev.map(s => {
       if (s.id === 'g_1') {
@@ -60,12 +63,12 @@ export const VendorOffers: React.FC = () => {
       triggerOfferBroadcast('g_1', promoText.trim());
     }
     
-    showToast(isRTL ? 'تم حفظ العرض الترويجي للمتجر والوسائط بنجاح' : 'Offer visual assets saved');
+    showToast(t('str_825'));
     setEditing(false);
   };
 
   const handleRemovePromo = () => {
-    if (confirm(isRTL ? 'هل ترغب في إزالة العرض الترويجي النشط حالياً؟' : 'Are you sure you want to delete the active offer?')) {
+    if (confirm(t('str_826'))) {
       setStores(prev => prev.map(s => {
         if (s.id === 'g_1') {
           return { 
@@ -84,7 +87,7 @@ export const VendorOffers: React.FC = () => {
       setMobileBanner('');
       setOfferThumbnail('');
       setOfferGallery([]);
-      showToast(isRTL ? 'تمت إزالة العرض الترويجي والوسائط' : 'Offer assets cleared');
+      showToast(t('str_827'));
     }
   };
 
@@ -93,7 +96,7 @@ export const VendorOffers: React.FC = () => {
       <div className="flex justify-between items-center pb-3 border-b border-theme-border/60">
         <h3 className="font-black text-theme-text text-sm flex items-center gap-2">
           <Tag size={18} className="text-primary" />
-          {isRTL ? 'العروض والوسائط الترويجية للمتجر' : 'Store Campaigns & Visual Offers'}
+          {t('str_828')}
         </h3>
       </div>
 
@@ -101,9 +104,9 @@ export const VendorOffers: React.FC = () => {
         <div className="bg-primary/10 border border-primary/20 p-5 rounded-2xl space-y-3 relative overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,122,0,0.08),transparent)]"></div>
           <div>
-            <span className="text-[10px] font-black text-primary bg-primary/20 px-2 py-0.5 rounded-lg">{isRTL ? 'العرض النشط' : 'Active Offer'}</span>
+            <span className="text-[10px] font-black text-primary bg-primary/20 px-2 py-0.5 rounded-lg">{t('str_829')}</span>
             <p className="text-base font-black text-theme-text mt-2 leading-relaxed">
-              {store.promoBanner || (isRTL ? 'عرض صور ترويجي نشط' : 'Active Offer Banner Banner')}
+              {store.promoBanner || (t('str_830'))}
             </p>
             {store.offerBanner && (
               <div className="mt-3 rounded-xl overflow-hidden border border-theme-border/60 max-h-36">
@@ -123,13 +126,13 @@ export const VendorOffers: React.FC = () => {
               }}
               className="bg-theme-card border border-theme-border-hover text-theme-text font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1 hover:bg-theme-bg transition"
             >
-              <Edit size={12} /> {isRTL ? 'تعديل النص والوسائط' : 'Edit Assets'}
+              <Edit size={12} /> {t('str_831')}
             </button>
             <button 
               onClick={handleRemovePromo}
               className="bg-red-500/10 border border-red-500/20 text-red-500 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1 hover:bg-red-500/25 transition"
             >
-              <Trash2 size={12} /> {isRTL ? 'إزالة العرض' : 'Clear Offer'}
+              <Trash2 size={12} /> {t('str_832')}
             </button>
           </div>
         </div>
@@ -137,9 +140,9 @@ export const VendorOffers: React.FC = () => {
         <div className="text-center py-10 bg-theme-bg rounded-2xl border-2 border-dashed border-theme-border-hover space-y-4">
           <Tag size={36} className="text-theme-muted mx-auto" />
           <div>
-            <h4 className="font-black text-theme-text text-sm">{isRTL ? 'لا توجد عروض نشطة حالياً' : 'No offers currently active'}</h4>
+            <h4 className="font-black text-theme-text text-sm">{t('str_833')}</h4>
             <p className="text-[11px] text-theme-muted font-bold mt-1 max-w-[80%] mx-auto">
-              {isRTL ? 'أضف عروضاً نصية ورفع لافتات وبانرات ترويجية عريضة للمتجر تظهر للمستخدمين.' : 'Add advertising banners or offer campaigns to attract store views.'}
+              {t('str_834')}
             </p>
           </div>
           <button 
@@ -153,7 +156,7 @@ export const VendorOffers: React.FC = () => {
             }}
             className="bg-primary hover:bg-primary-hover text-white font-black px-6 py-2.5 rounded-xl text-xs transition"
           >
-            {isRTL ? 'إنشاء عرض ترويجي' : 'Setup Campaign Offer'}
+            {t('str_835')}
           </button>
         </div>
       )}
@@ -166,7 +169,7 @@ export const VendorOffers: React.FC = () => {
             className="bg-theme-card border border-theme-border rounded-3xl p-6 max-w-md w-full space-y-4 shadow-xl animate-slide-up max-h-[85vh] overflow-y-auto no-scrollbar theme-transition"
           >
             <div className="flex justify-between items-center pb-2 border-b border-theme-border">
-              <h4 className="font-black text-theme-text text-sm">{isRTL ? 'إعداد وتحديث العرض الترويجي والبانر' : 'Setup Offer Details'}</h4>
+              <h4 className="font-black text-theme-text text-sm">{t('str_836')}</h4>
               <button 
                 type="button" 
                 onClick={() => setEditing(false)} 
@@ -178,31 +181,31 @@ export const VendorOffers: React.FC = () => {
 
             <div className="space-y-3">
               <div>
-                <label className="text-[10px] font-black text-theme-muted block mb-1.5">{isRTL ? 'نص العرض الترويجي الأساسي' : 'Primary Offer Text'}</label>
+                <label className="text-[10px] font-black text-theme-muted block mb-1.5">{t('str_837')}</label>
                 <textarea 
                   value={promoText} 
                   onChange={(e) => setPromoText(e.target.value)} 
                   className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs outline-none focus:border-primary font-bold h-16 resize-none leading-relaxed text-theme-text"
-                  placeholder={isRTL ? 'اكتب العرض هنا...' : 'e.g. 20% discount on all orders'}
+                  placeholder={t('str_838')}
                   required
                 />
               </div>
 
               {/* Large Desktop Banner */}
               <div>
-                <label className="text-[10px] font-black text-theme-muted block mb-1">{isRTL ? 'لافتة العرض الرئيسية (Banner)' : 'Promo Large Banner'}</label>
+                <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_839')}</label>
                 <div className="relative border border-theme-border rounded-xl h-20 flex flex-col items-center justify-center overflow-hidden bg-theme-bg cursor-pointer">
                   {offerBanner ? (
                     <>
                       <img src={offerBanner} className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/45 flex items-center justify-center text-white text-[8px] font-bold opacity-0 hover:opacity-100 transition">
-                        {isRTL ? 'تغيير اللافتة' : 'Replace Banner'}
+                        {t('str_840')}
                       </div>
                     </>
                   ) : (
                     <div className="text-center p-2">
                       <Upload size={14} className="mx-auto text-theme-muted mb-0.5" />
-                      <span className="text-[9px] font-bold text-theme-text">{isRTL ? 'رفع البانر الرئيسي' : 'Upload Banner'}</span>
+                      <span className="text-[9px] font-bold text-theme-text">{t('str_841')}</span>
                     </div>
                   )}
                   <input 
@@ -212,24 +215,24 @@ export const VendorOffers: React.FC = () => {
                     className="absolute inset-0 opacity-0 cursor-pointer" 
                   />
                 </div>
-                {uploading.banner && <p className="text-[8px] text-primary animate-pulse font-bold mt-0.5">{isRTL ? 'جاري رفع البانر...' : 'Uploading banner...'}</p>}
+                {uploading.banner && <p className="text-[8px] text-primary animate-pulse font-bold mt-0.5">{t('str_842')}</p>}
               </div>
 
               {/* Mobile Banner */}
               <div>
-                <label className="text-[10px] font-black text-theme-muted block mb-1">{isRTL ? 'بانر الموبايل (Mobile Banner)' : 'Promo Mobile Banner'}</label>
+                <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_843')}</label>
                 <div className="relative border border-theme-border rounded-xl h-20 flex flex-col items-center justify-center overflow-hidden bg-theme-bg cursor-pointer">
                   {mobileBanner ? (
                     <>
                       <img src={mobileBanner} className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/45 flex items-center justify-center text-white text-[8px] font-bold opacity-0 hover:opacity-100 transition">
-                        {isRTL ? 'تغيير بانر الموبايل' : 'Replace Mobile Banner'}
+                        {t('str_844')}
                       </div>
                     </>
                   ) : (
                     <div className="text-center p-2">
                       <Upload size={14} className="mx-auto text-theme-muted mb-0.5" />
-                      <span className="text-[9px] font-bold text-theme-text">{isRTL ? 'رفع لافتة الموبايل' : 'Upload Mobile Banner'}</span>
+                      <span className="text-[9px] font-bold text-theme-text">{t('str_845')}</span>
                     </div>
                   )}
                   <input 
@@ -239,25 +242,25 @@ export const VendorOffers: React.FC = () => {
                     className="absolute inset-0 opacity-0 cursor-pointer" 
                   />
                 </div>
-                {uploading.mobile && <p className="text-[8px] text-primary animate-pulse font-bold mt-0.5">{isRTL ? 'جاري رفع لافتة الموبايل...' : 'Uploading mobile banner...'}</p>}
+                {uploading.mobile && <p className="text-[8px] text-primary animate-pulse font-bold mt-0.5">{t('str_846')}</p>}
               </div>
 
               {/* Offer Thumbnail & Gallery */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-black text-theme-muted block mb-1">{isRTL ? 'الصورة المصغرة (Thumb)' : 'Offer Thumbnail'}</label>
+                  <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_847')}</label>
                   <div className="relative border border-theme-border rounded-xl h-16 flex flex-col items-center justify-center overflow-hidden bg-theme-bg cursor-pointer">
                     {offerThumbnail ? (
                       <>
                         <img src={offerThumbnail} className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/45 flex items-center justify-center text-white text-[8px] font-bold opacity-0 hover:opacity-100 transition">
-                          {isRTL ? 'تغيير' : 'Change'}
+                          {t('str_848')}
                         </div>
                       </>
                     ) : (
                       <div className="text-center p-1">
                         <Upload size={12} className="mx-auto text-theme-muted mb-0.5" />
-                        <span className="text-[8px] font-bold text-theme-text">{isRTL ? 'رفع مصغرة' : 'Upload Thumb'}</span>
+                        <span className="text-[8px] font-bold text-theme-text">{t('str_849')}</span>
                       </div>
                     )}
                     <input 
@@ -267,16 +270,16 @@ export const VendorOffers: React.FC = () => {
                       className="absolute inset-0 opacity-0 cursor-pointer" 
                     />
                   </div>
-                  {uploading.thumb && <p className="text-[8px] text-primary animate-pulse font-bold mt-0.5">{isRTL ? 'جاري الرفع...' : 'Uploading...'}</p>}
+                  {uploading.thumb && <p className="text-[8px] text-primary animate-pulse font-bold mt-0.5">{t('str_733')}</p>}
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-black text-theme-muted block mb-1">{isRTL ? 'معرض صور العرض (Gallery)' : 'Offer Gallery'}</label>
+                  <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_850')}</label>
                   <div className="relative border border-theme-border rounded-xl h-16 flex flex-col items-center justify-center overflow-hidden bg-theme-bg cursor-pointer">
                     <div className="text-center p-1">
                       <Plus size={12} className="mx-auto text-theme-muted mb-0.5" />
                       <span className="text-[8px] font-bold text-theme-text">
-                        {isRTL ? `رفع (${offerGallery.length} صور)` : `Upload (${offerGallery.length} images)`}
+                        {t('str_851')}
                       </span>
                     </div>
                     <input 
@@ -287,7 +290,7 @@ export const VendorOffers: React.FC = () => {
                       className="absolute inset-0 opacity-0 cursor-pointer" 
                     />
                   </div>
-                  {uploading.gallery && <p className="text-[8px] text-primary animate-pulse font-bold mt-0.5">{isRTL ? 'جاري الرفع...' : 'Uploading...'}</p>}
+                  {uploading.gallery && <p className="text-[8px] text-primary animate-pulse font-bold mt-0.5">{t('str_733')}</p>}
                 </div>
               </div>
 
@@ -314,7 +317,7 @@ export const VendorOffers: React.FC = () => {
               type="submit"
               className="w-full bg-primary hover:bg-primary-hover text-white font-black py-3.5 rounded-xl text-xs shadow-md transition flex items-center justify-center gap-1.5"
             >
-              <Save size={16} /> {isRTL ? 'حفظ وتفعيل العرض' : 'Save Offer Campaign'}
+              <Save size={16} /> {t('str_852')}
             </button>
           </form>
         </div>

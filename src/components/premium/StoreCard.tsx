@@ -20,9 +20,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   onToggleFavorite,
   avgRating,
   openStatus,
-  isRTL,
-  t
-}) => {
+  isRTL }) => {
   return (
     <div 
       onClick={onClick}

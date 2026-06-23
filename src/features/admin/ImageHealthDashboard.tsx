@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState, useEffect } from 'react';
 import { db } from '../../services/firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
@@ -116,7 +117,7 @@ export const ImageHealthDashboard: React.FC = () => {
       setAlerts(newAlerts);
     } catch (err) {
       console.error(err);
-      showToast(isRTL ? 'فشل تحديث مؤشرات الصحة' : 'Failed to update health statistics');
+      showToast(t('str_559'));
     } finally {
       setLoading(false);
     }
@@ -128,25 +129,25 @@ export const ImageHealthDashboard: React.FC = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
         <div className="bg-theme-card p-5 rounded-3xl border border-theme-border/60 shadow-sm theme-transition">
           <Database size={16} className="text-primary mb-2.5" />
-          <h5 className="text-[10px] text-theme-muted font-bold uppercase">{isRTL ? 'إجمالي الأصول' : 'Total Assets'}</h5>
+          <h5 className="text-[10px] text-theme-muted font-bold uppercase">{t('str_560')}</h5>
           <p className="text-xl font-black mt-1">{stats.totalAssets}</p>
         </div>
 
         <div className="bg-theme-card p-5 rounded-3xl border border-theme-border/60 shadow-sm theme-transition">
           <CheckCircle size={16} className="text-green-500 mb-2.5" />
-          <h5 className="text-[10px] text-theme-muted font-bold uppercase">{isRTL ? 'الأصول السليمة' : 'Healthy Assets'}</h5>
+          <h5 className="text-[10px] text-theme-muted font-bold uppercase">{t('str_561')}</h5>
           <p className="text-xl font-black text-green-500 mt-1">{stats.healthyAssets}</p>
         </div>
 
         <div className="bg-theme-card p-5 rounded-3xl border border-theme-border/60 shadow-sm theme-transition">
           <AlertTriangle size={16} className="text-red-500 mb-2.5" />
-          <h5 className="text-[10px] text-theme-muted font-bold uppercase">{isRTL ? 'أصول تالفة / مفقودة' : 'Broken / Missing'}</h5>
+          <h5 className="text-[10px] text-theme-muted font-bold uppercase">{t('str_562')}</h5>
           <p className="text-xl font-black text-red-500 mt-1">{stats.brokenAssets}</p>
         </div>
 
         <div className="bg-theme-card p-5 rounded-3xl border border-theme-border/60 shadow-sm theme-transition">
           <Heart size={16} className="text-indigo-500 mb-2.5" />
-          <h5 className="text-[10px] text-theme-muted font-bold uppercase">{isRTL ? 'أصول تم استردادها' : 'Recovered Assets'}</h5>
+          <h5 className="text-[10px] text-theme-muted font-bold uppercase">{t('str_563')}</h5>
           <p className="text-xl font-black text-indigo-500 mt-1">{stats.recoveredAssets}</p>
         </div>
       </div>
@@ -154,7 +155,7 @@ export const ImageHealthDashboard: React.FC = () => {
       {/* Coverage Progress Bar */}
       <div className="bg-theme-card p-5 rounded-3xl border border-theme-border/60 shadow-sm theme-transition">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-xs font-black">{isRTL ? 'معدل تغطية الكتالوج الإجمالي' : 'Catalog Asset Coverage Rate'}</span>
+          <span className="text-xs font-black">{t('str_564')}</span>
           <span className="text-xs font-black text-primary">{stats.coveragePct}%</span>
         </div>
         <div className="w-full h-2.5 bg-theme-bg rounded-full overflow-hidden">
@@ -168,24 +169,24 @@ export const ImageHealthDashboard: React.FC = () => {
         <div className="bg-theme-card p-5 rounded-3xl border border-theme-border/60 shadow-sm space-y-4 theme-transition">
           <h4 className="font-black text-xs text-theme-text uppercase tracking-wider border-b border-theme-border/60 pb-2 flex items-center gap-1.5">
             <BarChart2 size={14} className="text-primary" />
-            {isRTL ? 'تفاصيل التغطية البصرية' : 'Visual Asset Coverage Details'}
+            {t('str_565')}
           </h4>
 
           <div className="space-y-3 text-xs font-bold text-theme-muted">
             <div className="flex justify-between items-center">
-              <span>{isRTL ? 'تغطية ألبوم صور المنتجات (Gallery)' : 'Product Gallery Coverage'}</span>
+              <span>{t('str_566')}</span>
               <span className="text-theme-text font-black">{stats.galleryCoveragePct}%</span>
             </div>
             <div className="flex justify-between items-center">
-              <span>{isRTL ? 'شعارات المتاجر المفقودة' : 'Missing Store Logos'}</span>
+              <span>{t('str_567')}</span>
               <span className="text-red-500 font-black">{stats.storeLogosMissing}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span>{isRTL ? 'أغلفة المتاجر المفقودة' : 'Missing Store Covers'}</span>
+              <span>{t('str_568')}</span>
               <span className="text-red-500 font-black">{stats.storeCoversMissing}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span>{isRTL ? 'لافتات عروض المتاجر المفقودة' : 'Missing Promo Offer Banners'}</span>
+              <span>{t('str_569')}</span>
               <span className="text-amber-500 font-black">{stats.offerBannersMissing}</span>
             </div>
           </div>
@@ -195,13 +196,13 @@ export const ImageHealthDashboard: React.FC = () => {
         <div className="bg-theme-card p-5 rounded-3xl border border-theme-border/60 shadow-sm space-y-4 theme-transition">
           <h4 className="font-black text-xs text-theme-text uppercase tracking-wider border-b border-theme-border/60 pb-2 flex items-center gap-1.5">
             <AlertTriangle size={14} className="text-red-500" />
-            {isRTL ? 'تنبيهات حالة الأصول النشطة' : 'Active Media Health Alerts'}
+            {t('str_570')}
           </h4>
 
           <div className="space-y-2.5">
             {alerts.length === 0 ? (
               <div className="bg-green-500/10 border border-green-500/20 text-green-500 p-4 rounded-xl text-center text-xs font-bold">
-                {isRTL ? 'كل الأصول البصرية سليمة وتعمل بشكل ممتاز!' : 'All visual assets are healthy and configured!'}
+                {t('str_571')}
               </div>
             ) : (
               alerts.map((alert, idx) => (
@@ -218,13 +219,13 @@ export const ImageHealthDashboard: React.FC = () => {
       {/* Visual Simulated Charts (Egyptian 4G friendly SVG charts) */}
       <div className="bg-theme-card p-5 rounded-3xl border border-theme-border/60 shadow-sm space-y-4 theme-transition">
         <h4 className="font-black text-xs text-theme-text uppercase tracking-wider border-b border-theme-border/60 pb-2">
-          {isRTL ? 'مخططات التوجهات والموثوقية' : 'Media Operations Analytics & Trends'}
+          {t('str_572')}
         </h4>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
           {/* Chart 1: Coverage Trend */}
           <div className="space-y-2">
-            <h5 className="text-[10px] text-theme-muted font-bold uppercase">{isRTL ? 'نمو تغطية الكتالوج (آخر 4 أسابيع)' : 'Coverage Growth (4w)'}</h5>
+            <h5 className="text-[10px] text-theme-muted font-bold uppercase">{t('str_573')}</h5>
             <div className="h-28 flex items-end gap-3.5 bg-theme-bg/30 p-3 rounded-2xl border border-theme-border/40">
               <div className="flex-1 bg-primary/20 h-[45%] rounded-t-lg relative group"><span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[9px] font-black opacity-0 group-hover:opacity-100 bg-black text-white px-1.5 py-0.5 rounded">45%</span></div>
               <div className="flex-1 bg-primary/40 h-[60%] rounded-t-lg relative group"><span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[9px] font-black opacity-0 group-hover:opacity-100 bg-black text-white px-1.5 py-0.5 rounded">60%</span></div>
@@ -235,7 +236,7 @@ export const ImageHealthDashboard: React.FC = () => {
 
           {/* Chart 2: Recovery Trend */}
           <div className="space-y-2">
-            <h5 className="text-[10px] text-theme-muted font-bold uppercase">{isRTL ? 'حجم الصور المستردة والمصلحة' : 'Recovered Assets Volume'}</h5>
+            <h5 className="text-[10px] text-theme-muted font-bold uppercase">{t('str_574')}</h5>
             <div className="h-28 flex items-end gap-3.5 bg-theme-bg/30 p-3 rounded-2xl border border-theme-border/40">
               <div className="flex-1 bg-indigo-500/20 h-[20%] rounded-t-lg"></div>
               <div className="flex-1 bg-indigo-500/40 h-[40%] rounded-t-lg"></div>
@@ -246,7 +247,7 @@ export const ImageHealthDashboard: React.FC = () => {
 
           {/* Chart 3: Upload Activity */}
           <div className="space-y-2">
-            <h5 className="text-[10px] text-theme-muted font-bold uppercase">{isRTL ? 'نشاط رفع الصور الأسبوعي' : 'Weekly Upload Activity'}</h5>
+            <h5 className="text-[10px] text-theme-muted font-bold uppercase">{t('str_575')}</h5>
             <div className="h-28 flex items-end gap-3.5 bg-theme-bg/30 p-3 rounded-2xl border border-theme-border/40">
               <div className="flex-1 bg-green-500/20 h-[30%] rounded-t-lg"></div>
               <div className="flex-1 bg-green-500/40 h-[55%] rounded-t-lg"></div>
@@ -265,7 +266,7 @@ export const ImageHealthDashboard: React.FC = () => {
           className="bg-theme-card border border-theme-border hover:bg-theme-border-hover text-theme-text font-black px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition"
         >
           {loading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-          {isRTL ? 'إعادة حساب الإحصائيات' : 'Recalculate Health Metrics'}
+          {t('str_576')}
         </button>
       </div>
     </div>

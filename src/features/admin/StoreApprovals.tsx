@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React from 'react';
 import { Check, X, Store as StoreIcon, AlertCircle, Trash2, Ban, RefreshCw } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -14,6 +15,8 @@ export const StoreApprovals: React.FC = () => {
   const suspendedStores = stores.filter(s => s.status === 'suspended');
 
   const handleApproveStore = (id: string) => {
+  const {} = useTranslation();
+
     setStores(prev => prev.map(s => {
       if (s.id === id) {
         return { ...s, status: 'approved' };
@@ -61,8 +64,7 @@ export const StoreApprovals: React.FC = () => {
         
         {pendingStores.length === 0 ? (
           <div className="bg-theme-card rounded-3xl p-6 border border-theme-border text-center text-theme-muted font-bold shadow-sm flex items-center justify-center gap-2 theme-transition">
-            <AlertCircle size={18} /> لا توجد طلبات تسجيل معلقة حالياً
-          </div>
+            <AlertCircle size={18} />{t('str_658')}</div>
         ) : (
           <div className="space-y-3">
             {pendingStores.map(shop => (
@@ -71,7 +73,7 @@ export const StoreApprovals: React.FC = () => {
                   <img src={shop.logoUrl} className="w-12 h-12 rounded-xl object-cover" alt={shop.name} />
                   <div>
                     <h4 className="font-black text-sm text-theme-text">{shop.name}</h4>
-                    <p className="text-[10px] text-primary font-bold">بانتظار الموافقة</p>
+                    <p className="text-[10px] text-primary font-bold">{t('str_585')}</p>
                   </div>
                 </div>
                 
@@ -113,20 +115,18 @@ export const StoreApprovals: React.FC = () => {
                 <button
                   onClick={() => handleToggleSuspendStore(shop.id, shop.status)}
                   className="p-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-500 hover:bg-amber-500/20 transition"
-                  title="تعليق نشاط المتجر"
+                  title={t('str_661')}
                 >
                   <Ban size={12} />
                 </button>
                 <button
                   onClick={() => handleDeleteStore(shop.id)}
                   className="p-1.5 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 hover:bg-red-500/20 transition"
-                  title="حذف المتجر نهائياً"
+                  title={t('str_662')}
                 >
                   <Trash2 size={12} />
                 </button>
-                <span className="text-[9px] font-black text-green-500 bg-green-500/10 px-2 py-0.5 rounded-lg border border-green-500/20 mr-2">
-                  نشط
-                </span>
+                <span className="text-[9px] font-black text-green-500 bg-green-500/10 px-2 py-0.5 rounded-lg border border-green-500/20 mr-2">{t('str_659')}</span>
               </div>
             </div>
           ))}
@@ -144,7 +144,7 @@ export const StoreApprovals: React.FC = () => {
                   <img src={shop.logoUrl} className="w-10 h-10 rounded-lg object-cover grayscale" alt={shop.name} />
                   <div>
                     <h4 className="font-black text-xs text-theme-muted line-through">{shop.name}</h4>
-                    <p className="text-[9px] text-theme-muted font-bold">معلق ومحجوب من القوائم العامة</p>
+                    <p className="text-[9px] text-theme-muted font-bold">{t('str_660')}</p>
                   </div>
                 </div>
                 
@@ -152,11 +152,9 @@ export const StoreApprovals: React.FC = () => {
                   <button
                     onClick={() => handleToggleSuspendStore(shop.id, shop.status)}
                     className="p-1.5 bg-green-500/10 border border-green-500/20 rounded-lg text-green-500 hover:bg-green-500/20 transition flex items-center gap-1 text-[10px] font-black"
-                    title="تنشيط وإعادة الخدمة"
+                    title={t('str_555')}
                   >
-                    <RefreshCw size={10} />
-                    تنشيط
-                  </button>
+                    <RefreshCw size={10} />{t('str_556')}</button>
                   <button
                     onClick={() => handleDeleteStore(shop.id)}
                     className="p-1.5 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 hover:bg-red-500/20 transition"

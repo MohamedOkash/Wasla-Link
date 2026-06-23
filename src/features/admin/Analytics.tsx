@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useEffect, useState } from 'react';
 import { Store as StoreIcon, ClipboardList, Wallet, Users, FolderOpen, Star, TrendingUp, DollarSign, Award, Truck, Bike, Navigation, Activity } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -33,7 +34,7 @@ export const Analytics: React.FC = () => {
   }, []);
 
   if (loading) {
-    return <div className="p-8 text-center animate-pulse">{isRTL ? 'جاري تحميل التحليلات...' : 'Loading Analytics...'}</div>;
+    return <div className="p-8 text-center animate-pulse">{t('str_362')}</div>;
   }
 
   const drivers = users.filter(u => u.role === 'driver');
@@ -79,46 +80,46 @@ export const Analytics: React.FC = () => {
       {/* 1. Marketplace Overview */}
       <section>
         <h3 className="text-lg font-black mb-4 flex items-center gap-2 text-primary">
-          <Activity size={20} /> {isRTL ? 'نظرة عامة على السوق' : 'Marketplace Overview'}
+          <Activity size={20} /> {t('str_363')}
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <PremiumStatCard title={isRTL ? 'المستخدمين' : 'Users'} value={kpi.totalUsers.toString()} icon={<Users size={16} />} />
-          <PremiumStatCard title={isRTL ? 'المتاجر' : 'Stores'} value={kpi.totalStores.toString()} icon={<StoreIcon size={16} />} />
-          <PremiumStatCard title={isRTL ? 'السائقين' : 'Drivers'} value={kpi.totalDrivers.toString()} icon={<Bike size={16} />} />
-          <PremiumStatCard title={isRTL ? 'الطلبات' : 'Orders'} value={kpi.totalOrdersCount.toString()} icon={<ClipboardList size={16} />} />
-          <PremiumStatCard title={isRTL ? 'العوائد' : 'Revenue'} value={`${kpi.totalGMV} ج.م`} icon={<Wallet size={16} />} />
+          <PremiumStatCard title={t('str_364')} value={kpi.totalUsers.toString()} icon={<Users size={16} />} />
+          <PremiumStatCard title={t('str_348')} value={kpi.totalStores.toString()} icon={<StoreIcon size={16} />} />
+          <PremiumStatCard title={t('str_351')} value={kpi.totalDrivers.toString()} icon={<Bike size={16} />} />
+          <PremiumStatCard title={t('str_365')} value={kpi.totalOrdersCount.toString()} icon={<ClipboardList size={16} />} />
+          <PremiumStatCard title={t('str_366')} value={`${kpi.totalGMV} ج.م`} icon={<Wallet size={16} />} />
         </div>
       </section>
 
       {/* 2. Logistics Overview */}
       <section>
         <h3 className="text-lg font-black mb-4 flex items-center gap-2 text-primary">
-          <Navigation size={20} /> {isRTL ? 'نظرة عامة على اللوجستيات' : 'Logistics Overview'}
+          <Navigation size={20} /> {t('str_367')}
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <PremiumStatCard title={isRTL ? 'سائقين نشطين' : 'Active Drivers'} value={kpi.activeDrivers.toString()} icon={<Bike size={16} />} />
-          <PremiumStatCard title={isRTL ? 'سائقين مشغولين' : 'Busy Drivers'} value={kpi.busyDrivers.toString()} icon={<Truck size={16} />} />
-          <PremiumStatCard title={isRTL ? 'سائقين متاحين' : 'Available Drivers'} value={kpi.availableDrivers.toString()} icon={<Users size={16} />} />
-          <PremiumStatCard title={isRTL ? 'طلبات قيد التوصيل' : 'Orders In Delivery'} value={kpi.ordersInDelivery.toString()} icon={<TrendingUp size={16} />} />
+          <PremiumStatCard title={t('str_368')} value={kpi.activeDrivers.toString()} icon={<Bike size={16} />} />
+          <PremiumStatCard title={t('str_369')} value={kpi.busyDrivers.toString()} icon={<Truck size={16} />} />
+          <PremiumStatCard title={t('str_370')} value={kpi.availableDrivers.toString()} icon={<Users size={16} />} />
+          <PremiumStatCard title={t('str_371')} value={kpi.ordersInDelivery.toString()} icon={<TrendingUp size={16} />} />
         </div>
       </section>
 
       {/* 3. Time Analytics */}
       <section>
         <h3 className="text-lg font-black mb-4 flex items-center gap-2 text-primary">
-          <FolderOpen size={20} /> {isRTL ? 'تحليلات الوقت' : 'Time Analytics'}
+          <FolderOpen size={20} /> {t('str_372')}
         </h3>
         <div className="grid grid-cols-3 gap-4">
           <PremiumCard className="p-4 flex flex-col justify-center items-center">
-            <span className="text-sm font-bold text-theme-muted">{isRTL ? 'طلبات اليوم' : 'Orders Today'}</span>
+            <span className="text-sm font-bold text-theme-muted">{t('str_373')}</span>
             <span className="text-2xl font-black">{ordersToday}</span>
           </PremiumCard>
           <PremiumCard className="p-4 flex flex-col justify-center items-center">
-            <span className="text-sm font-bold text-theme-muted">{isRTL ? 'طلبات هذا الأسبوع' : 'Orders This Week'}</span>
+            <span className="text-sm font-bold text-theme-muted">{t('str_374')}</span>
             <span className="text-2xl font-black">{ordersThisWeek}</span>
           </PremiumCard>
           <PremiumCard className="p-4 flex flex-col justify-center items-center">
-            <span className="text-sm font-bold text-theme-muted">{isRTL ? 'طلبات هذا الشهر' : 'Orders This Month'}</span>
+            <span className="text-sm font-bold text-theme-muted">{t('str_375')}</span>
             <span className="text-2xl font-black">{ordersThisMonth}</span>
           </PremiumCard>
         </div>
@@ -127,7 +128,7 @@ export const Analytics: React.FC = () => {
       {/* 4. Production Monitoring */}
       <section>
         <h3 className="text-lg font-black mb-4 flex items-center gap-2 text-primary">
-          <Activity size={20} /> {isRTL ? 'مراقبة الإنتاج' : 'Production Monitoring'}
+          <Activity size={20} /> {t('str_376')}
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <PremiumCard className="p-4">
@@ -144,7 +145,7 @@ export const Analytics: React.FC = () => {
           </PremiumCard>
           <PremiumCard className="p-4">
             <h4 className="text-xs font-bold text-theme-muted mb-2">Avg Delivery Time</h4>
-            <span className="text-lg font-black">{kpi.avgDeliveryTime} {isRTL ? 'دقيقة' : 'min'}</span>
+            <span className="text-lg font-black">{kpi.avgDeliveryTime} {t('str_191')}</span>
           </PremiumCard>
         </div>
       </section>

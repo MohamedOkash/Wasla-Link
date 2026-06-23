@@ -12,8 +12,7 @@ interface CustomerOrdersProps {
 
 export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate }) => {
   const { 
-    orders, 
-    t, 
+    orders,  
     isRTL, 
     setCart, 
     showToast, 
@@ -34,7 +33,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
   const customerReturns = returnRequests.filter(r => r.customerId === (currentUser?.id || 'customer_1'));
 
   const handleReorder = (order: any) => {
-  const { t } = useTranslation();
+  const {} = useTranslation();
 
     setCart({
       shopId: order.shopId,

@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState, useEffect } from 'react';
 import { db } from '../../services/firebase';
 import { collection, doc, getDocs, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
@@ -49,7 +50,7 @@ export const ProductAssetManager: React.FC = () => {
       setVendorProducts(prodData);
     } catch (err) {
       console.error(err);
-      showToast(isRTL ? 'فشل تحميل بيانات الأصول' : 'Failed to fetch asset data');
+      showToast(t('str_596'));
     } finally {
       setLoading(false);
     }
@@ -88,7 +89,7 @@ export const ProductAssetManager: React.FC = () => {
         
         // Create asset version
         await mediaService.createAssetVersion(templateId, url, gallery, 'admin');
-        showToast(isRTL ? 'تم رفع الصورة وتحديث الإصدار' : 'Uploaded primary image and updated version');
+        showToast(t('str_597'));
       } else {
         const files = Array.from(e.target.files);
         const urls = await mediaService.uploadGalleryImages(files, 'productTemplates');
@@ -99,7 +100,7 @@ export const ProductAssetManager: React.FC = () => {
         const newGallery = [...currentGallery, ...urls];
         
         await mediaService.createAssetVersion(templateId, primary, newGallery, 'admin');
-        showToast(isRTL ? 'تم رفع صور المعرض وتحديث الإصدار' : 'Uploaded gallery images and updated version');
+        showToast(t('str_598'));
       }
       await fetchData();
     } catch (err: any) {
@@ -110,7 +111,7 @@ export const ProductAssetManager: React.FC = () => {
   };
 
   const handleRemoveAsset = async (templateId: string) => {
-    if (!confirm(isRTL ? 'هل أنت متأكد من مسح جميع أصول هذا القالب البصرية؟' : 'Are you sure you want to remove visual assets for this template?')) return;
+    if (!confirm(t('str_599'))) return;
     setLoading(true);
     try {
       const tempRef = doc(db, 'productTemplates', templateId);
@@ -126,7 +127,7 @@ export const ProductAssetManager: React.FC = () => {
         assetStatus: 'missing',
         lastAssetUpdate: new Date().toISOString()
       });
-      showToast(isRTL ? 'تم مسح الأصول بنجاح' : 'Assets cleared successfully');
+      showToast(t('str_600'));
       await fetchData();
     } catch (err) {
       console.error(err);
@@ -145,7 +146,7 @@ export const ProductAssetManager: React.FC = () => {
         const count = await catalogSyncService.syncTemplateToProducts(id);
         synced += count;
       }
-      showToast(isRTL ? `تم تحديث ومزامنة ${synced} نسخة من المنتجات` : `Synced ${synced} product instances`);
+      showToast(t('str_601'));
       setSelectedIds([]);
       await fetchData();
     } catch (err) {
@@ -157,7 +158,7 @@ export const ProductAssetManager: React.FC = () => {
 
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
-    if (!confirm(isRTL ? 'هل أنت متأكد من حذف صور القوالب المحددة؟' : 'Are you sure you want to delete assets for selected templates?')) return;
+    if (!confirm(t('str_602'))) return;
     setLoading(true);
     try {
       for (const id of selectedIds) {
@@ -174,7 +175,7 @@ export const ProductAssetManager: React.FC = () => {
           assetStatus: 'missing'
         });
       }
-      showToast(isRTL ? 'تم مسح أصول القوالب المحددة' : 'Cleared selected templates assets');
+      showToast(t('str_603'));
       setSelectedIds([]);
       await fetchData();
     } catch (err) {
@@ -193,7 +194,7 @@ export const ProductAssetManager: React.FC = () => {
         await assetRecoveryService.repairAsset(id, true);
         repaired++;
       }
-      showToast(isRTL ? `تم فحص وإصلاح ${repaired} قالب` : `Repaired ${repaired} templates`);
+      showToast(t('str_604'));
       setSelectedIds([]);
       await fetchData();
     } catch (err) {
@@ -204,6 +205,8 @@ export const ProductAssetManager: React.FC = () => {
   };
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const {} = useTranslation();
+
     if (e.target.checked) {
       setSelectedIds(filteredTemplates.map(t => t.id));
     } else {
@@ -257,31 +260,31 @@ export const ProductAssetManager: React.FC = () => {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
         <div className="bg-theme-card p-4 rounded-3xl border border-theme-border/60 shadow-sm theme-transition">
           <Database size={16} className="text-primary mb-2" />
-          <h5 className="text-[10px] text-theme-muted font-bold uppercase">{isRTL ? 'إجمالي القوالب' : 'Total Templates'}</h5>
+          <h5 className="text-[10px] text-theme-muted font-bold uppercase">{t('str_605')}</h5>
           <p className="text-lg font-black mt-1">{totalTemplates}</p>
         </div>
 
         <div className="bg-theme-card p-4 rounded-3xl border border-theme-border/60 shadow-sm theme-transition">
           <CheckCircle size={16} className="text-green-500 mb-2" />
-          <h5 className="text-[10px] text-theme-muted font-bold uppercase">{isRTL ? 'قوالب بصور جاهزة' : 'With Images'}</h5>
+          <h5 className="text-[10px] text-theme-muted font-bold uppercase">{t('str_606')}</h5>
           <p className="text-lg font-black text-green-500 mt-1">{templatesWithImages}</p>
         </div>
 
         <div className="bg-theme-card p-4 rounded-3xl border border-theme-border/60 shadow-sm theme-transition">
           <AlertTriangle size={16} className="text-red-500 mb-2" />
-          <h5 className="text-[10px] text-theme-muted font-bold uppercase">{isRTL ? 'قوالب بدون صور' : 'Missing Images'}</h5>
+          <h5 className="text-[10px] text-theme-muted font-bold uppercase">{t('str_607')}</h5>
           <p className="text-lg font-black text-red-500 mt-1">{templatesMissingImages}</p>
         </div>
 
         <div className="bg-theme-card p-4 rounded-3xl border border-theme-border/60 shadow-sm theme-transition">
           <Sparkles size={16} className="text-indigo-500 mb-2" />
-          <h5 className="text-[10px] text-theme-muted font-bold uppercase">{isRTL ? 'تغطية المعرض %' : 'Gallery Coverage'}</h5>
+          <h5 className="text-[10px] text-theme-muted font-bold uppercase">{t('str_608')}</h5>
           <p className="text-lg font-black text-indigo-500 mt-1">{galleryCoverage}%</p>
         </div>
 
         <div className="bg-theme-card p-4 rounded-3xl border border-theme-border/60 shadow-sm theme-transition">
           <Layers size={16} className="text-amber-500 mb-2" />
-          <h5 className="text-[10px] text-theme-muted font-bold uppercase">{isRTL ? 'المساحة التقديرية' : 'Est Storage'}</h5>
+          <h5 className="text-[10px] text-theme-muted font-bold uppercase">{t('str_609')}</h5>
           <p className="text-lg font-black text-amber-500 mt-1">{storageUsageEstimateMb} MB</p>
         </div>
       </div>
@@ -295,7 +298,7 @@ export const ProductAssetManager: React.FC = () => {
               type="text" 
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder={isRTL ? 'ابحث في القوالب...' : 'Search master templates...'}
+              placeholder={t('str_610')}
               className="bg-theme-bg border border-theme-border/60 rounded-xl pl-3.5 pr-9 py-2 text-xs font-bold outline-none focus:border-primary text-theme-text w-48"
             />
             <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-muted" />
@@ -306,12 +309,12 @@ export const ProductAssetManager: React.FC = () => {
             onChange={e => setFilterType(e.target.value)}
             className="bg-theme-bg border border-theme-border/60 rounded-xl px-3 py-2 text-xs font-bold outline-none text-theme-text focus:border-primary"
           >
-            <option value="all">{isRTL ? 'كل التصنيفات' : 'All Classes'}</option>
-            <option value="grocery">{isRTL ? 'بقالة وسوبرماركت' : 'Supermarket / Grocery'}</option>
-            <option value="mobile">{isRTL ? 'موبايلات وإلكترونيات' : 'Mobile / Tech'}</option>
-            <option value="pharmacy">{isRTL ? 'صيدلية ورعاية' : 'Pharmacy'}</option>
-            <option value="library">{isRTL ? 'مكتبة وأدوات مكتبية' : 'Library / Stationery'}</option>
-            <option value="electrical">{isRTL ? 'أجهزة كهربائية' : 'Electrical'}</option>
+            <option value="all">{t('str_611')}</option>
+            <option value="grocery">{t('str_612')}</option>
+            <option value="mobile">{t('str_613')}</option>
+            <option value="pharmacy">{t('str_614')}</option>
+            <option value="library">{t('str_615')}</option>
+            <option value="electrical">{t('str_616')}</option>
           </select>
 
           <select 
@@ -319,9 +322,9 @@ export const ProductAssetManager: React.FC = () => {
             onChange={e => setFilterStatus(e.target.value)}
             className="bg-theme-bg border border-theme-border/60 rounded-xl px-3 py-2 text-xs font-bold outline-none text-theme-text focus:border-primary"
           >
-            <option value="all">{isRTL ? 'كل الحالات' : 'All Statuses'}</option>
-            <option value="ready">{isRTL ? 'جاهز (بصور)' : 'Ready (With Image)'}</option>
-            <option value="missing">{isRTL ? 'مفقود (بدون صور)' : 'Missing Image'}</option>
+            <option value="all">{t('str_617')}</option>
+            <option value="ready">{t('str_618')}</option>
+            <option value="missing">{t('str_619')}</option>
           </select>
         </div>
 
@@ -333,7 +336,7 @@ export const ProductAssetManager: React.FC = () => {
             className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow transition"
           >
             <Activity size={14} className={scanning ? 'animate-spin' : ''} />
-            {scanning ? (isRTL ? 'جاري الفحص...' : 'Scanning...') : (isRTL ? 'تشغيل فحص الإصلاح' : 'Run Recovery Scan')}
+            {scanning ? (t('str_620')) : (t('str_621'))}
           </button>
 
           <button 
@@ -342,7 +345,7 @@ export const ProductAssetManager: React.FC = () => {
             className="bg-theme-bg border border-theme-border hover:bg-theme-border-hover text-theme-text font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-            {isRTL ? 'تحديث البيانات' : 'Refresh'}
+            {t('str_622')}
           </button>
         </div>
       </div>
@@ -351,32 +354,32 @@ export const ProductAssetManager: React.FC = () => {
       {selectedIds.length > 0 && (
         <div className="bg-primary/10 border border-primary/20 p-3.5 rounded-2xl flex justify-between items-center animate-fade-in">
           <span className="text-xs font-black text-primary">
-            {isRTL ? `تم تحديد ${selectedIds.length} قالب` : `Selected ${selectedIds.length} templates`}
+            {t('str_623')}
           </span>
           <div className="flex gap-2">
             <button 
               onClick={handleBulkSync}
               className="bg-primary text-white text-[10px] font-black px-3 py-1.5 rounded-lg hover:scale-102 transition"
             >
-              {isRTL ? 'مزامنة مع المتاجر' : 'Sync Vendors'}
+              {t('str_624')}
             </button>
             <button 
               onClick={handleBulkRecover}
               className="bg-indigo-600 text-white text-[10px] font-black px-3 py-1.5 rounded-lg hover:scale-102 transition"
             >
-              {isRTL ? 'تشغيل إصلاح تلقائي' : 'Auto Repair'}
+              {t('str_625')}
             </button>
             <button 
               onClick={handleBulkDelete}
               className="bg-red-500 text-white text-[10px] font-black px-3 py-1.5 rounded-lg hover:scale-102 transition"
             >
-              {isRTL ? 'مسح الأصول' : 'Delete Assets'}
+              {t('str_626')}
             </button>
             <button 
               onClick={() => setSelectedIds([])}
               className="text-[10px] text-theme-muted hover:text-theme-text font-bold px-2"
             >
-              {isRTL ? 'إلغاء' : 'Cancel'}
+              {t('str_56')}
             </button>
           </div>
         </div>
@@ -396,26 +399,26 @@ export const ProductAssetManager: React.FC = () => {
                     className="w-4 h-4 accent-primary rounded border-theme-border cursor-pointer"
                   />
                 </th>
-                <th className="p-4">{isRTL ? 'اسم السلعة / القالب' : 'Product Template'}</th>
-                <th className="p-4">{isRTL ? 'نوع النشاط' : 'Store Type'}</th>
-                <th className="p-4">{isRTL ? 'الماركة' : 'Brand'}</th>
-                <th className="p-4">{isRTL ? 'إصدار الأصول' : 'Asset Version'}</th>
-                <th className="p-4">{isRTL ? 'حالة التزامن (المتاجر)' : 'Sync Status (Vendors)'}</th>
-                <th className="p-4">{isRTL ? 'حالة الصور' : 'Asset Status'}</th>
-                <th className="p-4 text-center">{isRTL ? 'إجراءات إدارة الأصول' : 'Actions'}</th>
+                <th className="p-4">{t('str_627')}</th>
+                <th className="p-4">{t('str_628')}</th>
+                <th className="p-4">{t('str_629')}</th>
+                <th className="p-4">{t('str_630')}</th>
+                <th className="p-4">{t('str_631')}</th>
+                <th className="p-4">{t('str_632')}</th>
+                <th className="p-4 text-center">{t('str_633')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-theme-border/40 font-bold">
               {loading ? (
                 <tr>
                   <td colSpan={8} className="p-10 text-center text-theme-muted font-bold animate-pulse">
-                    {isRTL ? 'جاري تحميل بيانات الأصول...' : 'Loading master assets catalog...'}
+                    {t('str_634')}
                   </td>
                 </tr>
               ) : filteredTemplates.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="p-10 text-center text-theme-muted font-bold">
-                    {isRTL ? 'لم يتم العثور على قوالب تطابق خيارات التصفية.' : 'No templates found.'}
+                    {t('str_635')}
                   </td>
                 </tr>
               ) : (
@@ -467,11 +470,11 @@ export const ProductAssetManager: React.FC = () => {
                       <td className="p-4">
                         <div className="space-y-0.5">
                           <span className="text-[10px] text-green-500 block">
-                            {isRTL ? `مستقر: ${syncedCount}` : `Synced: ${syncedCount}`}
+                            {t('str_636')}
                           </span>
                           {outdatedCount > 0 && (
                             <span className="text-[10px] text-red-500 block animate-pulse font-black">
-                              {isRTL ? `معلق مزامنة: ${outdatedCount}` : `Outdated: ${outdatedCount}`}
+                              {t('str_637')}
                             </span>
                           )}
                         </div>
@@ -482,7 +485,7 @@ export const ProductAssetManager: React.FC = () => {
                             ? 'text-green-500 bg-green-500/10 border-green-500/20' 
                             : 'text-red-500 bg-red-500/10 border-red-500/20 animate-pulse'
                         }`}>
-                          {hasImage ? (isRTL ? 'جاهز' : 'Ready') : (isRTL ? 'مفقود' : 'Missing')}
+                          {hasImage ? (t('str_161')) : (t('str_638'))}
                         </span>
                       </td>
                       <td className="p-4 text-center">
@@ -494,7 +497,7 @@ export const ProductAssetManager: React.FC = () => {
                               className="px-2.5 py-1.5 bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition rounded-xl text-[10px] font-black flex items-center gap-1"
                             >
                               <Upload size={10} />
-                              {isRTL ? 'رفع رئيسية' : 'Cover'}
+                              {t('str_639')}
                             </button>
                             <input 
                               type="file" 
@@ -511,7 +514,7 @@ export const ProductAssetManager: React.FC = () => {
                               className="px-2.5 py-1.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 hover:bg-indigo-500/20 transition rounded-xl text-[10px] font-black flex items-center gap-1"
                             >
                               <ImageIcon size={10} />
-                              {isRTL ? 'رفع ألبوم' : 'Gallery'}
+                              {t('str_640')}
                             </button>
                             <input 
                               type="file" 
@@ -527,11 +530,11 @@ export const ProductAssetManager: React.FC = () => {
                             onClick={async () => {
                               setLoading(true);
                               const c = await catalogSyncService.syncTemplateToProducts(temp.id);
-                              showToast(isRTL ? `تمت مزامنة وتحديث ${c} نسخة` : `Synced ${c} vendor copies`);
+                              showToast(t('str_641'));
                               await fetchData();
                             }}
                             className="p-1.5 bg-green-500/10 border border-green-500/20 text-green-500 rounded-xl hover:bg-green-500/20 transition"
-                            title={isRTL ? 'دفع التحديثات للمتاجر' : 'Sync Vendors'}
+                            title={t('str_642')}
                           >
                             <RefreshCw size={11} />
                           </button>
@@ -541,11 +544,11 @@ export const ProductAssetManager: React.FC = () => {
                             onClick={async () => {
                               setLoading(true);
                               await assetRecoveryService.repairAsset(temp.id, true);
-                              showToast(isRTL ? 'تم فحص وإصلاح القالب' : 'Template repaired');
+                              showToast(t('str_643'));
                               await fetchData();
                             }}
                             className="p-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-xl hover:bg-amber-500/20 transition"
-                            title={isRTL ? 'تشغيل استرداد الأصول' : 'Recover Assets'}
+                            title={t('str_644')}
                           >
                             <Activity size={11} />
                           </button>
@@ -554,7 +557,7 @@ export const ProductAssetManager: React.FC = () => {
                           <button 
                             onClick={() => handleRemoveAsset(temp.id)}
                             className="p-1.5 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl hover:bg-red-500/20 transition"
-                            title={isRTL ? 'حذف الأصول' : 'Delete Assets'}
+                            title={t('str_645')}
                           >
                             <Trash2 size={11} />
                           </button>

@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { 
@@ -30,22 +31,24 @@ import { SecurityCenter } from './SecurityCenter';
 import { LogisticsCenter } from './LogisticsCenter';
 
 export const AdminDashboard = () => {
-  const { t, isRTL, goHome } = useApp();
+  const {} = useTranslation();
+
+  const { isRTL, goHome } = useApp();
   
   const [activeTab, setActiveTab] = useState<'home' | 'stores' | 'categories' | 'users' | 'drivers' | 'monitor' | 'banners' | 'delivery' | 'analytics' | 'assets' | 'security' | 'logistics'>('home');
 
   const adminModules = [
-    { id: 'stores', label: isRTL ? 'المتاجر' : 'Stores', icon: StoreIcon, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-    { id: 'categories', label: isRTL ? 'الكتالوج والأقسام' : 'Catalog Center', icon: FolderOpen, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
-    { id: 'users', label: isRTL ? 'الأعضاء' : 'Users', icon: Users, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-    { id: 'drivers', label: isRTL ? 'السائقين' : 'Drivers', icon: Bike, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-    { id: 'logistics', label: isRTL ? 'اللوجستيات والـ GPS' : 'Logistics', icon: Navigation, color: 'text-orange-500', bg: 'bg-orange-500/10' },
-    { id: 'monitor', label: isRTL ? 'مراقبة السوق' : 'Market Monitor', icon: Activity, color: 'text-red-500', bg: 'bg-red-500/10' },
-    { id: 'banners', label: isRTL ? 'الإعلانات' : 'Banners', icon: Tag, color: 'text-pink-500', bg: 'bg-pink-500/10' },
-    { id: 'assets', label: isRTL ? 'تغطية الأصول' : 'Asset Coverage', icon: ImageIcon, color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
-    { id: 'delivery', label: isRTL ? 'إعدادات التوصيل' : 'Delivery Rates', icon: Truck, color: 'text-orange-500', bg: 'bg-orange-500/10' },
-    { id: 'analytics', label: isRTL ? 'التحليلات' : 'Analytics', icon: BarChart3, color: 'text-purple-500', bg: 'bg-purple-500/10' },
-    { id: 'security', label: isRTL ? 'مركز الأمان' : 'Security', icon: Shield, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+    { id: 'stores', label: t('str_348'), icon: StoreIcon, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+    { id: 'categories', label: t('str_349'), icon: FolderOpen, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
+    { id: 'users', label: t('str_350'), icon: Users, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+    { id: 'drivers', label: t('str_351'), icon: Bike, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+    { id: 'logistics', label: t('str_352'), icon: Navigation, color: 'text-orange-500', bg: 'bg-orange-500/10' },
+    { id: 'monitor', label: t('str_353'), icon: Activity, color: 'text-red-500', bg: 'bg-red-500/10' },
+    { id: 'banners', label: t('str_354'), icon: Tag, color: 'text-pink-500', bg: 'bg-pink-500/10' },
+    { id: 'assets', label: t('str_355'), icon: ImageIcon, color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
+    { id: 'delivery', label: t('str_356'), icon: Truck, color: 'text-orange-500', bg: 'bg-orange-500/10' },
+    { id: 'analytics', label: t('str_357'), icon: BarChart3, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+    { id: 'security', label: t('str_358'), icon: Shield, color: 'text-rose-500', bg: 'bg-rose-500/10' },
   ];
 
   return (
@@ -60,7 +63,7 @@ export const AdminDashboard = () => {
             <div>
               <h1 className="text-lg font-black tracking-tight text-theme-text">{t('adminDashboard')}</h1>
               <p className="text-[10px] text-theme-muted font-bold mt-0.5 uppercase tracking-wider">
-                {isRTL ? 'لوحة التحكم والمراقبة الرئيسية للمنصة' : 'Platform Operations & Control Center'}
+                {t('str_359')}
               </p>
             </div>
           </div>
@@ -122,7 +125,7 @@ export const AdminDashboard = () => {
             className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${activeTab === 'home' ? 'text-primary' : 'text-theme-muted'}`}
           >
             <LayoutGrid size={20} className={activeTab === 'home' ? 'animate-bounce-slight' : ''} />
-            <span className="text-[10px] font-black">{isRTL ? 'الرئيسية' : 'Home'}</span>
+            <span className="text-[10px] font-black">{t('str_360')}</span>
           </button>
           
           <button 
@@ -130,7 +133,7 @@ export const AdminDashboard = () => {
             className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${activeTab === 'monitor' ? 'text-primary' : 'text-theme-muted'}`}
           >
             <Activity size={20} className={activeTab === 'monitor' ? 'animate-bounce-slight' : ''} />
-            <span className="text-[10px] font-black">{isRTL ? 'المراقبة' : 'Monitor'}</span>
+            <span className="text-[10px] font-black">{t('str_361')}</span>
           </button>
 
           <button 
@@ -138,7 +141,7 @@ export const AdminDashboard = () => {
             className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${activeTab === 'stores' ? 'text-primary' : 'text-theme-muted'}`}
           >
             <StoreIcon size={20} className={activeTab === 'stores' ? 'animate-bounce-slight' : ''} />
-            <span className="text-[10px] font-black">{isRTL ? 'المتاجر' : 'Stores'}</span>
+            <span className="text-[10px] font-black">{t('str_348')}</span>
           </button>
 
           <button 
@@ -146,7 +149,7 @@ export const AdminDashboard = () => {
             className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${activeTab === 'users' ? 'text-primary' : 'text-theme-muted'}`}
           >
             <Users size={20} className={activeTab === 'users' ? 'animate-bounce-slight' : ''} />
-            <span className="text-[10px] font-black">{isRTL ? 'الأعضاء' : 'Users'}</span>
+            <span className="text-[10px] font-black">{t('str_350')}</span>
           </button>
         </div>
       </div>

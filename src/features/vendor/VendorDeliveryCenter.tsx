@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { Order } from '../../types/order.types';
@@ -49,14 +50,16 @@ export const VendorDeliveryCenter: React.FC<VendorDeliveryCenterProps> = ({ orde
   }, [driverLoc, storeLocation, order.location, order.status]);
 
   const steps = [
-    { key: 'ready_for_delivery', label: isRTL ? 'بانتظار المندوب' : 'Waiting for Driver', icon: Clock },
-    { key: 'driver_assigned', label: isRTL ? 'تم التعيين' : 'Driver Assigned', icon: Bike },
-    { key: 'picked_up', label: isRTL ? 'تم الاستلام' : 'Picked Up', icon: Package },
-    { key: 'on_the_way', label: isRTL ? 'في الطريق' : 'On The Way', icon: Navigation },
-    { key: 'delivered', label: isRTL ? 'تم التوصيل' : 'Delivered', icon: CheckCircle },
+    { key: 'ready_for_delivery', label: t('str_816'), icon: Clock },
+    { key: 'driver_assigned', label: t('str_817'), icon: Bike },
+    { key: 'picked_up', label: t('str_137'), icon: Package },
+    { key: 'on_the_way', label: t('str_818'), icon: Navigation },
+    { key: 'delivered', label: t('str_139'), icon: CheckCircle },
   ];
 
   const getCurrentStepIndex = () => {
+  const {} = useTranslation();
+
     const s = order.status;
     if (s === 'delivered') return 4;
     if (s === 'on_the_way') return 3;
@@ -72,12 +75,12 @@ export const VendorDeliveryCenter: React.FC<VendorDeliveryCenterProps> = ({ orde
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-theme-text text-lg flex items-center gap-2">
           <Navigation className="text-primary w-5 h-5" />
-          {isRTL ? 'مركز التوصيل' : 'Delivery Center'}
+          {t('str_819')}
         </h3>
         {eta && eta > 0 && order.status !== 'delivered' && (
           <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1">
             <Clock className="w-4 h-4" />
-            {eta} {isRTL ? 'دقيقة' : 'mins'}
+            {eta} {t('str_191')}
           </div>
         )}
       </div>
@@ -85,17 +88,17 @@ export const VendorDeliveryCenter: React.FC<VendorDeliveryCenterProps> = ({ orde
       {(order.driverName || order.assignedDriverId) && (
         <div className="bg-theme-bg border border-theme-border rounded-lg p-3 mb-4 flex items-center justify-between">
           <div>
-            <p className="text-sm text-theme-secondary">{isRTL ? 'المندوب' : 'Driver'}</p>
+            <p className="text-sm text-theme-secondary">{t('str_820')}</p>
             <p className="font-bold text-theme-text">{order.driverName || 'Assigned Driver'}</p>
             {order.assignmentAttempts ? (
               <p className="text-xs text-orange-500 flex items-center gap-1 mt-1">
                 <AlertCircle className="w-3 h-3" />
-                {isRTL ? `محاولات التعيين: ${order.assignmentAttempts}` : `Attempts: ${order.assignmentAttempts}`}
+                {t('str_821')}
               </p>
             ) : null}
           </div>
           <div className="text-right">
-            <p className="text-sm text-theme-secondary">{isRTL ? 'حالة التوصيل' : 'Status'}</p>
+            <p className="text-sm text-theme-secondary">{t('str_822')}</p>
             <p className="font-bold text-primary capitalize">{order.status.replace(/_/g, ' ')}</p>
           </div>
         </div>
@@ -127,7 +130,7 @@ export const VendorDeliveryCenter: React.FC<VendorDeliveryCenterProps> = ({ orde
       {/* Delivery History */}
       {events.length > 0 && (
         <div className="mt-8">
-          <h4 className="text-sm font-bold text-theme-secondary mb-3">{isRTL ? 'سجل الحالات' : 'Status History'}</h4>
+          <h4 className="text-sm font-bold text-theme-secondary mb-3">{t('str_823')}</h4>
           <div className="space-y-3">
             {events.map((ev, i) => (
               <div key={ev.id} className="flex gap-3 text-sm">

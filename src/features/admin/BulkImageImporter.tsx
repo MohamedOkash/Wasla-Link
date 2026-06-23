@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState, useEffect } from 'react';
 import { db } from '../../services/firebase';
 import { collection, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
@@ -41,6 +42,8 @@ export const BulkImageImporter: React.FC = () => {
 
   // Perform Match Mapping
   const performMatching = (selectedFiles: File[], criteria: 'sku' | 'barcode' | 'id' | 'name') => {
+  const {} = useTranslation();
+
     const list = selectedFiles.map(file => {
       // Strip extension
       const basename = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
@@ -62,7 +65,7 @@ export const BulkImageImporter: React.FC = () => {
 
       return {
         file,
-        template: found || { id: '', name: isRTL ? 'غير معروف' : 'Unmatched', price: 0 } as any,
+        template: found || { id: '', name: t('str_414'), price: 0 } as any,
         status: found ? 'matched' as const : 'unmatched' as const
       };
     });
@@ -97,7 +100,7 @@ export const BulkImageImporter: React.FC = () => {
   const handleStartImport = async () => {
     const activeMatches = matchedAssets.filter(m => m.status === 'matched');
     if (activeMatches.length === 0) {
-      showToast(isRTL ? 'لا توجد صور متطابقة لبدء الاستيراد' : 'No matched assets to import');
+      showToast(t('str_415'));
       return;
     }
 
@@ -135,7 +138,7 @@ export const BulkImageImporter: React.FC = () => {
 
     setImportReport(report);
     setImporting(false);
-    showToast(isRTL ? 'اكتمل استيراد الصور بنجاح!' : 'Bulk image import complete!');
+    showToast(t('str_416'));
   };
 
   const handleExportReport = () => {
@@ -151,34 +154,34 @@ export const BulkImageImporter: React.FC = () => {
       <div>
         <h3 className="font-black text-theme-text text-sm flex items-center gap-2 border-b border-theme-border pb-2">
           <Upload size={18} className="text-primary" />
-          {isRTL ? 'استيراد وربط الصور الجماعي للمستودع' : 'Master Catalog Bulk Image Importer Pro'}
+          {t('str_417')}
         </h3>
         <p className="text-[10px] text-theme-muted font-bold mt-1 uppercase tracking-wider">
-          {isRTL ? 'مربط الصور بالباركود أو رمز SKU أو المعرف تلقائياً' : 'Automated SKU/Barcode image attachment platform'}
+          {t('str_418')}
         </p>
       </div>
 
       {/* Select Match Options */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
         <div>
-          <label className="text-[10px] font-black text-theme-muted block mb-1.5">{isRTL ? 'معيار المطابقة التلقائي' : 'Image Filename Matching Rule'}</label>
+          <label className="text-[10px] font-black text-theme-muted block mb-1.5">{t('str_419')}</label>
           <select 
             value={matchingCriteria} 
             onChange={e => handleCriteriaChange(e.target.value as any)}
             className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs font-bold outline-none text-theme-text focus:border-primary"
           >
-            <option value="sku">{isRTL ? 'اسم الملف = رمز SKU (مثال: SKU-100.jpg)' : 'Filename = SKU'}</option>
-            <option value="barcode">{isRTL ? 'اسم الملف = الباركود (مثال: 622110.jpg)' : 'Filename = Barcode'}</option>
-            <option value="id">{isRTL ? 'اسم الملف = معرف القالب (مثال: grocery_milk_1.jpg)' : 'Filename = Template ID'}</option>
-            <option value="name">{isRTL ? 'اسم الملف يحتوي على اسم السلعة' : 'Filename contains Product Name'}</option>
+            <option value="sku">{t('str_420')}</option>
+            <option value="barcode">{t('str_421')}</option>
+            <option value="id">{t('str_422')}</option>
+            <option value="name">{t('str_423')}</option>
           </select>
         </div>
 
         <div>
-          <label className="text-[10px] font-black text-theme-muted block mb-1.5">{isRTL ? 'تحديد ملفات الصور للرفع' : 'Select Target Images'}</label>
+          <label className="text-[10px] font-black text-theme-muted block mb-1.5">{t('str_424')}</label>
           <div className="relative border border-theme-border rounded-xl p-3 bg-theme-bg flex items-center justify-center cursor-pointer hover:border-primary/40 transition">
             <span className="text-xs font-bold text-theme-muted flex items-center gap-1.5">
-              <Upload size={14} /> {isRTL ? 'اختر ملفات (100، 500، 1000+)' : 'Choose Images (100, 500, 1000+)'}
+              <Upload size={14} /> {t('str_425')}
             </span>
             <input 
               type="file" 
@@ -197,7 +200,7 @@ export const BulkImageImporter: React.FC = () => {
             className="w-full bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-white font-black py-3 rounded-xl text-xs shadow-md transition flex items-center justify-center gap-1.5"
           >
             {importing ? <Loader2 className="animate-spin" size={14} /> : <Play size={14} />}
-            {isRTL ? 'بدء تشغيل الاستيراد الجماعي' : 'Run Bulk Attach'}
+            {t('str_426')}
           </button>
         </div>
       </div>
@@ -206,7 +209,7 @@ export const BulkImageImporter: React.FC = () => {
       {importing && (
         <div className="bg-theme-bg p-4.5 rounded-2xl border border-theme-border/60 space-y-2">
           <div className="flex justify-between text-xs font-black">
-            <span>{isRTL ? 'جاري رفع الصور وضغطها تلقائياً...' : 'Uploading & converting images...'}</span>
+            <span>{t('str_427')}</span>
             <span>{progress.current} / {progress.total}</span>
           </div>
           <div className="w-full h-2 bg-theme-border rounded-full overflow-hidden">
@@ -219,8 +222,8 @@ export const BulkImageImporter: React.FC = () => {
       {matchedAssets.length > 0 && (
         <div className="border border-theme-border/60 rounded-3xl overflow-hidden bg-theme-bg/10 theme-transition">
           <div className="bg-theme-bg px-4.5 py-3 border-b border-theme-border/60 flex justify-between items-center text-xs font-black">
-            <span>{isRTL ? 'معاينة خريطة المطابقة التلقائية' : 'Auto-Match Map Preview'}</span>
-            <button onClick={() => { setFiles([]); setMatchedAssets([]); }} className="text-red-500 hover:underline">{isRTL ? 'مسح الكل' : 'Clear All'}</button>
+            <span>{t('str_428')}</span>
+            <button onClick={() => { setFiles([]); setMatchedAssets([]); }} className="text-red-500 hover:underline">{t('str_429')}</button>
           </div>
           
           <div className="max-h-[300px] overflow-y-auto divide-y divide-theme-border/40 p-1">
@@ -242,7 +245,7 @@ export const BulkImageImporter: React.FC = () => {
                   ) : (
                     <div className="flex items-center gap-1 text-red-500">
                       <AlertTriangle size={12} />
-                      <span>{isRTL ? 'غير مطابق' : 'Unmatched'}</span>
+                      <span>{t('str_430')}</span>
                     </div>
                   )}
                 </div>
@@ -263,14 +266,14 @@ export const BulkImageImporter: React.FC = () => {
       {importReport.length > 0 && (
         <div className="bg-theme-bg p-4.5 rounded-2xl border border-theme-border/60 flex justify-between items-center">
           <span className="text-xs font-black text-theme-text">
-            {isRTL ? 'يتوفر تقرير استيراد نشط لعملية الرفع.' : 'Asset bulk import report is ready.'}
+            {t('str_431')}
           </span>
           <button 
             onClick={handleExportReport}
             className="bg-green-600 hover:bg-green-700 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition"
           >
             <Download size={14} />
-            {isRTL ? 'تصدير تقرير الإكسل' : 'Export Excel Report'}
+            {t('str_432')}
           </button>
         </div>
       )}

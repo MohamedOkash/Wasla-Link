@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React from 'react';
 import { MapPin, Bell, Heart, ChevronLeft, Sparkles, ShoppingCart } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -17,13 +18,15 @@ export const PremiumHeader: React.FC<PremiumHeaderProps> = ({
   openCart,
   onLogoClick
 }) => {
-  const { location, t, notifications, isRTL, currentUser, cart } = useApp();
+  const { location,  notifications, isRTL, currentUser, cart } = useApp();
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
   const cartCount = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
 
   // Smart Greeting logic based on time of day
   const getGreeting = () => {
+  const {} = useTranslation();
+
     const hours = new Date().getHours();
     const name = currentUser?.name ? currentUser.name.split(' ')[0] : '';
     
@@ -67,9 +70,7 @@ export const PremiumHeader: React.FC<PremiumHeaderProps> = ({
               </h1>
               <Sparkles size={10} className="text-primary animate-pulse" />
             </div>
-            <span className="text-[11px] text-theme-muted font-black leading-none mt-1">
-              وصلة لينك
-            </span>
+            <span className="text-[11px] text-theme-muted font-black leading-none mt-1">{t('str_1167')}</span>
             <p className="text-[9px] text-theme-muted font-bold tracking-wide mt-0.5 leading-none">
               {getGreeting()}
             </p>

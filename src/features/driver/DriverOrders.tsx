@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React from 'react';
 import { Bike, MapPin, DollarSign, Clock, ClipboardList, CheckCircle2, ArrowRight } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -33,10 +34,10 @@ export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
       });
 
       await batch.commit();
-      showToast(isRTL ? 'تم استلام الطلب' : 'Order accepted');
+      showToast(t('str_1116'));
     } catch (error) {
       console.error(error);
-      showToast(isRTL ? 'حدث خطأ' : 'Error', 'error');
+      showToast(t('str_537'), 'error');
     }
   };
 
@@ -67,14 +68,16 @@ export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
       }
 
       await batch.commit();
-      showToast(isRTL ? 'تم تحديث حالة الطلب' : 'Status updated');
+      showToast(t('str_1117'));
     } catch (error) {
       console.error(error);
-      showToast(isRTL ? 'حدث خطأ' : 'Error', 'error');
+      showToast(t('str_537'), 'error');
     }
   };
 
   const getStatusLabelAr = (status: string) => {
+  const {} = useTranslation();
+
     switch (status) {
       case 'ready_for_pickup': return 'جاهز للاستلام';
       case 'accepted': return 'في انتظار الاستلام منك';
@@ -103,11 +106,11 @@ export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
       <div>
         <h3 className="font-black text-sm mb-3 flex items-center gap-1.5 text-primary">
           <Bike size={16} />
-          {isRTL ? 'الطلبات النشطة' : 'Active Orders'} ({activeOrders.length})
+          {t('str_584')} ({activeOrders.length})
         </h3>
         {activeOrders.length === 0 ? (
            <p className="bg-theme-card p-4 text-center border border-theme-border rounded-2xl text-xs text-theme-muted font-bold">
-           {isRTL ? 'لا توجد طلبات جارية' : 'No active orders'}
+           {t('str_1118')}
          </p>
         ) : (
           <div className="space-y-3">
@@ -134,9 +137,9 @@ export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
                     onClick={() => handleUpdateStatus(order.id, order.status)}
                     className="w-full bg-primary hover:bg-primary-hover text-white py-3 rounded-xl font-black text-sm shadow-md transition flex justify-center items-center gap-2"
                   >
-                    {order.status === 'accepted' && (isRTL ? 'استلمت الطلب من المتجر' : 'Picked up from store')}
-                    {order.status === 'picked_up' && (isRTL ? 'بدء التوصيل للعميل' : 'Start Delivery')}
-                    {order.status === 'on_the_way' && (isRTL ? 'إكمال الطلب وتسليم العميل' : 'Complete Delivery')}
+                    {order.status === 'accepted' && (t('str_1119'))}
+                    {order.status === 'picked_up' && (t('str_1120'))}
+                    {order.status === 'on_the_way' && (t('str_1121'))}
                     <ArrowRight size={16} className={isRTL ? 'rotate-180' : ''} />
                   </button>
                 </div>
@@ -149,11 +152,11 @@ export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
       <div>
         <h3 className="font-black text-sm mb-3 flex items-center gap-1.5 text-theme-text">
           <ClipboardList size={16} />
-          {isRTL ? 'الطلبات المتاحة' : 'Available Orders'} ({availableOrders.length})
+          {t('str_1122')} ({availableOrders.length})
         </h3>
         {availableOrders.length === 0 ? (
           <p className="bg-theme-card p-4 text-center border border-theme-border rounded-2xl text-xs text-theme-muted font-bold">
-            {isRTL ? 'لا توجد طلبات متاحة حالياً' : 'No available orders currently'}
+            {t('str_1123')}
           </p>
         ) : (
           <div className="space-y-3">
@@ -176,7 +179,7 @@ export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
                         : 'bg-theme-border text-theme-muted cursor-not-allowed'
                     }`}
                   >
-                    {isRTL ? 'قبول الطلب' : 'Accept Order'}
+                    {t('str_202')}
                   </button>
                </div>
             ))}
@@ -188,7 +191,7 @@ export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
       <div>
         <h3 className="font-black text-sm mb-3 flex items-center gap-1.5 text-theme-text">
           <CheckCircle2 size={16} className="text-green-500" />
-          {isRTL ? 'المكتملة' : 'Completed'} ({completedOrders.length})
+          {t('str_1124')} ({completedOrders.length})
         </h3>
         <div className="space-y-3">
             {completedOrders.map(order => (

@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useEffect, useState, useRef } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { MapPin, Navigation, Compass, Package } from 'lucide-react';
@@ -87,7 +88,7 @@ export const VendorTracking: React.FC<VendorTrackingProps> = ({ order }) => {
     return (
       <div className="bg-theme-bg p-6 rounded-2xl text-center border border-theme-border">
         <Package size={32} className="mx-auto text-theme-muted mb-2" />
-        <p className="text-xs font-bold text-theme-muted">{isRTL ? 'لم يتم تعيين مندوب بعد' : 'No driver assigned yet'}</p>
+        <p className="text-xs font-bold text-theme-muted">{t('str_1071')}</p>
       </div>
     );
   }
@@ -100,13 +101,13 @@ export const VendorTracking: React.FC<VendorTrackingProps> = ({ order }) => {
             <Navigation size={18} />
           </div>
           <div>
-            <h4 className="text-sm font-black text-theme-text">{isRTL ? 'تتبع المندوب' : 'Driver Tracking'}</h4>
+            <h4 className="text-sm font-black text-theme-text">{t('str_1072')}</h4>
             <span className="text-[10px] font-bold text-theme-muted mt-0.5 block">{driverInfo?.name || 'Mandoob'}</span>
           </div>
         </div>
         <div className="flex items-center gap-1 text-[10px] font-black text-green-500 bg-green-500/10 px-2 py-1 rounded-lg">
           <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-          {isRTL ? 'مباشر' : 'Live'}
+          {t('str_1073')}
         </div>
       </div>
       <div className="h-64 relative bg-theme-bg">
@@ -114,7 +115,7 @@ export const VendorTracking: React.FC<VendorTrackingProps> = ({ order }) => {
         {!driverLocation && (
           <div className="absolute inset-0 bg-theme-bg/80 backdrop-blur-sm z-[1000] flex flex-col items-center justify-center">
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-3"></div>
-            <p className="text-xs font-bold text-theme-text">{isRTL ? 'جاري الاتصال بـ GPS المندوب...' : 'Connecting to Driver GPS...'}</p>
+            <p className="text-xs font-bold text-theme-text">{t('str_1074')}</p>
           </div>
         )}
       </div>

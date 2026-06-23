@@ -26,9 +26,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   quantityInCart = 0,
   isFavorite,
   onToggleFavorite,
-  isRTL,
-  t
-}) => {
+  isRTL }) => {
   const discountedPrice = calculateDiscountedPrice(product, 1);
   const hasDiscount = discountedPrice < product.price;
   const promoLabel = getPromoLabel(product, isRTL);

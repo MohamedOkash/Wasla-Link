@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit, X, Check, FolderOpen, Tag, Database, Upload, Download, RefreshCw, BarChart } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -98,25 +99,25 @@ export const CatalogManagement: React.FC = () => {
     if (!newBrand.trim()) return;
     const brandName = newBrand.trim();
     if (brands.includes(brandName)) {
-      showToast(isRTL ? 'البراند موجود بالفعل' : 'Brand already exists');
+      showToast(t('str_433'));
       return;
     }
     try {
       await setDoc(doc(db, 'brands', brandName), { createdAt: new Date().toISOString() });
       setBrands(prev => [...prev, brandName]);
       setNewBrand('');
-      showToast(isRTL ? 'تمت إضافة البراند بنجاح' : 'Brand added successfully');
+      showToast(t('str_434'));
     } catch (err) {
       console.error(err);
     }
   };
 
   const handleDeleteBrand = async (brandName: string) => {
-    if (!window.confirm(isRTL ? 'هل أنت متأكد من حذف هذا البراند؟' : 'Are you sure you want to delete this brand?')) return;
+    if (!window.confirm(t('str_435'))) return;
     try {
       await deleteDoc(doc(db, 'brands', brandName));
       setBrands(prev => prev.filter(b => b !== brandName));
-      showToast(isRTL ? 'تم حذف البراند بنجاح' : 'Brand deleted successfully');
+      showToast(t('str_436'));
     } catch (err) {
       console.error(err);
     }
@@ -124,6 +125,8 @@ export const CatalogManagement: React.FC = () => {
 
   // --- CATEGORIES MANAGEMENT ACTIONS ---
   const handleOpenAddCat = () => {
+  const {} = useTranslation();
+
     setCatId('');
     setCatNameAr('');
     setCatNameEn('');
@@ -144,7 +147,7 @@ export const CatalogManagement: React.FC = () => {
   const handleSaveCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!catId || !catNameAr || !catNameEn) {
-      showToast(isRTL ? 'يرجى تعبئة كافة الحقول المطلوبة' : 'Please fill all required fields');
+      showToast(t('str_437'));
       return;
     }
 
@@ -162,10 +165,10 @@ export const CatalogManagement: React.FC = () => {
       await setDoc(doc(db, 'categories', catPayload.id), catPayload);
       if (editingCat) {
         setCategories(prev => prev.map(c => c.id === catPayload.id ? catPayload : c));
-        showToast(isRTL ? 'تم تحديث القسم بنجاح' : 'Category updated successfully');
+        showToast(t('str_438'));
       } else {
         setCategories(prev => [...prev, catPayload]);
-        showToast(isRTL ? 'تمت إضافة القسم الجديد بنجاح' : 'Category added successfully');
+        showToast(t('str_439'));
       }
       setShowAddCat(false);
     } catch (err) {
@@ -174,11 +177,11 @@ export const CatalogManagement: React.FC = () => {
   };
 
   const handleDeleteCategory = async (id: string) => {
-    if (!window.confirm(isRTL ? 'هل أنت متأكد من حذف هذا القسم؟ قد يؤثر ذلك على المتاجر المرتبطة به.' : 'Are you sure you want to delete this category?')) return;
+    if (!window.confirm(t('str_440'))) return;
     try {
       await deleteDoc(doc(db, 'categories', id));
       setCategories(prev => prev.filter(c => c.id !== id));
-      showToast(isRTL ? 'تم حذف القسم بنجاح' : 'Category deleted successfully');
+      showToast(t('str_441'));
     } catch (err) {
       console.error(err);
     }
@@ -224,7 +227,7 @@ export const CatalogManagement: React.FC = () => {
   const handleSaveTemplate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tempNameAr || !tempNameEn || !tempSubCat || !tempSellingPrice) {
-      showToast(isRTL ? 'يرجى تعبئة اسم الصنف الفرعي والأسماء والأسعار' : 'Please fill all required inputs');
+      showToast(t('str_442'));
       return;
     }
 
@@ -270,10 +273,10 @@ export const CatalogManagement: React.FC = () => {
       await setDoc(doc(db, 'productTemplates', tempId), payload);
       if (editingTemplate) {
         setTemplates(prev => prev.map(t => t.id === tempId ? payload : t));
-        showToast(isRTL ? 'تم تحديث قالب المنتج بنجاح' : 'Product template updated successfully');
+        showToast(t('str_443'));
       } else {
         setTemplates(prev => [...prev, payload]);
-        showToast(isRTL ? 'تمت إضافة القالب الجديد بنجاح' : 'Product template added successfully');
+        showToast(t('str_444'));
       }
       setShowAddTemplate(false);
     } catch (err) {
@@ -282,11 +285,11 @@ export const CatalogManagement: React.FC = () => {
   };
 
   const handleDeleteTemplate = async (id: string) => {
-    if (!window.confirm(isRTL ? 'هل أنت متأكد من حذف هذا القالب؟' : 'Are you sure you want to delete this template?')) return;
+    if (!window.confirm(t('str_445'))) return;
     try {
       await deleteDoc(doc(db, 'productTemplates', id));
       setTemplates(prev => prev.filter(t => t.id !== id));
-      showToast(isRTL ? 'تم حذف القالب بنجاح' : 'Template deleted successfully');
+      showToast(t('str_446'));
     } catch (err) {
       console.error(err);
     }
@@ -306,10 +309,10 @@ export const CatalogManagement: React.FC = () => {
         const worksheet = workbook.Sheets[firstSheetName];
         const data = XLSX.utils.sheet_to_json(worksheet);
         setExcelPreview(data);
-        showToast(isRTL ? `تم قراءة ${data.length} صف من الملف` : `Parsed ${data.length} rows from file`);
+        showToast(t('str_447'));
       } catch (err) {
         console.error(err);
-        showToast(isRTL ? 'فشل تحليل ملف Excel' : 'Failed to parse Excel file');
+        showToast(t('str_448'));
       }
     };
     reader.readAsBinaryString(file);
@@ -353,12 +356,12 @@ export const CatalogManagement: React.FC = () => {
         batch.set(doc(db, 'productTemplates', tempId), payload);
       });
       await batch.commit();
-      showToast(isRTL ? 'تم رفع وحفظ قوالب المنتجات بنجاح!' : 'Excel templates uploaded and saved successfully!');
+      showToast(t('str_449'));
       setExcelPreview([]);
       fetchTemplates();
     } catch (err) {
       console.error(err);
-      showToast(isRTL ? 'فشل حفظ البيانات المستوردة' : 'Failed to save imported templates');
+      showToast(t('str_450'));
     } finally {
       setLoading(false);
     }
@@ -389,13 +392,13 @@ export const CatalogManagement: React.FC = () => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Product Templates");
     XLSX.writeFile(workbook, `MasterCatalog_Templates_${new Date().toISOString().split('T')[0]}.xlsx`);
-    showToast(isRTL ? 'تم تصدير ملف الإكسيل بنجاح' : 'Catalog exported successfully');
+    showToast(t('str_451'));
   };
 
   // Bulk Sync Engine: Updates name, description, brand, and images across live stores
   const handleBulkSyncCatalog = async () => {
     if (templates.length === 0) {
-      showToast(isRTL ? 'لا توجد قوالب للمزامنة' : 'No templates loaded to sync');
+      showToast(t('str_452'));
       return;
     }
     setLoading(true);
@@ -406,7 +409,7 @@ export const CatalogManagement: React.FC = () => {
       const toSync = liveProducts.filter(p => p.templateId !== undefined);
       
       if (toSync.length === 0) {
-        showToast(isRTL ? 'لا توجد منتجات شريكة مرتبطة بالقوالب حالياً' : 'No partner products are linked to templates');
+        showToast(t('str_453'));
         setLoading(false);
         return;
       }
@@ -440,10 +443,10 @@ export const CatalogManagement: React.FC = () => {
         });
         await batch.commit();
       }
-      showToast(isRTL ? `تمت مزامنة ${count} منتج شريك بنجاح!` : `Synced ${count} partner products successfully!`);
+      showToast(t('str_454'));
     } catch (err) {
       console.error(err);
-      showToast(isRTL ? 'فشل تشغيل محرك المزامنة' : 'Failed to execute sync engine');
+      showToast(t('str_455'));
     } finally {
       setLoading(false);
     }
@@ -463,10 +466,10 @@ export const CatalogManagement: React.FC = () => {
       {/* Navigation sub-tabs */}
       <div className="bg-theme-card p-1.5 rounded-2xl border border-theme-border/60 shadow-sm flex overflow-x-auto no-scrollbar gap-1.5 theme-transition">
         {[
-          { id: 'categories', label: isRTL ? 'إدارة الأقسام' : 'Categories', icon: FolderOpen },
-          { id: 'brands', label: isRTL ? 'العلامات التجارية' : 'Brands', icon: Tag },
-          { id: 'templates', label: isRTL ? 'قوالب المنتجات' : 'Templates', icon: Database },
-          { id: 'excel', label: isRTL ? 'مركز البيانات' : 'Excel Center', icon: Upload }
+          { id: 'categories', label: t('str_456'), icon: FolderOpen },
+          { id: 'brands', label: t('str_457'), icon: Tag },
+          { id: 'templates', label: t('str_458'), icon: Database },
+          { id: 'excel', label: t('str_459'), icon: Upload }
         ].map(tab => (
           <button
             key={tab.id}
@@ -488,11 +491,11 @@ export const CatalogManagement: React.FC = () => {
         <div className="space-y-5">
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="font-black text-theme-text text-sm">{isRTL ? 'إقسام المتاجر الكلية' : 'Global Store Types'}</h3>
-              <p className="text-[10px] text-theme-muted font-bold mt-0.5">{isRTL ? 'إدارة الأنشطة والأنواع الرئيسية بالمنصة' : 'Configure main storefront profiles'}</p>
+              <h3 className="font-black text-theme-text text-sm">{t('str_460')}</h3>
+              <p className="text-[10px] text-theme-muted font-bold mt-0.5">{t('str_461')}</p>
             </div>
             <PremiumButton size="sm" onClick={handleOpenAddCat} leftIcon={<Plus size={14} />}>
-              {isRTL ? 'إضافة نشاط' : 'Add Category'}
+              {t('str_462')}
             </PremiumButton>
           </div>
 
@@ -523,37 +526,37 @@ export const CatalogManagement: React.FC = () => {
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
               <PremiumCard hoverable={false} className="w-full max-w-md p-6 space-y-4">
                 <h3 className="font-black text-sm text-primary">
-                  {editingCat ? (isRTL ? 'تعديل قسم' : 'Edit Category') : (isRTL ? 'إضافة قسم جديد' : 'New Category')}
+                  {editingCat ? (t('str_463')) : (t('str_464'))}
                 </h3>
                 <form onSubmit={handleSaveCategory} className="space-y-4">
                   <PremiumInput 
                     type="text" 
-                    placeholder={isRTL ? 'معرف القسم (أحرف إنجليزية فقط)' : 'Category ID (letters only)'} 
+                    placeholder={t('str_465')} 
                     value={catId}
                     onChange={(e) => setCatId(e.target.value)}
                     disabled={!!editingCat}
                   />
                   <PremiumInput 
                     type="text" 
-                    placeholder={isRTL ? 'الاسم باللغة العربية' : 'Arabic Name'} 
+                    placeholder={t('str_466')} 
                     value={catNameAr}
                     onChange={(e) => setCatNameAr(e.target.value)}
                   />
                   <PremiumInput 
                     type="text" 
-                    placeholder={isRTL ? 'الاسم باللغة الإنجليزية' : 'English Name'} 
+                    placeholder={t('str_467')} 
                     value={catNameEn}
                     onChange={(e) => setCatNameEn(e.target.value)}
                   />
                   <PremiumInput 
                     type="text" 
-                    placeholder={isRTL ? 'رابط صورة الغلاف' : 'Cover Image URL'} 
+                    placeholder={t('str_468')} 
                     value={catImg}
                     onChange={(e) => setCatImg(e.target.value)}
                   />
                   <div className="flex gap-2 justify-end pt-3">
-                    <PremiumButton variant="outline" size="sm" type="button" onClick={() => setShowAddCat(false)}>{isRTL ? 'إلغاء' : 'Cancel'}</PremiumButton>
-                    <PremiumButton variant="primary" size="sm" type="submit">{isRTL ? 'حفظ الحقول' : 'Save Changes'}</PremiumButton>
+                    <PremiumButton variant="outline" size="sm" type="button" onClick={() => setShowAddCat(false)}>{t('str_56')}</PremiumButton>
+                    <PremiumButton variant="primary" size="sm" type="submit">{t('str_469')}</PremiumButton>
                   </div>
                 </form>
               </PremiumCard>
@@ -567,21 +570,21 @@ export const CatalogManagement: React.FC = () => {
         <div className="space-y-5">
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="font-black text-theme-text text-sm">{isRTL ? 'العلامات التجارية المعتمدة' : 'Master Catalog Brands'}</h3>
-              <p className="text-[10px] text-theme-muted font-bold mt-0.5">{isRTL ? 'إدارة ماركات السلع المتاحة بالكتالوج' : 'Configure recognized product brands'}</p>
+              <h3 className="font-black text-theme-text text-sm">{t('str_470')}</h3>
+              <p className="text-[10px] text-theme-muted font-bold mt-0.5">{t('str_471')}</p>
             </div>
           </div>
 
           <div className="bg-theme-card p-4 rounded-2xl border border-theme-border/60 shadow-sm flex gap-3 theme-transition">
             <PremiumInput 
               type="text" 
-              placeholder={isRTL ? 'اسم الماركة الجديدة...' : 'New brand name...'} 
+              placeholder={t('str_472')} 
               value={newBrand}
               onChange={(e) => setNewBrand(e.target.value)}
               className="flex-1"
             />
             <PremiumButton onClick={handleAddBrand} leftIcon={<Plus size={14} />}>
-              {isRTL ? 'إضافة براند' : 'Add Brand'}
+              {t('str_473')}
             </PremiumButton>
           </div>
 
@@ -603,11 +606,11 @@ export const CatalogManagement: React.FC = () => {
         <div className="space-y-5">
           <div className="flex justify-between items-center flex-wrap gap-2">
             <div>
-              <h3 className="font-black text-theme-text text-sm">{isRTL ? 'قوالب المنتجات الكلية' : 'Global Product Templates'}</h3>
-              <p className="text-[10px] text-theme-muted font-bold mt-0.5">{isRTL ? 'سجل السلع الأساسي لإمداد مخزون التجار الجدد' : 'Master items cloned during onboarding'}</p>
+              <h3 className="font-black text-theme-text text-sm">{t('str_474')}</h3>
+              <p className="text-[10px] text-theme-muted font-bold mt-0.5">{t('str_475')}</p>
             </div>
             <PremiumButton size="sm" onClick={handleOpenAddTemplate} leftIcon={<Plus size={14} />}>
-              {isRTL ? 'قالب منتج جديد' : 'New Template'}
+              {t('str_476')}
             </PremiumButton>
           </div>
 
@@ -615,7 +618,7 @@ export const CatalogManagement: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <PremiumInput 
               type="text"
-              placeholder={isRTL ? 'البحث بالاسم، الباركود أو الماركة...' : 'Search name, barcode or brand...'}
+              placeholder={t('str_477')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -624,7 +627,7 @@ export const CatalogManagement: React.FC = () => {
               onChange={(e) => setFilterCategory(e.target.value)}
               className="bg-theme-card border border-theme-border/60 p-3 rounded-xl font-bold outline-none focus:border-primary text-theme-text transition w-full"
             >
-              <option value="all">{isRTL ? 'تصفح كل المتاجر' : 'All Categories'}</option>
+              <option value="all">{t('str_478')}</option>
               {categories.map(c => (
                 <option key={c.id} value={c.id}>{lang === 'ar' ? c.nameAr : c.nameEn}</option>
               ))}
@@ -633,9 +636,9 @@ export const CatalogManagement: React.FC = () => {
 
           <div className="space-y-3.5">
             {loading ? (
-              <p className="text-center text-xs text-theme-muted py-8 font-bold">{isRTL ? 'جاري تحميل قالب البيانات...' : 'Loading templates...'}</p>
+              <p className="text-center text-xs text-theme-muted py-8 font-bold">{t('str_479')}</p>
             ) : filteredTemplates.length === 0 ? (
-              <p className="text-center text-xs text-theme-muted py-8 font-bold">{isRTL ? 'لا توجد قوالب مطابقة' : 'No templates match your filters'}</p>
+              <p className="text-center text-xs text-theme-muted py-8 font-bold">{t('str_480')}</p>
             ) : (
               filteredTemplates.map(t => (
                 <PremiumCard key={t.id} hoverable={false} className="p-4 flex items-center justify-between gap-3">
@@ -650,7 +653,7 @@ export const CatalogManagement: React.FC = () => {
                       <div className="flex gap-4 text-[9px] text-theme-muted font-bold mt-1">
                         <span>Barcode: {t.barcode}</span>
                         <span>SKU: {t.sku}</span>
-                        <span>{isRTL ? `سعر التوصية: ${t.sellingPrice} ج.م` : `Rec Price: ${t.sellingPrice} EGP`}</span>
+                        <span>{t('str_481')}</span>
                       </div>
                     </div>
                   </div>
@@ -672,7 +675,7 @@ export const CatalogManagement: React.FC = () => {
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
               <PremiumCard hoverable={false} className="w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto pr-1 no-scrollbar my-8">
                 <h3 className="font-black text-sm text-primary">
-                  {editingTemplate ? (isRTL ? 'تعديل قالب منتج' : 'Edit Product Template') : (isRTL ? 'إضافة قالب منتج جديد' : 'New Product Template')}
+                  {editingTemplate ? (t('str_482')) : (t('str_483'))}
                 </h3>
                 <form onSubmit={handleSaveTemplate} className="space-y-3.5">
                   <div className="grid grid-cols-2 gap-3">
@@ -687,7 +690,7 @@ export const CatalogManagement: React.FC = () => {
                     </select>
                     <PremiumInput 
                       type="text" 
-                      placeholder={isRTL ? 'الصنف الفرعي (مثال: ألبان)' : 'Subcategory Name (e.g. Dairy)'} 
+                      placeholder={t('str_484')} 
                       value={tempSubCat}
                       onChange={(e) => setTempSubCat(e.target.value)}
                     />
@@ -695,13 +698,13 @@ export const CatalogManagement: React.FC = () => {
 
                   <PremiumInput 
                     type="text" 
-                    placeholder={isRTL ? 'الاسم باللغة العربية' : 'Arabic Name'} 
+                    placeholder={t('str_466')} 
                     value={tempNameAr}
                     onChange={(e) => setTempNameAr(e.target.value)}
                   />
                   <PremiumInput 
                     type="text" 
-                    placeholder={isRTL ? 'الاسم باللغة الإنجليزية' : 'English Name'} 
+                    placeholder={t('str_467')} 
                     value={tempNameEn}
                     onChange={(e) => setTempNameEn(e.target.value)}
                   />
@@ -712,14 +715,14 @@ export const CatalogManagement: React.FC = () => {
                       onChange={(e) => setTempBrand(e.target.value)}
                       className="bg-theme-bg border border-theme-border/60 p-3 rounded-xl font-bold outline-none focus:border-primary text-theme-text transition w-full text-xs"
                     >
-                      <option value="">{isRTL ? 'حدد العلامة التجارية' : 'Select Brand'}</option>
+                      <option value="">{t('str_485')}</option>
                       {brands.map(b => (
                         <option key={b} value={b}>{b}</option>
                       ))}
                     </select>
                     <PremiumInput 
                       type="text" 
-                      placeholder={isRTL ? 'الوزن (مثال: ١ كجم)' : 'Weight (e.g. 1kg)'} 
+                      placeholder={t('str_486')} 
                       value={tempWeight}
                       onChange={(e) => setTempWeight(e.target.value)}
                     />
@@ -743,13 +746,13 @@ export const CatalogManagement: React.FC = () => {
                   <div className="grid grid-cols-2 gap-3">
                     <PremiumInput 
                       type="number" 
-                      placeholder={isRTL ? 'سعر التكلفة' : 'Cost Price'} 
+                      placeholder={t('str_487')} 
                       value={tempCostPrice || ''}
                       onChange={(e) => setTempCostPrice(Number(e.target.value))}
                     />
                     <PremiumInput 
                       type="number" 
-                      placeholder={isRTL ? 'سعر البيع المقترح' : 'Selling Price'} 
+                      placeholder={t('str_488')} 
                       value={tempSellingPrice || ''}
                       onChange={(e) => setTempSellingPrice(Number(e.target.value))}
                     />
@@ -757,21 +760,21 @@ export const CatalogManagement: React.FC = () => {
 
                   <PremiumInput 
                     type="text" 
-                    placeholder={isRTL ? 'رابط الصورة' : 'Image URL'} 
+                    placeholder={t('str_489')} 
                     value={tempImgUrl}
                     onChange={(e) => setTempImgUrl(e.target.value)}
                   />
 
                   <textarea 
-                    placeholder={isRTL ? 'وصف قالب المنتج...' : 'Template description...'} 
+                    placeholder={t('str_490')} 
                     value={tempDesc}
                     onChange={(e) => setTempDesc(e.target.value)}
                     className="w-full min-h-[80px] bg-theme-bg border border-theme-border/60 p-3 rounded-xl font-bold outline-none focus:border-primary text-theme-text text-xs transition"
                   />
 
                   <div className="flex gap-2 justify-end pt-2">
-                    <PremiumButton variant="outline" size="sm" type="button" onClick={() => setShowAddTemplate(false)}>{isRTL ? 'إلغاء' : 'Cancel'}</PremiumButton>
-                    <PremiumButton variant="primary" size="sm" type="submit">{isRTL ? 'حفظ قالب البيانات' : 'Save Template'}</PremiumButton>
+                    <PremiumButton variant="outline" size="sm" type="button" onClick={() => setShowAddTemplate(false)}>{t('str_56')}</PremiumButton>
+                    <PremiumButton variant="primary" size="sm" type="submit">{t('str_491')}</PremiumButton>
                   </div>
                 </form>
               </PremiumCard>
@@ -785,8 +788,8 @@ export const CatalogManagement: React.FC = () => {
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="font-black text-theme-text text-sm">{isRTL ? 'مركز استيراد وتصدير البيانات المجمع' : 'Bulk Excel & Sync Center'}</h3>
-              <p className="text-[10px] text-theme-muted font-bold mt-0.5">{isRTL ? 'إدارة كتالوج المنصة وتحديث فروع التجار بضغطة واحدة' : 'Bulk manage inventory templates and sync partner stores'}</p>
+              <h3 className="font-black text-theme-text text-sm">{t('str_492')}</h3>
+              <p className="text-[10px] text-theme-muted font-bold mt-0.5">{t('str_493')}</p>
             </div>
           </div>
 
@@ -795,11 +798,10 @@ export const CatalogManagement: React.FC = () => {
             <PremiumCard hoverable={false} className="p-5 space-y-4">
               <div className="flex items-center gap-2">
                 <RefreshCw className="text-primary animate-spin-slow" size={20} />
-                <h4 className="font-black text-xs text-theme-text">{isRTL ? 'محرك المزامنة المجمع' : 'Platform Bulk Sync Engine'}</h4>
+                <h4 className="font-black text-xs text-theme-text">{t('str_494')}</h4>
               </div>
               <p className="text-[10px] text-theme-muted leading-relaxed font-bold">
-                {isRTL ? 'عند تعديل اسم المنتج، العلامة التجارية أو الصورة بالقالـب الأساسي، اضغط هنا لتعميم البيانات فوراً على جميع فروع المتاجر مع الاحتفاظ بأسعارهم ومخزونهم الخاص.' 
-                       : 'Synchronize master modifications (names, brand, desc, images) to all merchant listings in real-time, preserving their unique selling prices, stock levels, and ratings.'}
+                {t('str_495')}
               </p>
               <PremiumButton 
                 onClick={handleBulkSyncCatalog} 
@@ -807,7 +809,7 @@ export const CatalogManagement: React.FC = () => {
                 className="w-full"
                 leftIcon={<RefreshCw size={14} />}
               >
-                {isRTL ? 'مزامنة الكتالوج الموحد' : 'Sync Live Store Catalogs'}
+                {t('str_496')}
               </PremiumButton>
             </PremiumCard>
 
@@ -816,11 +818,10 @@ export const CatalogManagement: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2">
                   <Download className="text-primary" size={20} />
-                  <h4 className="font-black text-xs text-theme-text">{isRTL ? 'تصدير القوالب الحالية' : 'Export Master Catalog'}</h4>
+                  <h4 className="font-black text-xs text-theme-text">{t('str_497')}</h4>
                 </div>
                 <p className="text-[10px] text-theme-muted leading-relaxed font-bold mt-2">
-                  {isRTL ? 'قم بتصدير جميع قوالب السلع المسجلة على المنصة كملف إكسيل (.xlsx) لإجراء تعديلات خارجية.' 
-                         : 'Download all master catalog product templates as a structured Excel ledger (.xlsx) for offline audits or batch updates.'}
+                  {t('str_498')}
                 </p>
               </div>
               <PremiumButton 
@@ -829,7 +830,7 @@ export const CatalogManagement: React.FC = () => {
                 className="w-full mt-3"
                 leftIcon={<Download size={14} />}
               >
-                {isRTL ? 'تصدير إكسيل' : 'Export Templates'}
+                {t('str_499')}
               </PremiumButton>
             </PremiumCard>
           </div>
@@ -838,7 +839,7 @@ export const CatalogManagement: React.FC = () => {
           <PremiumCard hoverable={false} className="p-6 space-y-4">
             <div className="flex items-center gap-2 mb-2">
               <Upload className="text-primary" size={20} />
-              <h4 className="font-black text-xs text-theme-text">{isRTL ? 'استيراد قوالب جماعية' : 'Import Product Templates (.xlsx)'}</h4>
+              <h4 className="font-black text-xs text-theme-text">{t('str_500')}</h4>
             </div>
             
             <div className="border-2 border-dashed border-theme-border/60 hover:border-primary/45 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer transition relative">
@@ -849,17 +850,17 @@ export const CatalogManagement: React.FC = () => {
                 className="absolute inset-0 opacity-0 cursor-pointer"
               />
               <Upload size={28} className="text-theme-muted mb-2" />
-              <span className="text-xs font-black text-theme-text">{isRTL ? 'اسحب ملف الإكسيل هنا أو تصفح الملفات' : 'Drag & Drop Excel file or browse'}</span>
+              <span className="text-xs font-black text-theme-text">{t('str_501')}</span>
               <span className="text-[9px] text-theme-muted font-bold mt-1">يجب مطابقة أعمدة: id, nameAr, nameEn, categoryId, categoryName, brand, barcode, sku, costPrice, sellingPrice</span>
             </div>
 
             {excelPreview.length > 0 && (
               <div className="space-y-3.5 pt-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-black text-theme-text">{isRTL ? `معاينة البيانات (${excelPreview.length} صنف جاهز)` : `Data Preview (${excelPreview.length} items ready)`}</span>
+                  <span className="text-xs font-black text-theme-text">{t('str_502')}</span>
                   <div className="flex gap-2">
-                    <PremiumButton variant="outline" size="sm" onClick={() => setExcelPreview([])}>{isRTL ? 'إلغاء' : 'Cancel'}</PremiumButton>
-                    <PremiumButton variant="primary" size="sm" onClick={handleCommitExcelImports}>{isRTL ? 'حفظ وتأكيد الرفع' : 'Commit & Import'}</PremiumButton>
+                    <PremiumButton variant="outline" size="sm" onClick={() => setExcelPreview([])}>{t('str_56')}</PremiumButton>
+                    <PremiumButton variant="primary" size="sm" onClick={handleCommitExcelImports}>{t('str_503')}</PremiumButton>
                   </div>
                 </div>
 
@@ -888,7 +889,7 @@ export const CatalogManagement: React.FC = () => {
                   </table>
                   {excelPreview.length > 10 && (
                     <div className="p-2 text-center text-[9px] text-theme-muted border-t border-theme-border/20 font-bold bg-theme-bg">
-                      ... {isRTL ? `و ${excelPreview.length - 10} صنف إضافي` : `and ${excelPreview.length - 10} more rows`}
+                      ... {t('str_504')}
                     </div>
                   )}
                 </div>

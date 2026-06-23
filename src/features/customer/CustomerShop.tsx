@@ -26,7 +26,7 @@ interface CustomerShopProps {
 }
 
 export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBack, openSearch }) => {
-  const { cart, setCart, addToCartGlobal, t, isRTL, favoriteProducts, toggleFavoriteProduct, favoriteStores, toggleFavoriteStore, followedStores, toggleFollowStore, location, orders, showToast } = useApp();
+  const { cart, setCart, addToCartGlobal,  isRTL, favoriteProducts, toggleFavoriteProduct, favoriteStores, toggleFavoriteStore, followedStores, toggleFollowStore, location, orders, showToast } = useApp();
   const { products } = useProducts();
   const { reviews } = useReviews();;
 
@@ -78,7 +78,7 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
     : shop.rating || 4.5;
 
   const handleAddToCart = (product: any, e: React.MouseEvent) => {
-  const { t } = useTranslation();
+  const {} = useTranslation();
 
     e.stopPropagation();
     if (!isDeliverable) {

@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState, useEffect } from 'react';
 import { Bike, Check, X, Ban, RefreshCw, Phone, Star, ShieldAlert, Trash2, Eye, Users, Clock, Activity } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -34,20 +35,20 @@ export const DriverManagement: React.FC = () => {
         availability: 'offline' // they start offline after approval
       });
       await batch.commit();
-      showToast(isRTL ? 'تم تفعيل حساب المندوب بنجاح' : 'Driver account activated successfully');
+      showToast(t('str_534'));
     } catch (error) {
       console.error(error);
-      showToast(isRTL ? 'حدث خطأ أثناء التفعيل' : 'Error activating driver', 'error');
+      showToast(t('str_535'), 'error');
     }
   };
 
   const handleReject = async (driverId: string) => {
     try {
       await updateDoc(doc(db, 'drivers', driverId), { status: 'rejected' });
-      showToast(isRTL ? 'تم رفض الطلب' : 'Request rejected');
+      showToast(t('str_536'));
     } catch (error) {
       console.error(error);
-      showToast(isRTL ? 'حدث خطأ' : 'Error', 'error');
+      showToast(t('str_537'), 'error');
     }
   };
 
@@ -58,10 +59,10 @@ export const DriverManagement: React.FC = () => {
         isActive: false,
         availability: 'offline'
       });
-      showToast(isRTL ? 'تم تعليق حساب المندوب' : 'Driver account suspended');
+      showToast(t('str_538'));
     } catch (error) {
       console.error(error);
-      showToast(isRTL ? 'حدث خطأ' : 'Error', 'error');
+      showToast(t('str_537'), 'error');
     }
   };
 
@@ -71,10 +72,10 @@ export const DriverManagement: React.FC = () => {
         status: 'approved',
         isActive: true
       });
-      showToast(isRTL ? 'تم إعادة تفعيل الحساب' : 'Account reactivated');
+      showToast(t('str_539'));
     } catch (error) {
       console.error(error);
-      showToast(isRTL ? 'حدث خطأ' : 'Error', 'error');
+      showToast(t('str_537'), 'error');
     }
   };
 
@@ -97,7 +98,7 @@ export const DriverManagement: React.FC = () => {
             <Users size={20} />
           </div>
           <div>
-            <p className="text-[10px] text-theme-muted font-bold">{isRTL ? 'إجمالي المعتمدين' : 'Total Approved'}</p>
+            <p className="text-[10px] text-theme-muted font-bold">{t('str_540')}</p>
             <p className="font-black text-lg">{stats.total}</p>
           </div>
         </div>
@@ -106,7 +107,7 @@ export const DriverManagement: React.FC = () => {
             <Activity size={20} />
           </div>
           <div>
-            <p className="text-[10px] text-theme-muted font-bold">{isRTL ? 'متاح أونلاين' : 'Online'}</p>
+            <p className="text-[10px] text-theme-muted font-bold">{t('str_541')}</p>
             <p className="font-black text-lg">{stats.online}</p>
           </div>
         </div>
@@ -115,7 +116,7 @@ export const DriverManagement: React.FC = () => {
             <Bike size={20} />
           </div>
           <div>
-            <p className="text-[10px] text-theme-muted font-bold">{isRTL ? 'مشغول بتوصيلة' : 'Busy'}</p>
+            <p className="text-[10px] text-theme-muted font-bold">{t('str_542')}</p>
             <p className="font-black text-lg">{stats.busy}</p>
           </div>
         </div>
@@ -124,7 +125,7 @@ export const DriverManagement: React.FC = () => {
             <Clock size={20} />
           </div>
           <div>
-            <p className="text-[10px] text-theme-muted font-bold">{isRTL ? 'طلبات قيد الانتظار' : 'Pending Req'}</p>
+            <p className="text-[10px] text-theme-muted font-bold">{t('str_543')}</p>
             <p className="font-black text-lg">{stats.pending}</p>
           </div>
         </div>
@@ -133,10 +134,10 @@ export const DriverManagement: React.FC = () => {
       {/* Filter Tabs */}
       <div className="bg-theme-card p-1 rounded-2xl border border-theme-border shadow-sm flex gap-1 theme-transition overflow-x-auto no-scrollbar">
         {[
-          { id: 'approved', label: isRTL ? 'المعتمدين' : 'Approved' },
-          { id: 'pending', label: isRTL ? 'قيد الانتظار' : 'Pending' },
-          { id: 'rejected', label: isRTL ? 'المرفوضين' : 'Rejected' },
-          { id: 'suspended', label: isRTL ? 'الموقوفين' : 'Suspended' }
+          { id: 'approved', label: t('str_544') },
+          { id: 'pending', label: t('str_545') },
+          { id: 'rejected', label: t('str_546') },
+          { id: 'suspended', label: t('str_547') }
         ].map(tab => (
           <button
             key={tab.id}
@@ -156,7 +157,7 @@ export const DriverManagement: React.FC = () => {
       <div className="bg-theme-card rounded-[30px] border border-theme-border p-5 shadow-sm space-y-4 animate-fade-in theme-transition">
         <h3 className="font-black text-theme-text text-sm flex items-center gap-2 border-b border-theme-border/60 pb-2.5">
           <Bike size={18} className="text-primary" />
-          {isRTL ? 'إدارة مناديب التوصيل' : 'Delivery Drivers Management'}
+          {t('str_548')}
         </h3>
 
         {filteredDrivers.length === 0 ? (
@@ -164,7 +165,7 @@ export const DriverManagement: React.FC = () => {
             <div className="w-12 h-12 bg-theme-border/30 rounded-full flex items-center justify-center mb-3">
               <ShieldAlert size={20} className="text-theme-muted" />
             </div>
-            <p className="text-sm">{isRTL ? 'لا توجد بيانات' : 'No data available in this section.'}</p>
+            <p className="text-sm">{t('str_549')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -189,7 +190,7 @@ export const DriverManagement: React.FC = () => {
                       <span>• {driver.vehicleType}</span>
                     </p>
                     <p className="text-xs text-theme-muted font-bold mt-1 flex items-center gap-1 text-amber-500 font-sans">
-                      <Star size={12} className="fill-amber-500" /> {driver.rating} ({driver.completedOrders} {isRTL ? 'طلب' : 'orders'})
+                      <Star size={12} className="fill-amber-500" /> {driver.rating} ({driver.completedOrders} {t('str_550')})
                     </p>
                   </div>
                 </div>
@@ -201,29 +202,27 @@ export const DriverManagement: React.FC = () => {
                         onClick={() => window.open(driver.nationalIdImage, '_blank')}
                         className="flex-1 bg-blue-500/10 text-blue-500 py-2 rounded-xl border border-blue-500/20 hover:bg-blue-500/20 transition flex items-center justify-center gap-1 text-xs font-black"
                       >
-                        <Eye size={14} /> الهوية
-                      </button>
+                        <Eye size={14} />{t('str_557')}</button>
                       <button
                         onClick={() => window.open(driver.licenseImage, '_blank')}
                         className="flex-1 bg-blue-500/10 text-blue-500 py-2 rounded-xl border border-blue-500/20 hover:bg-blue-500/20 transition flex items-center justify-center gap-1 text-xs font-black"
                       >
-                        <Eye size={14} /> الرخصة
-                      </button>
+                        <Eye size={14} />{t('str_558')}</button>
                     </>
                   )}
                   {driver.status === 'approved' && (
                     <div className="flex-1 text-xs font-black text-green-500 bg-green-500/10 py-2 rounded-xl text-center border border-green-500/20">
-                      {isRTL ? 'معتمد' : 'Approved'}
+                      {t('str_551')}
                     </div>
                   )}
                   {driver.status === 'rejected' && (
                     <div className="flex-1 text-xs font-black text-red-500 bg-red-500/10 py-2 rounded-xl text-center border border-red-500/20">
-                      {isRTL ? 'مرفوض' : 'Rejected'}
+                      {t('str_552')}
                     </div>
                   )}
                   {driver.status === 'suspended' && (
                     <div className="flex-1 text-xs font-black text-amber-500 bg-amber-500/10 py-2 rounded-xl text-center border border-amber-500/20">
-                      {isRTL ? 'موقوف' : 'Suspended'}
+                      {t('str_553')}
                     </div>
                   )}
                 </div>
@@ -236,7 +235,7 @@ export const DriverManagement: React.FC = () => {
                         onClick={() => handleApprove(driver)}
                         className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-xl shadow-md transition flex items-center justify-center gap-1 text-xs font-black"
                       >
-                        <Check size={14} /> {isRTL ? 'قبول' : 'Approve'}
+                        <Check size={14} /> {t('str_159')}
                       </button>
                       <button
                         onClick={() => handleReject(driver.id)}
@@ -252,7 +251,7 @@ export const DriverManagement: React.FC = () => {
                       onClick={() => handleSuspend(driver.id)}
                       className="flex-1 bg-amber-500/10 border border-amber-500/20 py-2 rounded-xl text-amber-500 hover:bg-amber-500/20 transition flex items-center justify-center gap-1 text-xs font-black"
                     >
-                      <Ban size={14} /> {isRTL ? 'إيقاف النشاط' : 'Suspend'}
+                      <Ban size={14} /> {t('str_554')}
                     </button>
                   )}
 
@@ -261,7 +260,7 @@ export const DriverManagement: React.FC = () => {
                       onClick={() => handleReactivate(driver.id)}
                       className="flex-1 bg-green-500/10 border border-green-500/20 py-2 rounded-xl text-green-500 hover:bg-green-500/20 transition flex items-center justify-center gap-1 text-xs font-black"
                     >
-                      <RefreshCw size={14} /> {isRTL ? 'تنشيط وإعادة الخدمة' : 'Reactivate'}
+                      <RefreshCw size={14} /> {t('str_555')}
                     </button>
                   )}
                   
@@ -270,7 +269,7 @@ export const DriverManagement: React.FC = () => {
                      onClick={() => handleApprove(driver)}
                      className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-xl shadow-md transition flex items-center justify-center gap-1 text-xs font-black"
                    >
-                     <Check size={14} /> {isRTL ? 'تنشيط' : 'Activate'}
+                     <Check size={14} /> {t('str_556')}
                    </button>
                   )}
                 </div>

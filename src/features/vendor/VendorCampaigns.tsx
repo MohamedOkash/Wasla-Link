@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState } from 'react';
 import { Tag, Send, Calendar, BarChart3, AlertCircle, Play, Eye, Users, FileText, CheckCircle, Clock, X } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -73,7 +74,7 @@ export const VendorCampaigns: React.FC = () => {
       try {
         const compressed = await mediaService.uploadImage(e.target.files[0]);
         setBanner(compressed);
-        showToast(isRTL ? 'تم رفع البانر التسويقي' : 'Campaign banner uploaded successfully');
+        showToast(t('str_709'));
       } catch (err: any) {
         alert(err.message);
       } finally {
@@ -83,9 +84,11 @@ export const VendorCampaigns: React.FC = () => {
   };
 
   const handleCreateCampaign = (e: React.FormEvent) => {
+  const {} = useTranslation();
+
     e.preventDefault();
     if (!title || !message) {
-      alert(isRTL ? 'الرجاء إدخال العنوان وتفاصيل الرسالة' : 'Please enter title and message');
+      alert(t('str_710'));
       return;
     }
 
@@ -106,7 +109,7 @@ export const VendorCampaigns: React.FC = () => {
     };
 
     setCampaignsList(prev => [newCamp, ...prev]);
-    showToast(isRTL ? 'تم إنشاء الحملة بنجاح' : 'Campaign created successfully');
+    showToast(t('str_711'));
     
     // Auto broadcast notification if running immediately
     if (status === 'Running') {
@@ -151,7 +154,7 @@ export const VendorCampaigns: React.FC = () => {
           createdAt: new Date().toISOString()
         };
         setNotifications(prev => [newNotif, ...prev]);
-        showToast(isRTL ? 'تم إطلاق الحملة التسويقية الآن' : 'Campaign launched successfully');
+        showToast(t('str_712'));
         return {
           ...c,
           status: 'Running' as const,
@@ -173,10 +176,10 @@ export const VendorCampaigns: React.FC = () => {
 
   const getStatusLabel = (status: Campaign['status']) => {
     switch (status) {
-      case 'Running': return isRTL ? 'نشطة حالياً' : 'Running';
-      case 'Scheduled': return isRTL ? 'مجدولة' : 'Scheduled';
-      case 'Finished': return isRTL ? 'منتهية' : 'Finished';
-      default: return isRTL ? 'مسودة' : 'Draft';
+      case 'Running': return t('str_713');
+      case 'Scheduled': return t('str_714');
+      case 'Finished': return t('str_715');
+      default: return t('str_716');
     }
   };
 
@@ -186,13 +189,13 @@ export const VendorCampaigns: React.FC = () => {
       <div className="flex justify-between items-center">
         <h3 className="font-black text-theme-text text-sm flex items-center gap-2">
           <Tag size={16} className="text-primary" />
-          {isRTL ? 'إدارة الحملات الترويجية' : 'Promotion & Campaigns Manager'}
+          {t('str_717')}
         </h3>
         <button 
           onClick={() => setShowAddForm(true)}
           className="bg-primary hover:bg-primary-hover text-white font-black px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition"
         >
-          <Send size={14} /> {isRTL ? 'إنشاء حملة جديدة' : 'Create Campaign'}
+          <Send size={14} /> {t('str_718')}
         </button>
       </div>
 
@@ -215,7 +218,7 @@ export const VendorCampaigns: React.FC = () => {
                   onClick={() => triggerRunCampaign(camp.id)}
                   className="bg-primary text-white text-[9px] font-black px-3 py-1.5 rounded-xl flex items-center gap-1 shadow hover:bg-primary-hover transition"
                 >
-                  <Play size={10} fill="white" /> {isRTL ? 'إطلاق الآن' : 'Launch Now'}
+                  <Play size={10} fill="white" /> {t('str_719')}
                 </button>
               )}
             </div>
@@ -229,18 +232,18 @@ export const VendorCampaigns: React.FC = () => {
 
             {/* Scheduling Info */}
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-[9px] font-bold text-theme-muted border-t border-b border-theme-border/50 py-2">
-              <span className="flex items-center gap-1"><Calendar size={11} /> {isRTL ? `تبدأ: ${camp.startDate}` : `Starts: ${camp.startDate}`}</span>
-              <span className="flex items-center gap-1"><Calendar size={11} /> {isRTL ? `تنتهي: ${camp.endDate}` : `Ends: ${camp.endDate}`}</span>
-              <span className="flex items-center gap-1"><Clock size={11} /> {isRTL ? `التوقيت: ${camp.scheduleTime}` : `Scheduled: ${camp.scheduleTime}`}</span>
+              <span className="flex items-center gap-1"><Calendar size={11} /> {t('str_720')}</span>
+              <span className="flex items-center gap-1"><Calendar size={11} /> {t('str_721')}</span>
+              <span className="flex items-center gap-1"><Clock size={11} /> {t('str_722')}</span>
             </div>
 
             {/* Analytics Dashboard Grid */}
             <div className="grid grid-cols-4 gap-2 text-center text-xs">
               {[
-                { label: isRTL ? 'أرسلت' : 'Sent', val: camp.analytics.sent },
-                { label: isRTL ? 'وصلت' : 'Delivered', val: camp.analytics.delivered },
-                { label: isRTL ? 'فتحت' : 'Opened', val: camp.analytics.opened },
-                { label: isRTL ? 'نقرت' : 'Clicked', val: camp.analytics.clicked }
+                { label: t('str_723'), val: camp.analytics.sent },
+                { label: t('str_724'), val: camp.analytics.delivered },
+                { label: t('str_725'), val: camp.analytics.opened },
+                { label: t('str_726'), val: camp.analytics.clicked }
               ].map((an, i) => (
                 <div key={i} className="bg-theme-bg/60 p-2.5 rounded-xl border border-theme-border/40">
                   <span className="text-[8px] text-theme-muted block font-bold">{an.label}</span>
@@ -260,35 +263,35 @@ export const VendorCampaigns: React.FC = () => {
             className="bg-theme-card border border-theme-border rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl animate-slide-up max-h-[85vh] overflow-y-auto no-scrollbar theme-transition"
           >
             <div className="flex justify-between items-center pb-2 border-b border-theme-border">
-              <h4 className="font-black text-theme-text text-sm">{isRTL ? 'إنشاء حملة تسويقية' : 'Create Campaign'}</h4>
+              <h4 className="font-black text-theme-text text-sm">{t('str_727')}</h4>
               <button type="button" onClick={() => setShowAddForm(false)} className="text-theme-muted hover:text-theme-text"><X size={20} /></button>
             </div>
 
             <div className="space-y-3">
               <div>
-                <label className="text-[10px] font-black text-theme-muted block mb-1">{isRTL ? 'عنوان الحملة' : 'Campaign Title'}</label>
+                <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_728')}</label>
                 <input 
                   type="text" 
                   value={title} 
                   onChange={e => setTitle(e.target.value)} 
                   className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs font-bold outline-none focus:border-primary text-theme-text" 
-                  placeholder={isRTL ? 'مثال: مهرجان الجبن الطازج' : 'e.g. Cheese Festival'} 
+                  placeholder={t('str_729')} 
                 />
               </div>
 
               <div>
-                <label className="text-[10px] font-black text-theme-muted block mb-1">{isRTL ? 'نص الرسالة الإعلانية' : 'Message Body'}</label>
+                <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_730')}</label>
                 <textarea 
                   value={message} 
                   onChange={e => setMessage(e.target.value)} 
                   className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs font-bold outline-none focus:border-primary text-theme-text h-20 resize-none" 
-                  placeholder={isRTL ? 'اكتب تفاصيل العرض والخصومات والسلع...' : 'Details of promotional discounts...'}
+                  placeholder={t('str_731')}
                 />
               </div>
 
               {/* Banner upload slot */}
               <div>
-                <label className="text-[10px] font-black text-theme-muted block mb-1">{isRTL ? 'صورة بانر الحملة' : 'Promotion Banner'}</label>
+                <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_732')}</label>
                 <div className="flex items-center gap-3">
                   <input 
                     type="file" 
@@ -301,7 +304,7 @@ export const VendorCampaigns: React.FC = () => {
                     htmlFor="camp-banner-input"
                     className="cursor-pointer bg-theme-bg hover:bg-theme-border/60 text-theme-text font-black px-4 py-2.5 rounded-xl border border-theme-border text-[10px] transition"
                   >
-                    {uploading ? (isRTL ? 'جاري الرفع...' : 'Uploading...') : (isRTL ? 'اختيار بانر' : 'Choose Banner')}
+                    {uploading ? (t('str_733')) : (t('str_734'))}
                   </label>
                   {banner && (
                     <img src={banner} className="w-10 h-10 rounded-lg object-cover bg-theme-bg border border-theme-border" alt="Preview Banner" />
@@ -310,20 +313,20 @@ export const VendorCampaigns: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-[10px] font-black text-theme-muted block mb-1">{isRTL ? 'شريحة العملاء المستهدفة' : 'Target Segment'}</label>
+                <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_735')}</label>
                 <select 
                   value={targetType} 
                   onChange={e => setTargetType(e.target.value as any)}
                   className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs font-bold outline-none focus:border-primary text-theme-text"
                 >
-                  <option value="all">{isRTL ? 'جميع متابعي المتجر' : 'All Store Followers'}</option>
-                  <option value="category">{isRTL ? 'متابعي تصنيف معين' : 'Followers of Category'}</option>
+                  <option value="all">{t('str_736')}</option>
+                  <option value="category">{t('str_737')}</option>
                 </select>
               </div>
 
               {targetType === 'category' && (
                 <div>
-                  <label className="text-[10px] font-black text-theme-muted block mb-1">{isRTL ? 'التصنيف المستهدف' : 'Target Category'}</label>
+                  <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_738')}</label>
                   <select 
                     value={targetCategory} 
                     onChange={e => setTargetCategory(e.target.value)}
@@ -338,7 +341,7 @@ export const VendorCampaigns: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[10px] font-black text-theme-muted block mb-1">{isRTL ? 'تاريخ البدء' : 'Start Date'}</label>
+                  <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_739')}</label>
                   <input 
                     type="date" 
                     value={startDate} 
@@ -347,7 +350,7 @@ export const VendorCampaigns: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-black text-theme-muted block mb-1">{isRTL ? 'تاريخ الانتهاء' : 'End Date'}</label>
+                  <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_740')}</label>
                   <input 
                     type="date" 
                     value={endDate} 
@@ -358,7 +361,7 @@ export const VendorCampaigns: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-[10px] font-black text-theme-muted block mb-1">{isRTL ? 'وقت الإطلاق المجدول' : 'Scheduled Release Time'}</label>
+                <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_741')}</label>
                 <input 
                   type="time" 
                   value={scheduleTime} 
@@ -368,15 +371,15 @@ export const VendorCampaigns: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-[10px] font-black text-theme-muted block mb-1">{isRTL ? 'حالة الحملة الأولى' : 'Initial State Status'}</label>
+                <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_742')}</label>
                 <select 
                   value={status} 
                   onChange={e => setStatus(e.target.value as any)}
                   className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs font-bold outline-none focus:border-primary text-theme-text"
                 >
-                  <option value="Draft">{isRTL ? 'مسودة' : 'Draft'}</option>
-                  <option value="Scheduled">{isRTL ? 'مجدولة' : 'Scheduled'}</option>
-                  <option value="Running">{isRTL ? 'إطلاق فوري' : 'Launch Immediately (Running)'}</option>
+                  <option value="Draft">{t('str_716')}</option>
+                  <option value="Scheduled">{t('str_714')}</option>
+                  <option value="Running">{t('str_743')}</option>
                 </select>
               </div>
             </div>
@@ -386,14 +389,14 @@ export const VendorCampaigns: React.FC = () => {
                 type="submit" 
                 className="flex-1 bg-primary hover:bg-primary-hover text-white font-black py-3.5 rounded-2xl text-xs shadow-md transition"
               >
-                {isRTL ? 'إنشاء الحملة' : 'Create Campaign'}
+                {t('str_744')}
               </button>
               <button 
                 type="button" 
                 onClick={() => setShowAddForm(false)} 
                 className="bg-theme-bg hover:bg-theme-border text-theme-text font-black px-5 py-3.5 rounded-2xl text-xs transition"
               >
-                {isRTL ? 'إلغاء' : 'Cancel'}
+                {t('str_56')}
               </button>
             </div>
           </form>

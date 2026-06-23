@@ -47,7 +47,7 @@ const EGYPT_REGIONS: Record<string, { cities: Record<string, string[]> }> = {
 };
 
 export const AuthScreen: React.FC = () => {
-  const { setRole, setCurrentUser, lang, setLang, t, categories, showToast } = useApp();
+  const { setRole, setCurrentUser, lang, setLang,  categories, showToast } = useApp();
   const [view, setView] = useState<'login' | 'register' | 'vendor_register' | 'forgot_password'>('login');
   
   // Form states
@@ -69,7 +69,7 @@ export const AuthScreen: React.FC = () => {
   const [customVillage, setCustomVillage] = useState('');
 
   const getAvailableCities = () => {
-  const { t } = useTranslation();
+  const {} = useTranslation();
 
     return EGYPT_REGIONS[governorate]?.cities ? Object.keys(EGYPT_REGIONS[governorate].cities) : ['أخرى'];
   };

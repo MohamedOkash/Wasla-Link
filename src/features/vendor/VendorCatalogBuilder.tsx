@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Package, Tag, Filter } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -40,7 +41,7 @@ export const VendorCatalogBuilder: React.FC = () => {
     if (!newItemName.trim() || !currentUser?.storeId) return;
     
     if (activeTab === 'subCategories' && !selectedParentId) {
-      showToast(isRTL ? 'يجب اختيار القسم الرئيسي أولاً' : 'Must select parent category first');
+      showToast(t('str_745'));
       return;
     }
 
@@ -63,23 +64,23 @@ export const VendorCatalogBuilder: React.FC = () => {
 
       await setDoc(doc(db, colName, id), payload);
       setNewItemName('');
-      showToast(isRTL ? 'تم الإضافة بنجاح' : 'Added successfully');
+      showToast(t('str_746'));
     } catch (err) {
       console.error(err);
-      showToast(isRTL ? 'فشل الحفظ' : 'Failed to save');
+      showToast(t('str_747'));
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id: string, colName: string) => {
-    if (!confirm(isRTL ? 'هل أنت متأكد من الحذف؟' : 'Are you sure you want to delete?')) return;
+    if (!confirm(t('str_748'))) return;
     try {
       await deleteDoc(doc(db, colName, id));
-      showToast(isRTL ? 'تم الحذف' : 'Deleted');
+      showToast(t('str_749'));
     } catch (err) {
       console.error(err);
-      showToast(isRTL ? 'خطأ في الحذف' : 'Error deleting');
+      showToast(t('str_750'));
     }
   };
 
@@ -89,10 +90,10 @@ export const VendorCatalogBuilder: React.FC = () => {
         <div>
           <h2 className="text-xl font-black text-theme-text flex items-center gap-2">
             <Package size={24} className="text-primary"/>
-            {isRTL ? 'بناء كتالوج المتجر' : 'Catalog Builder Pro'}
+            {t('str_751')}
           </h2>
           <p className="text-xs text-theme-muted mt-1">
-            {isRTL ? 'إدارة الأقسام، الأقسام الفرعية، والعلامات التجارية' : 'Manage categories, subcategories, and brands'}
+            {t('str_752')}
           </p>
         </div>
       </div>
@@ -100,9 +101,9 @@ export const VendorCatalogBuilder: React.FC = () => {
       {/* Tabs */}
       <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
         {[
-          { id: 'categories', label: isRTL ? 'الأقسام الرئيسية' : 'Categories', icon: <Tag size={16}/> },
-          { id: 'subCategories', label: isRTL ? 'الأقسام الفرعية' : 'Sub Categories', icon: <Filter size={16}/> },
-          { id: 'brands', label: isRTL ? 'العلامات التجارية' : 'Brands', icon: <Package size={16}/> },
+          { id: 'categories', label: t('str_753'), icon: <Tag size={16}/> },
+          { id: 'subCategories', label: t('str_754'), icon: <Filter size={16}/> },
+          { id: 'brands', label: t('str_457'), icon: <Package size={16}/> },
         ].map(tab => (
           <button
             key={tab.id}
@@ -121,23 +122,23 @@ export const VendorCatalogBuilder: React.FC = () => {
       {/* Builder Core */}
       <PremiumCard className="p-5">
         <h3 className="text-sm font-black mb-4">
-          {activeTab === 'categories' && (isRTL ? 'إضافة قسم رئيسي جديد' : 'Add New Category')}
-          {activeTab === 'subCategories' && (isRTL ? 'إضافة قسم فرعي جديد' : 'Add New Subcategory')}
-          {activeTab === 'brands' && (isRTL ? 'إضافة علامة تجارية' : 'Add Brand')}
+          {activeTab === 'categories' && (t('str_755'))}
+          {activeTab === 'subCategories' && (t('str_756'))}
+          {activeTab === 'brands' && (t('str_757'))}
         </h3>
 
         <div className="flex flex-col gap-4 md:flex-row md:items-end">
           {activeTab === 'subCategories' && (
             <div className="flex-1">
               <label className="block text-xs font-bold text-theme-muted mb-2">
-                {isRTL ? 'القسم الرئيسي التابع له' : 'Parent Category'}
+                {t('str_758')}
               </label>
               <select 
                 className="w-full bg-theme-bg border border-theme-border/60 rounded-xl px-4 py-3.5 text-sm font-bold text-theme-text outline-none focus:border-primary transition"
                 value={selectedParentId}
                 onChange={(e) => setSelectedParentId(e.target.value)}
               >
-                <option value="">{isRTL ? 'اختر القسم...' : 'Select Category...'}</option>
+                <option value="">{t('str_759')}</option>
                 {categories.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
@@ -148,7 +149,7 @@ export const VendorCatalogBuilder: React.FC = () => {
           <div className="flex-1">
              <PremiumInput 
                type="text"
-               placeholder={isRTL ? 'الاسم باللغة العربية' : 'Name in Arabic'}
+               placeholder={t('str_466')}
                value={newItemName}
                onChange={(e) => setNewItemName(e.target.value)}
              />
@@ -159,7 +160,7 @@ export const VendorCatalogBuilder: React.FC = () => {
              isLoading={loading}
              className="md:w-auto w-full px-8 h-[52px]"
           >
-             <Plus size={18}/> {isRTL ? 'إضافة' : 'Add'}
+             <Plus size={18}/> {t('str_48')}
           </PremiumButton>
         </div>
       </PremiumCard>

@@ -12,7 +12,7 @@ interface CategoryScreenProps {
 }
 
 export const CategoryScreen: React.FC<CategoryScreenProps> = ({ catId, navigate, goBack, openSearch }) => {
-  const { categories, t, isRTL, favoriteStores, toggleFavoriteStore } = useApp();
+  const { categories,  isRTL, favoriteStores, toggleFavoriteStore } = useApp();
   const { stores } = useStores();;
   const category = categories.find(c => c.id === catId);
   const [filter, setFilter] = useState('all'); // all, top, fast, free, open

@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useEffect, useState, useRef } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { MapPin, Navigation, Compass, Package, Users, Activity, Search, AlertTriangle, Clock } from 'lucide-react';
@@ -146,23 +147,23 @@ export const LogisticsCenter: React.FC = () => {
       {/* Top Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <div className="bg-theme-card border border-theme-border p-4 rounded-2xl shadow-sm cursor-pointer" onClick={() => setFilter('all')}>
-          <span className="text-[10px] text-theme-muted font-black block">{isRTL ? 'إجمالي المناديب' : 'Total Drivers'}</span>
+          <span className="text-[10px] text-theme-muted font-black block">{t('str_577')}</span>
           <span className="text-xl font-black text-theme-text mt-1">{stats.total}</span>
         </div>
         <div className="bg-theme-card border border-green-500/30 p-4 rounded-2xl shadow-sm cursor-pointer" onClick={() => setFilter('available')}>
-          <span className="text-[10px] text-green-500 font-black block">{isRTL ? 'متاح (Online)' : 'Online'}</span>
+          <span className="text-[10px] text-green-500 font-black block">{t('str_578')}</span>
           <span className="text-xl font-black text-theme-text mt-1">{stats.online}</span>
         </div>
         <div className="bg-theme-card border border-amber-500/30 p-4 rounded-2xl shadow-sm cursor-pointer" onClick={() => setFilter('busy')}>
-          <span className="text-[10px] text-amber-500 font-black block">{isRTL ? 'مشغول بتوصيلة' : 'Busy'}</span>
+          <span className="text-[10px] text-amber-500 font-black block">{t('str_542')}</span>
           <span className="text-xl font-black text-theme-text mt-1">{stats.busy}</span>
         </div>
         <div className="bg-theme-card border border-theme-border p-4 rounded-2xl shadow-sm cursor-pointer" onClick={() => setFilter('offline')}>
-          <span className="text-[10px] text-theme-muted font-black block">{isRTL ? 'مغلق (Offline)' : 'Offline'}</span>
+          <span className="text-[10px] text-theme-muted font-black block">{t('str_579')}</span>
           <span className="text-xl font-black text-theme-text mt-1">{stats.offline}</span>
         </div>
         <div className="bg-theme-card border border-red-500/30 p-4 rounded-2xl shadow-sm">
-          <span className="text-[10px] text-red-500 font-black block">{isRTL ? 'أخطاء GPS' : 'GPS Errors'}</span>
+          <span className="text-[10px] text-red-500 font-black block">{t('str_580')}</span>
           <span className="text-xl font-black text-theme-text mt-1">{stats.errors}</span>
         </div>
       </div>
@@ -175,7 +176,7 @@ export const LogisticsCenter: React.FC = () => {
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-muted" />
               <input 
                 type="text" 
-                placeholder={isRTL ? 'بحث بالاسم أو الرقم...' : 'Search driver...'}
+                placeholder={t('str_581')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-theme-bg border border-theme-border rounded-xl pl-9 pr-4 py-2.5 text-xs text-theme-text font-bold focus:border-primary outline-none"

@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState, useEffect } from 'react';
 import { db } from '../../services/firebase';
 import { collection, getDocs } from 'firebase/firestore';
@@ -76,10 +77,10 @@ export const SyncCenterPanel: React.FC = () => {
       <div>
         <h3 className="font-black text-theme-text text-sm flex items-center gap-2 border-b border-theme-border pb-2">
           <RefreshCw size={18} className="text-primary" />
-          {isRTL ? 'مركز مزامنة وتحديث الكتالوج الرئيسي للفروع' : 'Global Catalog Cascade Sync Center'}
+          {t('str_663')}
         </h3>
         <p className="text-[10px] text-theme-muted font-bold mt-1 uppercase tracking-wider">
-          {isRTL ? 'نشر تعديلات صور وأسماء وتفاصيل القوالب لنسخ البائعين مع الحفاظ على أسعارهم' : 'Cascades master catalog media updates while strictly preserving custom vendor prices & stock'}
+          {t('str_664')}
         </p>
       </div>
 
@@ -87,19 +88,19 @@ export const SyncCenterPanel: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-theme-bg p-4.5 rounded-2xl border border-theme-border/60 text-center">
           <Layers size={16} className="text-theme-muted mx-auto mb-1.5" />
-          <span className="text-[10px] text-theme-muted font-bold block uppercase">{isRTL ? 'إجمالي المنتجات بالفروع' : 'Total Store Copies'}</span>
+          <span className="text-[10px] text-theme-muted font-bold block uppercase">{t('str_665')}</span>
           <span className="text-lg font-black text-theme-text mt-0.5 block">{stats.totalProducts}</span>
         </div>
 
         <div className="bg-theme-bg p-4.5 rounded-2xl border border-theme-border/60 text-center">
           <CheckCircle size={16} className="text-green-500 mx-auto mb-1.5" />
-          <span className="text-[10px] text-theme-muted font-bold block uppercase">{isRTL ? 'نسخ فروع متطابقة' : 'Synced Copies'}</span>
+          <span className="text-[10px] text-theme-muted font-bold block uppercase">{t('str_666')}</span>
           <span className="text-lg font-black text-green-500 mt-0.5 block">{stats.syncedProducts}</span>
         </div>
 
         <div className="bg-theme-bg p-4.5 rounded-2xl border border-theme-border/60 text-center">
           <AlertTriangle size={16} className="text-red-500 mx-auto mb-1.5" />
-          <span className="text-[10px] text-theme-muted font-bold block uppercase">{isRTL ? 'نسخ فروع تحتاج لتحديث' : 'Outdated Copies'}</span>
+          <span className="text-[10px] text-theme-muted font-bold block uppercase">{t('str_667')}</span>
           <span className="text-lg font-black text-red-500 mt-0.5 block">{stats.outdatedProducts}</span>
         </div>
       </div>
@@ -108,11 +109,11 @@ export const SyncCenterPanel: React.FC = () => {
         <div className="space-y-1.5 text-xs font-bold text-theme-muted">
           <p className="text-theme-text font-black text-sm flex items-center gap-1.5">
             <Info size={14} className="text-primary" />
-            {isRTL ? 'قواعد الحماية والمزامنة النشطة' : 'Cascade Security Rules'}
+            {t('str_668')}
           </p>
           <ul className="list-disc pr-4 space-y-0.5">
-            <li>{isRTL ? 'يتم مزامنة: الصور والاسم والبراند والوصف والتفاصيل.' : 'Syncs: images, name, brand, description, unit specs.'}</li>
-            <li>{isRTL ? 'لا يتم تعديل: السعر، المخزون، المبيعات والتقييمات الخاصة بالتاجر.' : 'NEVER overwrites: selling price, stock, ratings, or sales count.'}</li>
+            <li>{t('str_669')}</li>
+            <li>{t('str_670')}</li>
           </ul>
         </div>
 
@@ -122,7 +123,7 @@ export const SyncCenterPanel: React.FC = () => {
           className="bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-white font-black px-6 py-3.5 rounded-xl text-xs flex items-center gap-1.5 shadow transition shrink-0"
         >
           {syncing ? <Loader2 className="animate-spin" size={14} /> : <Play size={14} />}
-          {isRTL ? 'نشر التحديثات الآن' : 'Trigger Global Cascade Sync'}
+          {t('str_671')}
         </button>
       </div>
 
@@ -133,7 +134,7 @@ export const SyncCenterPanel: React.FC = () => {
           className="bg-theme-bg border border-theme-border hover:bg-theme-border-hover text-theme-text font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition"
         >
           <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
-          {isRTL ? 'تحديث الإحصائيات' : 'Recalculate Sync Stats'}
+          {t('str_672')}
         </button>
       </div>
     </div>

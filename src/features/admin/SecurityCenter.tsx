@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { Shield, Key, AlertTriangle } from 'lucide-react';
@@ -7,6 +8,8 @@ import { PremiumInput } from '../../components/premium/PremiumInput';
 import { getAuth, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 
 export const SecurityCenter = () => {
+  const {} = useTranslation();
+
   const { lang, showToast } = useApp();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -20,12 +23,12 @@ export const SecurityCenter = () => {
     if (!user || !user.email) return;
 
     if (!currentPassword || !newPassword) {
-      showToast(lang === 'ar' ? 'يرجى إدخال كلمة المرور الحالية والجديدة' : 'Please enter current and new passwords');
+      showToast(t('str_646'));
       return;
     }
 
     if (newPassword.length < 8) {
-      showToast(lang === 'ar' ? 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' : 'Password must be at least 8 characters');
+      showToast(t('str_647'));
       return;
     }
 
@@ -35,14 +38,14 @@ export const SecurityCenter = () => {
       await reauthenticateWithCredential(user, credential);
       await updatePassword(user, newPassword);
       
-      showToast(lang === 'ar' ? 'تم تغيير كلمة المرور بنجاح' : 'Password updated successfully');
+      showToast(t('str_648'));
       setCurrentPassword('');
       setNewPassword('');
     } catch (err: any) {
       console.error("Password update error:", err);
-      let errMsg = lang === 'ar' ? 'فشل تغيير كلمة المرور' : 'Failed to update password';
+      let errMsg = t('str_649');
       if (err.code === 'auth/invalid-credential') {
-        errMsg = lang === 'ar' ? 'كلمة المرور الحالية غير صحيحة' : 'Current password is incorrect';
+        errMsg = t('str_224');
       }
       showToast(errMsg);
     } finally {
@@ -58,10 +61,10 @@ export const SecurityCenter = () => {
         </div>
         <div>
           <h2 className="text-xl font-black text-theme-text">
-            {lang === 'ar' ? 'مركز الأمان' : 'Security Center'}
+            {t('str_358')}
           </h2>
           <p className="text-xs text-theme-muted font-bold mt-1">
-            {lang === 'ar' ? 'إدارة كلمة المرور وإعدادات الأمان الخاصة بحساب الإدارة' : 'Manage your admin account security and password'}
+            {t('str_650')}
           </p>
         </div>
       </div>
@@ -70,25 +73,25 @@ export const SecurityCenter = () => {
         <PremiumCard className="p-6">
           <h3 className="text-lg font-black mb-4 flex items-center gap-2">
             <Key size={18} className="text-primary" />
-            {lang === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'}
+            {t('str_651')}
           </h3>
           <form onSubmit={handlePasswordChange} className="space-y-4">
             <PremiumInput
               type="password"
-              placeholder={lang === 'ar' ? 'كلمة المرور الحالية' : 'Current Password'}
+              placeholder={t('str_247')}
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               disabled={loading}
             />
             <PremiumInput
               type="password"
-              placeholder={lang === 'ar' ? 'كلمة المرور الجديدة' : 'New Password'}
+              placeholder={t('str_248')}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               disabled={loading}
             />
             <PremiumButton type="submit" isLoading={loading} className="w-full">
-              {lang === 'ar' ? 'تحديث كلمة المرور' : 'Update Password'}
+              {t('str_652')}
             </PremiumButton>
           </form>
         </PremiumCard>
@@ -96,13 +99,13 @@ export const SecurityCenter = () => {
         <PremiumCard className="p-6 bg-theme-card/50 border border-yellow-500/30">
           <h3 className="text-lg font-black mb-4 flex items-center gap-2 text-yellow-500">
             <AlertTriangle size={18} />
-            {lang === 'ar' ? 'إرشادات الأمان' : 'Security Guidelines'}
+            {t('str_653')}
           </h3>
           <ul className="list-disc list-inside space-y-2 text-sm font-bold text-theme-muted">
-            <li>{lang === 'ar' ? 'استخدم كلمة مرور قوية تحتوي على أحرف وأرقام' : 'Use a strong password with letters and numbers'}</li>
-            <li>{lang === 'ar' ? 'لا تشارك بيانات حساب الإدارة مع أي شخص' : 'Never share admin account details'}</li>
-            <li>{lang === 'ar' ? 'تم تأمين قاعدة البيانات باستخدام Role-Based Access' : 'Database is secured with Role-Based Access'}</li>
-            <li>{lang === 'ar' ? 'الجلسة الحالية:' : 'Current Session:'} {user?.email}</li>
+            <li>{t('str_654')}</li>
+            <li>{t('str_655')}</li>
+            <li>{t('str_656')}</li>
+            <li>{t('str_657')} {user?.email}</li>
           </ul>
         </PremiumCard>
       </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React from 'react';
 import { ClipboardList, Clock, CheckCircle2, MapPin, Bike, ShieldAlert, ThumbsUp, Package, UserCheck, DollarSign, X } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -11,6 +12,8 @@ export const MarketplaceMonitor: React.FC = () => {
   );
 
   const getOrderStepNumber = (status: string) => {
+  const {} = useTranslation();
+
     switch (status) {
       case 'pending': return 1;
       case 'accepted': return 2;
@@ -27,32 +30,32 @@ export const MarketplaceMonitor: React.FC = () => {
     switch (status) {
       case 'pending':
         return { 
-          label: isRTL ? 'بانتظار التأكيد' : 'Pending Approval', 
+          label: t('str_133'), 
           color: 'text-amber-500 bg-amber-500/10 border-amber-500/20' 
         };
       case 'accepted':
         return { 
-          label: isRTL ? 'مقبول' : 'Accepted', 
+          label: t('str_134'), 
           color: 'text-indigo-500 bg-indigo-500/10 border-indigo-500/20' 
         };
       case 'preparing':
         return { 
-          label: isRTL ? 'جاري التحضير' : 'Preparing', 
+          label: t('str_135'), 
           color: 'text-blue-500 bg-blue-500/10 border-blue-500/20' 
         };
       case 'readyForPickup':
         return { 
-          label: isRTL ? 'جاهز للاستلام' : 'Ready for Pickup', 
+          label: t('str_136'), 
           color: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20' 
         };
       case 'pickedUp':
         return { 
-          label: isRTL ? 'تم الاستلام' : 'Picked Up', 
+          label: t('str_137'), 
           color: 'text-purple-500 bg-purple-500/10 border-purple-500/20' 
         };
       case 'onTheWay':
         return { 
-          label: isRTL ? 'جاري التوصيل' : 'On the Way', 
+          label: t('str_138'), 
           color: 'text-orange-500 bg-orange-500/10 border-orange-500/20' 
         };
       default:
@@ -64,9 +67,9 @@ export const MarketplaceMonitor: React.FC = () => {
   };
 
   const handleAdminCancel = (orderId: string) => {
-    if (confirm(isRTL ? 'هل أنت متأكد من إلغاء هذا الطلب كمدير للنظام؟' : 'Are you sure you want to cancel this order as administrator?')) {
+    if (confirm(t('str_582'))) {
       updateOrderStatus(orderId, 'cancelled');
-      showToast(isRTL ? 'تم إلغاء الطلب إدارياً' : 'Order cancelled by administrator');
+      showToast(t('str_583'));
     }
   };
 
@@ -75,10 +78,10 @@ export const MarketplaceMonitor: React.FC = () => {
       {/* Overview Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: isRTL ? 'الطلبات النشطة' : 'Active Orders', value: activeOrders.length, color: 'text-primary' },
-          { label: isRTL ? 'بانتظار الموافقة' : 'Pending Confirmation', value: activeOrders.filter(o => o.status === 'pending').length, color: 'text-amber-500' },
-          { label: isRTL ? 'جاري تحضيرها' : 'In Preparation', value: activeOrders.filter(o => o.status === 'preparing').length, color: 'text-blue-500' },
-          { label: isRTL ? 'جاهزة للتوصيل' : 'Ready for Pickup', value: activeOrders.filter(o => o.status === 'ready_for_delivery').length, color: 'text-cyan-500' }
+          { label: t('str_584'), value: activeOrders.length, color: 'text-primary' },
+          { label: t('str_585'), value: activeOrders.filter(o => o.status === 'pending').length, color: 'text-amber-500' },
+          { label: t('str_586'), value: activeOrders.filter(o => o.status === 'preparing').length, color: 'text-blue-500' },
+          { label: t('str_587'), value: activeOrders.filter(o => o.status === 'ready_for_delivery').length, color: 'text-cyan-500' }
         ].map((stat, i) => (
           <div key={i} className="bg-theme-card border border-theme-border rounded-2xl p-4 shadow-sm text-center theme-transition">
             <span className="text-[10px] text-theme-muted font-bold block">{stat.label}</span>
@@ -91,13 +94,13 @@ export const MarketplaceMonitor: React.FC = () => {
       <div className="bg-theme-card rounded-[30px] border border-theme-border p-5 shadow-sm space-y-4 animate-fade-in theme-transition">
         <h3 className="font-black text-theme-text text-sm flex items-center gap-2 border-b border-theme-border/60 pb-2.5">
           <ClipboardList size={18} className="text-primary" />
-          {isRTL ? 'شاشة مراقبة العمليات الحية' : 'Live Marketplace Monitor'}
+          {t('str_588')}
         </h3>
 
         {activeOrders.length === 0 ? (
           <div className="bg-theme-bg p-8 rounded-2xl border border-theme-border text-center text-theme-muted font-bold theme-transition">
             <Clock size={32} className="mx-auto mb-2 text-theme-muted animate-pulse" />
-            <p className="text-xs">{isRTL ? 'لا توجد عمليات جارية في السوق حالياً' : 'Marketplace is currently quiet. No active transactions.'}</p>
+            <p className="text-xs">{t('str_589')}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -115,7 +118,7 @@ export const MarketplaceMonitor: React.FC = () => {
                     <div>
                       <h4 className="font-black text-xs text-theme-text">{order.shopName}</h4>
                       <p className="text-[9px] text-theme-muted font-bold mt-0.5">
-                        {isRTL ? `طلب: #${order.id}` : `Order: #${order.id}`} • {new Date(order.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        {t('str_590')} • {new Date(order.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -125,7 +128,7 @@ export const MarketplaceMonitor: React.FC = () => {
                       <button
                         onClick={() => handleAdminCancel(order.id)}
                         className="p-1 bg-red-500/10 border border-red-500/20 text-red-500 rounded-lg hover:bg-red-500/20 transition"
-                        title={isRTL ? 'إلغاء إداري' : 'Admin Cancel'}
+                        title={t('str_591')}
                       >
                         <X size={12} strokeWidth={2.5} />
                       </button>
@@ -136,19 +139,19 @@ export const MarketplaceMonitor: React.FC = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[10px] font-bold text-theme-muted">
                     <div className="space-y-1">
                       <div className="flex items-center gap-1"><MapPin size={11} /> <span className="truncate">{order.location.name}</span></div>
-                      <div>{isRTL ? 'العميل: عميل افتراضي' : 'Customer: Demo Client'}</div>
+                      <div>{t('str_592')}</div>
                     </div>
                     <div className="space-y-1 sm:text-right">
                       <div>
-                        {isRTL ? 'السائق المعين: ' : 'Assigned Driver: '}
+                        {t('str_593')}
                         <span className={order.driverName ? 'text-primary font-black' : 'text-amber-500 animate-pulse'}>
-                          {order.driverName || (isRTL ? 'بانتظار سائق للتوصيل' : 'Unassigned')}
+                          {order.driverName || (t('str_594'))}
                         </span>
                       </div>
                       <div className="flex items-center sm:justify-end gap-1">
                         <DollarSign size={11} className="text-primary" />
                         <span className="text-theme-text font-black text-xs">{order.total} ج.م</span>
-                        <span>({order.paymentMethod === 'cash' ? (isRTL ? 'نقدي' : 'Cash') : order.paymentMethod})</span>
+                        <span>({order.paymentMethod === 'cash' ? (t('str_595')) : order.paymentMethod})</span>
                       </div>
                     </div>
                   </div>
@@ -169,13 +172,13 @@ export const MarketplaceMonitor: React.FC = () => {
 
                       {/* Steps */}
                       {[
-                        { step: 1, icon: Clock, label: isRTL ? 'إرسال' : 'Sent' },
-                        { step: 2, icon: ThumbsUp, label: isRTL ? 'قبول' : 'Accept' },
-                        { step: 3, icon: ClipboardList, label: isRTL ? 'تحضير' : 'Prep' },
-                        { step: 4, icon: Package, label: isRTL ? 'جاهز' : 'Ready' },
-                        { step: 5, icon: UserCheck, label: isRTL ? 'استلام' : 'Picked' },
-                        { step: 6, icon: Bike, label: isRTL ? 'طريق' : 'Transit' },
-                        { step: 7, icon: CheckCircle2, label: isRTL ? 'تم' : 'Done' }
+                        { step: 1, icon: Clock, label: t('str_158') },
+                        { step: 2, icon: ThumbsUp, label: t('str_159') },
+                        { step: 3, icon: ClipboardList, label: t('str_160') },
+                        { step: 4, icon: Package, label: t('str_161') },
+                        { step: 5, icon: UserCheck, label: t('str_162') },
+                        { step: 6, icon: Bike, label: t('str_163') },
+                        { step: 7, icon: CheckCircle2, label: t('str_164') }
                       ].map(s => {
                         const isActive = stepNum >= s.step;
                         const isCurrent = stepNum === s.step;

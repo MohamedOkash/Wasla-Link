@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState, useEffect } from 'react';
 import { Clock, Check, X, ImageIcon, MapPin, Phone, Printer, ThumbsUp, ClipboardList, Package, UserCheck, Bike, CheckCircle2 } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -29,6 +30,8 @@ export const VendorOrders: React.FC = () => {
   }, [activeInvoice]);
 
   const getOrderStepNumber = (status: string) => {
+  const {} = useTranslation();
+
     switch (status) {
       case 'pending': return 1;
       case 'accepted': return 2;
@@ -73,11 +76,11 @@ export const VendorOrders: React.FC = () => {
   };
 
   const handleRejectOrder = (orderId: string) => {
-    if (confirm(isRTL ? 'هل أنت متأكد من رفض وإلغاء هذا الطلب؟' : 'Are you sure you want to reject and cancel this order?')) {
+    if (confirm(t('str_853'))) {
       handleUpdateStatus(
         orderId, 
         'cancelled', 
-        isRTL ? 'تم إلغاء الطلب وتحويله لقسم الملغية' : 'Order cancelled and moved to cancelled queue'
+        t('str_854')
       );
     }
   };
@@ -98,7 +101,7 @@ export const VendorOrders: React.FC = () => {
             >
               <X size={16} />
             </button>
-            <h3 className="font-black text-theme-text text-xs mb-4 text-center">{isRTL ? 'لقطة شاشة إيصال الدفع' : 'Payment Transfer Receipt Screenshot'}</h3>
+            <h3 className="font-black text-theme-text text-xs mb-4 text-center">{t('str_855')}</h3>
             <img src={activeReceipt} className="w-full h-80 object-contain rounded-2xl bg-theme-bg border border-theme-border" alt="Receipt Proof" />
           </div>
         </div>
@@ -110,24 +113,24 @@ export const VendorOrders: React.FC = () => {
           <div className="relative bg-theme-card border border-theme-border rounded-3xl overflow-hidden max-w-md w-full p-6 shadow-2xl flex flex-col justify-between print:shadow-none print:rounded-none print:w-full print:h-full print:p-0 print:border-none theme-transition">
             {/* Close & Print buttons */}
             <div className="flex justify-between items-center mb-6 border-b border-theme-border pb-4 print:hidden">
-              <h3 className="font-black text-theme-text text-sm">{isRTL ? 'تفاصيل الفاتورة' : 'Detailed Invoice Bill'}</h3>
+              <h3 className="font-black text-theme-text text-sm">{t('str_856')}</h3>
               <div className="flex gap-2">
                 <button 
                   onClick={() => {
-                    showToast(isRTL ? 'جاري تحضير ملف PDF للتنزيل...' : 'Preparing PDF file for download...');
+                    showToast(t('str_857'));
                     invoiceService.downloadPDF('printable-invoice-element', `invoice-${activeInvoice.id}.pdf`)
-                      .then(() => showToast(isRTL ? 'تم التنزيل بنجاح' : 'Downloaded successfully'))
-                      .catch(() => showToast(isRTL ? 'فشل التنزيل' : 'Download failed'));
+                      .then(() => showToast(t('str_858')))
+                      .catch(() => showToast(t('str_859')));
                   }}
                   className="bg-green-600 hover:bg-green-700 text-white text-[10px] font-black px-3 py-2 rounded-xl flex items-center gap-1 transition active:scale-95"
                 >
-                  {isRTL ? 'تنزيل PDF' : 'PDF'}
+                  {t('str_860')}
                 </button>
                 <button 
                   onClick={printInvoice}
                   className="bg-primary hover:bg-primary-hover text-white text-[10px] font-black px-3 py-2 rounded-xl flex items-center gap-1 shadow transition active:scale-95"
                 >
-                  <Printer size={12} /> {isRTL ? 'طباعة' : 'Print'}
+                  <Printer size={12} /> {t('str_861')}
                 </button>
                 <button 
                   onClick={() => setActiveInvoice(null)} 
@@ -141,20 +144,20 @@ export const VendorOrders: React.FC = () => {
             {/* Invoice Design */}
             <div id="printable-invoice-element" className="space-y-4 text-theme-text p-4 rounded-2xl bg-theme-card print:text-black">
               <div className="text-center">
-                <h2 className="text-xl font-black text-primary print:text-black">{isRTL ? 'سوق البلد — SOUQ EL BALAD' : 'SOUQ EL BALAD'}</h2>
-                <p className="text-[10px] text-theme-muted font-bold mt-1 print:text-black">{isRTL ? 'فاتورة بيع رسمية للمشتريات' : 'Official Customer Order Invoice'}</p>
+                <h2 className="text-xl font-black text-primary print:text-black">{t('str_862')}</h2>
+                <p className="text-[10px] text-theme-muted font-bold mt-1 print:text-black">{t('str_863')}</p>
               </div>
 
               <div className="border-t border-b border-theme-border py-3 space-y-1.5 text-xs font-bold text-theme-muted print:border-black print:text-black">
-                <div className="flex justify-between"><span>{isRTL ? 'رقم الفاتورة:' : 'Invoice ID:'}</span> <span className="font-black text-theme-text print:text-black">{invoiceService.generateInvoiceNumber(activeInvoice.id)}</span></div>
-                <div className="flex justify-between"><span>{isRTL ? 'تاريخ الطلب:' : 'Order Date:'}</span> <span>{new Date(activeInvoice.createdAt).toLocaleString(isRTL ? 'ar-EG' : 'en-US')}</span></div>
-                <div className="flex justify-between"><span>{isRTL ? 'المتجر:' : 'Store Name:'}</span> <span className="font-black">{activeInvoice.shopName}</span></div>
-                <div className="flex justify-between"><span>{isRTL ? 'طريقة الدفع:' : 'Payment Method:'}</span> <span>{activeInvoice.paymentMethod === 'cash' ? (isRTL ? 'نقدي عند الاستلام' : 'Cash') : activeInvoice.paymentMethod === 'vodafone' ? 'Vodafone Cash' : 'InstaPay'}</span></div>
+                <div className="flex justify-between"><span>{t('str_864')}</span> <span className="font-black text-theme-text print:text-black">{invoiceService.generateInvoiceNumber(activeInvoice.id)}</span></div>
+                <div className="flex justify-between"><span>{t('str_865')}</span> <span>{new Date(activeInvoice.createdAt).toLocaleString(isRTL ? 'ar-EG' : 'en-US')}</span></div>
+                <div className="flex justify-between"><span>{t('str_866')}</span> <span className="font-black">{activeInvoice.shopName}</span></div>
+                <div className="flex justify-between"><span>{t('str_122')}</span> <span>{activeInvoice.paymentMethod === 'cash' ? (t('str_149')) : activeInvoice.paymentMethod === 'vodafone' ? 'Vodafone Cash' : 'InstaPay'}</span></div>
               </div>
 
               {/* Items Table */}
               <div className="space-y-2.5">
-                <p className="text-[10px] font-black text-theme-muted">{isRTL ? 'قائمة المشتريات:' : 'Purchased Items Catalog:'}</p>
+                <p className="text-[10px] font-black text-theme-muted">{t('str_867')}</p>
                 <div className="space-y-2 border-b border-theme-border pb-3 print:border-black">
                   {activeInvoice.items.map((item, idx) => (
                     <div key={idx} className="flex justify-between items-center text-xs font-bold text-theme-text print:text-black">
@@ -167,13 +170,13 @@ export const VendorOrders: React.FC = () => {
 
               {/* Totals */}
               <div className="space-y-1.5 text-xs font-bold text-theme-muted print:text-black">
-                <div className="flex justify-between"><span>{isRTL ? 'المجموع الفرعي:' : 'Subtotal:'}</span> <span>{activeInvoice.subtotal} ج.م</span></div>
+                <div className="flex justify-between"><span>{t('str_128')}</span> <span>{activeInvoice.subtotal} ج.م</span></div>
                 {activeInvoice.discount !== undefined && activeInvoice.discount > 0 && (
-                  <div className="flex justify-between text-green-500"><span>{isRTL ? 'خصم الكوبون:' : 'Coupon Discount:'}</span> <span>-{activeInvoice.discount} ج.م</span></div>
+                  <div className="flex justify-between text-green-500"><span>{t('str_61')}</span> <span>-{activeInvoice.discount} ج.م</span></div>
                 )}
-                <div className="flex justify-between"><span>{isRTL ? 'رسوم خدمة التوصيل:' : 'Delivery fee:'}</span> <span>{activeInvoice.deliveryFee} ج.م</span></div>
+                <div className="flex justify-between"><span>{t('str_868')}</span> <span>{activeInvoice.deliveryFee} ج.م</span></div>
                 <div className="flex justify-between text-xs font-black text-theme-text border-t border-theme-border pt-2 print:border-black print:text-black">
-                  <span>{isRTL ? 'الإجمالي الكلي:' : 'Grand Total:'}</span>
+                  <span>{t('str_869')}</span>
                   <span className="text-primary font-black print:text-black">{activeInvoice.total} ج.م</span>
                 </div>
               </div>
@@ -182,13 +185,13 @@ export const VendorOrders: React.FC = () => {
               {invoiceQRCode && (
                 <div className="flex flex-col items-center justify-center pt-4 border-t border-theme-border/50 print:border-black">
                   <img src={invoiceQRCode} className="w-24 h-24 border border-theme-border rounded-lg bg-white p-1" alt="Invoice QR Code" />
-                  <p className="text-[8px] text-theme-muted mt-1">{isRTL ? 'امسح الرمز للتحقق من الفاتورة عبر سوق البلد' : 'Scan code to verify invoice via Souq El Balad'}</p>
+                  <p className="text-[8px] text-theme-muted mt-1">{t('str_870')}</p>
                 </div>
               )}
             </div>
 
             <p className="text-[9px] text-theme-muted font-bold text-center mt-6 border-t border-theme-border pt-4 print:text-black print:border-black">
-              {isRTL ? 'شكراً لاستخدامك منصة سوق البلد للتجارة المحلية 🔗' : 'Thank you for choosing Souq El Balad local commerce! 🔗'}
+              {t('str_871')}
             </p>
           </div>
         </div>
@@ -197,12 +200,12 @@ export const VendorOrders: React.FC = () => {
       {/* Tabs Switcher Grid */}
       <div className="bg-theme-card p-1 rounded-2xl border border-theme-border shadow-sm flex overflow-x-auto no-scrollbar gap-1.5 theme-transition">
         {[
-          { id: 'new', label: isRTL ? 'الجديدة' : 'New' },
-          { id: 'pendingVerification', label: isRTL ? 'تأكيد الدفع' : 'Verify Pay' },
-          { id: 'preparing', label: isRTL ? 'التحضير' : 'Prepare' },
-          { id: 'outForDelivery', label: isRTL ? 'التوصيل' : 'Shipping' },
-          { id: 'delivered', label: isRTL ? 'المسلمة' : 'Completed' },
-          { id: 'cancelled', label: isRTL ? 'الملغاة' : 'Cancelled' },
+          { id: 'new', label: t('str_872') },
+          { id: 'pendingVerification', label: t('str_873') },
+          { id: 'preparing', label: t('str_874') },
+          { id: 'outForDelivery', label: t('str_875') },
+          { id: 'delivered', label: t('str_876') },
+          { id: 'cancelled', label: t('str_877') },
         ].map(tab => (
           <button
             key={tab.id}
@@ -223,7 +226,7 @@ export const VendorOrders: React.FC = () => {
         {filteredOrders.length === 0 ? (
           <div className="bg-theme-card rounded-[24px] p-8 border border-theme-border text-center text-theme-muted font-bold shadow-sm theme-transition">
             <Clock size={32} className="mx-auto mb-2 text-theme-muted" />
-            <p className="text-xs">{isRTL ? 'لا توجد طلبات جارية في هذا القسم حالياً' : 'No incoming orders in this queue.'}</p>
+            <p className="text-xs">{t('str_878')}</p>
           </div>
         ) : (
           filteredOrders.map(order => (
@@ -234,13 +237,13 @@ export const VendorOrders: React.FC = () => {
               {/* Header Info */}
               <div className="flex justify-between items-start pb-3 border-b border-theme-border/60">
                 <div>
-                  <h4 className="font-black text-xs text-theme-text">{isRTL ? `طلب رقم: ${order.id}` : `Order ID: ${order.id}`}</h4>
-                  <p className="text-[10px] text-theme-muted font-bold mt-0.5">{isRTL ? 'العميل: أحمد محمود' : 'Client: Ahmed Mahmoud'}</p>
+                  <h4 className="font-black text-xs text-theme-text">{t('str_879')}</h4>
+                  <p className="text-[10px] text-theme-muted font-bold mt-0.5">{t('str_880')}</p>
                 </div>
                 <button
                   onClick={() => setActiveInvoice(order)}
                   className="text-theme-muted hover:text-primary p-2 bg-theme-bg hover:bg-primary/10 rounded-xl transition"
-                  title={isRTL ? 'طباعة الفاتورة' : 'Print Invoice'}
+                  title={t('str_881')}
                 >
                   <Printer size={14} />
                 </button>
@@ -273,13 +276,13 @@ export const VendorOrders: React.FC = () => {
 
                     {/* Steps */}
                     {[
-                      { step: 1, icon: Clock, label: isRTL ? 'إرسال' : 'Sent' },
-                      { step: 2, icon: ThumbsUp, label: isRTL ? 'قبول' : 'Accept' },
-                      { step: 3, icon: ClipboardList, label: isRTL ? 'تحضير' : 'Prep' },
-                      { step: 4, icon: Package, label: isRTL ? 'جاهز' : 'Ready' },
-                      { step: 5, icon: UserCheck, label: isRTL ? 'استلام' : 'Picked' },
-                      { step: 6, icon: Bike, label: isRTL ? 'طريق' : 'Transit' },
-                      { step: 7, icon: CheckCircle2, label: isRTL ? 'تم' : 'Done' }
+                      { step: 1, icon: Clock, label: t('str_158') },
+                      { step: 2, icon: ThumbsUp, label: t('str_159') },
+                      { step: 3, icon: ClipboardList, label: t('str_160') },
+                      { step: 4, icon: Package, label: t('str_161') },
+                      { step: 5, icon: UserCheck, label: t('str_162') },
+                      { step: 6, icon: Bike, label: t('str_163') },
+                      { step: 7, icon: CheckCircle2, label: t('str_164') }
                     ].map(s => {
                       const stepNum = getOrderStepNumber(order.status);
                       const isActive = stepNum >= s.step;
@@ -313,13 +316,13 @@ export const VendorOrders: React.FC = () => {
                 <div className="flex items-center gap-1.5"><MapPin size={12} className="text-theme-muted" /> <span className="truncate">{order.location.name}</span></div>
                 <div className="flex items-center gap-1.5"><Phone size={12} className="text-theme-muted" /> <span>+20 101 234 5678</span></div>
                 <div className="pt-2 flex items-center justify-between text-[9px] text-theme-muted font-bold border-t border-theme-border mt-1.5">
-                  <span>{isRTL ? 'طريقة الدفع: ' : 'Payment: '}{order.paymentMethod === 'cash' ? (isRTL ? 'نقدي' : 'Cash') : order.paymentMethod === 'vodafone' ? 'Vodafone Cash' : 'InstaPay'}</span>
+                  <span>{t('str_165')}{order.paymentMethod === 'cash' ? (t('str_595')) : order.paymentMethod === 'vodafone' ? 'Vodafone Cash' : 'InstaPay'}</span>
                   {order.paymentReceipt && (
                     <button 
                       onClick={() => setActiveReceipt(order.paymentReceipt || null)}
                       className="text-primary font-black flex items-center gap-1 hover:underline"
                     >
-                      <ImageIcon size={11} /> {isRTL ? 'عرض إيصال الدفع' : 'View Transfer Receipt'}
+                      <ImageIcon size={11} /> {t('str_882')}
                     </button>
                   )}
                 </div>
@@ -333,11 +336,11 @@ export const VendorOrders: React.FC = () => {
                       onClick={() => handleUpdateStatus(
                         order.id, 
                         'preparing', 
-                        isRTL ? 'تم قبول الطلب وبدء التحضير' : 'Order accepted and preparation started'
+                        t('str_883')
                       )}
                       className="flex-1 bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-2xl text-xs flex items-center justify-center gap-1.5 shadow transition"
                     >
-                      <Check size={14} strokeWidth={3} /> {isRTL ? 'قبول وتجهيز الطلب' : 'Accept & Prepare'}
+                      <Check size={14} strokeWidth={3} /> {t('str_884')}
                     </button>
                     <button 
                       onClick={() => handleRejectOrder(order.id)}
@@ -354,11 +357,11 @@ export const VendorOrders: React.FC = () => {
                       onClick={() => handleUpdateStatus(
                         order.id, 
                         'accepted', 
-                        isRTL ? 'تم تأكيد استلام المبلغ وقبول الطلب' : 'Receipt verified, order accepted'
+                        t('str_885')
                       )}
                       className="flex-1 bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-2xl text-xs flex items-center justify-center gap-1.5 shadow transition"
                     >
-                      <Check size={14} strokeWidth={3} /> {isRTL ? 'تأكيد وقبول الدفع' : 'Verify & Approve Payment'}
+                      <Check size={14} strokeWidth={3} /> {t('str_886')}
                     </button>
                     <button 
                       onClick={() => handleRejectOrder(order.id)}
@@ -375,11 +378,11 @@ export const VendorOrders: React.FC = () => {
                       onClick={() => handleUpdateStatus(
                         order.id, 
                         'preparing', 
-                        isRTL ? 'تم بدء تحضير وتعبئة المنتجات' : 'Started preparing and packing products'
+                        t('str_887')
                       )}
                       className="flex-1 bg-primary hover:bg-primary-hover text-white font-black py-3 rounded-2xl text-xs flex items-center justify-center gap-1.5 shadow transition"
                     >
-                      {isRTL ? 'بدء تجهيز الطلب' : 'Start Preparation'}
+                      {t('str_888')}
                     </button>
                     <button 
                       onClick={() => handleRejectOrder(order.id)}
@@ -396,11 +399,11 @@ export const VendorOrders: React.FC = () => {
                       onClick={() => handleUpdateStatus(
                         order.id, 
                         'ready_for_delivery', 
-                        isRTL ? 'الطلب جاهز للتسليم، في انتظار مندوب توصيل' : 'Order marked ready, waiting for driver pickup'
+                        t('str_889')
                       )}
                       className="flex-1 bg-primary hover:bg-primary-hover text-white font-black py-3 rounded-2xl text-xs flex items-center justify-center gap-1.5 shadow transition"
                     >
-                      {isRTL ? 'جاهز للتسليم (طلب مندوب)' : 'Mark Ready for Pickup'}
+                      {t('str_890')}
                     </button>
                     <button 
                       onClick={() => handleRejectOrder(order.id)}
@@ -413,7 +416,7 @@ export const VendorOrders: React.FC = () => {
 
                 {order.status === 'ready_for_delivery' && (
                   <div className="flex-1 bg-yellow-500/10 text-yellow-600 font-black py-3 rounded-2xl text-xs text-center border border-yellow-500/20">
-                    {isRTL ? 'في انتظار قبول وقبول التوصيل من سائق...' : 'Waiting for a delivery driver to accept...'}
+                    {t('str_891')}
                   </div>
                 )}
 
@@ -435,13 +438,13 @@ export const VendorOrders: React.FC = () => {
 
                 {order.status === 'delivered' && (
                   <div className="flex-1 bg-green-500/10 text-green-500 font-black py-3 rounded-2xl text-xs text-center border border-green-500/20">
-                    {isRTL ? `تم تسليم الطلب وتحصيل ${order.total} ج.م بنجاح` : `Delivered, collected EGP ${order.total}`}
+                    {t('str_892')}
                   </div>
                 )}
 
                 {order.status === 'cancelled' && (
                   <div className="flex-1 bg-red-500/10 text-red-500 font-black py-3 rounded-2xl text-xs text-center border border-red-500/20">
-                    {isRTL ? 'طلب ملغي' : 'Cancelled Order'}
+                    {t('str_893')}
                   </div>
                 )}
               </div>

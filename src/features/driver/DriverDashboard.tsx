@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState, useEffect } from 'react';
 import { BarChart3, ClipboardList, User, LogOut, Bike, Star, Power, Wallet, MapPin, Navigation, Signal, AlertTriangle } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -56,10 +57,10 @@ export const DriverDashboard: React.FC = () => {
     try {
       await updateOrderStatus(orderId, 'driver_accepted', driver.id, driver.name);
       setIncomingOrder(null);
-      showToast(isRTL ? 'تم قبول الطلب' : 'Order accepted');
+      showToast(t('str_1075'));
     } catch(e) {
       console.error(e);
-      showToast(isRTL ? 'حدث خطأ' : 'Error', 'error');
+      showToast(t('str_537'), 'error');
     }
   };
 
@@ -91,7 +92,7 @@ export const DriverDashboard: React.FC = () => {
       });
       
       setIncomingOrder(null);
-      showToast(isRTL ? 'تم رفض الطلب' : 'Order rejected');
+      showToast(t('str_536'));
     } catch(e) {
       console.error(e);
     }
@@ -161,7 +162,7 @@ export const DriverDashboard: React.FC = () => {
       );
     } catch (error) {
       console.error(error);
-      showToast(isRTL ? 'حدث خطأ' : 'Error', 'error');
+      showToast(t('str_537'), 'error');
     }
   };
 
@@ -174,6 +175,8 @@ export const DriverDashboard: React.FC = () => {
   const isBusy = driver.availability === 'busy';
 
   const renderGpsHealth = () => {
+  const {} = useTranslation();
+
     if (!isOnline) return null;
 
     let icon = <Signal size={16} />;
@@ -233,7 +236,7 @@ export const DriverDashboard: React.FC = () => {
           <div>
             <h1 className="text-base font-black text-theme-text truncate max-w-[150px]">{driver.name}</h1>
             <p className="text-[10px] text-theme-muted font-bold mt-0.5">
-              {isRTL ? 'لوحة توصيل الطلبات' : 'Delivery Workspace'}
+              {t('str_1076')}
             </p>
           </div>
         </div>
@@ -249,18 +252,18 @@ export const DriverDashboard: React.FC = () => {
                 ? 'bg-red-500/10 text-red-500 hover:bg-red-500/15' 
                 : 'bg-green-500/10 text-green-500 hover:bg-green-500/15'
             }`}
-            title={isOnline ? (isRTL ? 'إنهاء الوردية' : 'End Shift') : (isRTL ? 'بدء الوردية' : 'Start Shift')}
+            title={isOnline ? (t('str_1077')) : (t('str_1078'))}
           >
             <Power size={16} />
             <span className="text-[10px] font-black hidden md:inline">
-              {isBusy ? (isRTL ? 'مشغول' : 'Busy') : isOnline ? (isRTL ? 'إنهاء الوردية' : 'End Shift') : (isRTL ? 'بدء الوردية' : 'Start Shift')}
+              {isBusy ? (t('str_1079')) : isOnline ? (t('str_1077')) : (t('str_1078'))}
             </span>
           </button>
 
           <button 
             onClick={goHome} 
             className="p-2.5 bg-theme-border/50 text-theme-muted rounded-xl hover:bg-theme-border transition flex items-center justify-center"
-            title={isRTL ? 'تسجيل الخروج' : 'Log Out'}
+            title={t('str_1080')}
           >
             <LogOut size={16} />
           </button>
@@ -270,10 +273,10 @@ export const DriverDashboard: React.FC = () => {
       {/* Tabs Menu Navigation */}
       <div className="bg-theme-card px-3 py-2.5 border-b border-theme-border flex overflow-x-auto no-scrollbar gap-1.5 theme-transition">
         {[
-          { id: 'summary', label: isRTL ? 'الرئيسية' : 'Dashboard', icon: BarChart3 },
-          { id: 'orders', label: isRTL ? 'الطلبات' : 'Orders', icon: ClipboardList },
-          { id: 'earnings', label: isRTL ? 'الأرباح' : 'Earnings', icon: Wallet },
-          { id: 'profile', label: isRTL ? 'حسابي' : 'Account', icon: User },
+          { id: 'summary', label: t('str_360'), icon: BarChart3 },
+          { id: 'orders', label: t('str_365'), icon: ClipboardList },
+          { id: 'earnings', label: t('str_1081'), icon: Wallet },
+          { id: 'profile', label: t('str_1082'), icon: User },
         ].map(tab => (
           <button
             key={tab.id}
@@ -301,42 +304,42 @@ export const DriverDashboard: React.FC = () => {
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="font-black text-sm flex items-center gap-2 text-theme-text">
                     <Navigation size={18} className="text-primary" />
-                    {isRTL ? 'حالة التتبع (GPS)' : 'GPS Tracking Status'}
+                    {t('str_1083')}
                   </h3>
                   {renderGpsHealth()}
                 </div>
 
                 {gpsStatus === 'permission_denied' && (
                   <div className="bg-red-500/10 text-red-500 p-3 rounded-xl text-xs font-bold mb-4">
-                    {isRTL ? 'الرجاء السماح للتطبيق بالوصول إلى موقعك الجغرافي من إعدادات المتصفح للتمكن من استقبال الطلبات.' : 'Please allow location access from your browser settings to receive orders.'}
+                    {t('str_1084')}
                   </div>
                 )}
                 
                 {gpsStatus === 'gps_disabled' && (
                   <div className="bg-red-500/10 text-red-500 p-3 rounded-xl text-xs font-bold mb-4">
-                    {isRTL ? 'الرجاء تفعيل خدمة الموقع (GPS) في هاتفك.' : 'Please enable Location Services (GPS) on your device.'}
+                    {t('str_1085')}
                   </div>
                 )}
 
                 {currentLocation ? (
                   <div className="grid grid-cols-2 gap-3 text-xs font-bold">
                     <div className="bg-theme-bg p-3 rounded-xl flex flex-col gap-1 border border-theme-border">
-                      <span className="text-theme-muted">{isRTL ? 'الإحداثيات' : 'Coordinates'}</span>
+                      <span className="text-theme-muted">{t('str_1086')}</span>
                       <span className="text-theme-text font-black text-[10px] break-all">{currentLocation.lat.toFixed(6)}, {currentLocation.lng.toFixed(6)}</span>
                     </div>
                     <div className="bg-theme-bg p-3 rounded-xl flex flex-col gap-1 border border-theme-border">
-                      <span className="text-theme-muted">{isRTL ? 'الدقة' : 'Accuracy'}</span>
-                      <span className="text-theme-text font-black">{Math.round(currentLocation.accuracy)} {isRTL ? 'متر' : 'm'}</span>
+                      <span className="text-theme-muted">{t('str_1087')}</span>
+                      <span className="text-theme-text font-black">{Math.round(currentLocation.accuracy)} {t('str_1088')}</span>
                     </div>
                     <div className="bg-theme-bg p-3 rounded-xl flex flex-col gap-1 border border-theme-border col-span-2">
-                      <span className="text-theme-muted">{isRTL ? 'آخر تحديث' : 'Last Sync'}</span>
+                      <span className="text-theme-muted">{t('str_1089')}</span>
                       <span className="text-theme-text font-black">{new Date(currentLocation.lastUpdated).toLocaleTimeString()}</span>
                     </div>
                   </div>
                 ) : (
                   <div className="text-center p-4">
                     <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                    <p className="text-xs font-bold text-theme-muted">{isRTL ? 'جاري تحديد الموقع...' : 'Acquiring GPS Signal...'}</p>
+                    <p className="text-xs font-bold text-theme-muted">{t('str_1090')}</p>
                   </div>
                 )}
               </div>
@@ -355,18 +358,18 @@ export const DriverDashboard: React.FC = () => {
               <div>
                 <h4 className="text-sm font-black">
                   {isBusy 
-                    ? (isRTL ? 'أنت في مهمة توصيل حالياً' : 'You are currently on a delivery')
+                    ? (t('str_1091'))
                     : isOnline 
-                    ? (isRTL ? 'أنت متصل ومستعد لاستقبال الطلبات' : 'You are online and ready!')
-                    : (isRTL ? 'أنت غير متصل' : 'You are offline')
+                    ? (t('str_1092'))
+                    : (t('str_1093'))
                   }
                 </h4>
                 <p className="text-[10px] font-bold mt-0.5 opacity-80">
                   {isBusy 
-                    ? (isRTL ? 'يرجى إكمال الطلب الحالي لاستلام طلبات جديدة.' : 'Complete current order to receive new ones.')
+                    ? (t('str_1094'))
                     : isOnline 
-                    ? (isRTL ? 'سيتم تنبيهك فور توفر طلبات بالقرب منك.' : 'New orders will prompt immediately.')
-                    : (isRTL ? 'قم ببدء الوردية لبدء التتبع.' : 'Start your shift to begin tracking.')
+                    ? (t('str_1095'))
+                    : (t('str_1096'))
                   }
                 </p>
               </div>
@@ -377,23 +380,23 @@ export const DriverDashboard: React.FC = () => {
               <div className="bg-theme-card border border-theme-border p-4 rounded-2xl shadow-sm">
                 <div className="flex items-center gap-2 mb-2 text-primary">
                   <ClipboardList size={18} />
-                  <span className="text-xs font-black">{isRTL ? 'الطلبات المكتملة' : 'Completed'}</span>
+                  <span className="text-xs font-black">{t('str_1097')}</span>
                 </div>
                 <span className="text-2xl font-black text-theme-text block">{driver.completedOrders || 0}</span>
               </div>
               <div className="bg-theme-card border border-theme-border p-4 rounded-2xl shadow-sm">
                 <div className="flex items-center gap-2 mb-2 text-amber-500">
                   <Star size={18} className="fill-amber-500" />
-                  <span className="text-xs font-black">{isRTL ? 'التقييم العام' : 'Rating'}</span>
+                  <span className="text-xs font-black">{t('str_1098')}</span>
                 </div>
                 <span className="text-2xl font-black text-theme-text block">{driver.rating || 5.0}</span>
               </div>
               <div className="bg-theme-card border border-theme-border p-4 rounded-2xl shadow-sm col-span-2">
                 <div className="flex items-center gap-2 mb-2 text-green-500">
                   <Wallet size={18} />
-                  <span className="text-xs font-black">{isRTL ? 'إجمالي الأرباح' : 'Total Earnings'}</span>
+                  <span className="text-xs font-black">{t('str_1099')}</span>
                 </div>
-                <span className="text-3xl font-black text-theme-text block">{driver.totalEarnings || 0} <span className="text-sm text-theme-muted">ج.م</span></span>
+                <span className="text-3xl font-black text-theme-text block">{driver.totalEarnings || 0} <span className="text-sm text-theme-muted">{t('str_1110')}</span></span>
               </div>
             </div>
 
@@ -401,19 +404,19 @@ export const DriverDashboard: React.FC = () => {
             <div className="bg-theme-card border border-theme-border rounded-[28px] p-5 shadow-sm theme-transition">
                <h3 className="font-black text-theme-text text-sm flex items-center gap-2 border-b border-theme-border/60 pb-3">
                 <MapPin size={18} className="text-primary" />
-                {isRTL ? 'الطلب الحالي' : 'Active Order'}
+                {t('str_1100')}
               </h3>
               {driver.currentOrderId ? (
                 <div className="pt-4 text-center">
-                   <p className="text-xs font-bold text-amber-500 mb-3">{isRTL ? 'لديك طلب قيد التوصيل' : 'You have an active delivery'}</p>
+                   <p className="text-xs font-bold text-amber-500 mb-3">{t('str_1101')}</p>
                    <button onClick={() => setActiveTab('orders')} className="bg-primary text-white text-xs font-black py-2.5 px-6 rounded-xl shadow-md hover:bg-primary-hover transition">
-                     {isRTL ? 'عرض الطلب' : 'View Order'}
+                     {t('str_1102')}
                    </button>
                 </div>
               ) : (
                 <div className="pt-8 pb-4 text-center opacity-60">
                    <ClipboardList size={32} className="mx-auto mb-2 text-theme-muted" />
-                   <p className="text-xs font-bold text-theme-muted">{isRTL ? 'لا يوجد طلب حالي' : 'No active order'}</p>
+                   <p className="text-xs font-bold text-theme-muted">{t('str_1103')}</p>
                 </div>
               )}
             </div>
@@ -433,7 +436,7 @@ export const DriverDashboard: React.FC = () => {
                   <Bike className="text-primary w-8 h-8" />
                 </div>
                 <h3 className="text-xl font-bold text-theme-text mb-2">
-                  {isRTL ? 'طلب جديد متاح!' : 'New Order Available!'}
+                  {t('str_1104')}
                 </h3>
                 <p className="text-theme-secondary text-sm">
                   {incomingOrder.shopName}
@@ -442,22 +445,22 @@ export const DriverDashboard: React.FC = () => {
               
               <div className="flex justify-between items-center mb-6 p-4 bg-theme-bg-secondary rounded-lg border border-theme-border">
                 <div className="text-center">
-                  <span className="block text-theme-secondary text-xs">{isRTL ? 'المسافة' : 'Distance'}</span>
+                  <span className="block text-theme-secondary text-xs">{t('str_1105')}</span>
                   <span className="font-bold text-theme-text">{incomingOrder.assignmentDistance?.toFixed(1) || 5} km</span>
                 </div>
                 <div className="h-8 w-px bg-theme-border" />
                 <div className="text-center">
-                  <span className="block text-theme-secondary text-xs">{isRTL ? 'العائد' : 'Est. Earning'}</span>
+                  <span className="block text-theme-secondary text-xs">{t('str_1106')}</span>
                   <span className="font-bold text-green-500">
                     {(incomingOrder.assignmentDistance || 5) > 12 ? 50 : (incomingOrder.assignmentDistance || 5) > 8 ? 35 : (incomingOrder.assignmentDistance || 5) > 5 ? 25 : (incomingOrder.assignmentDistance || 5) > 3 ? 20 : 15}
-                    {isRTL ? ' ج.م' : ' EGP'}
+                    {t('str_1107')}
                   </span>
                 </div>
               </div>
 
               <div className="mb-6">
                 <div className="flex justify-between text-sm mb-2 text-theme-text">
-                  <span>{isRTL ? 'الوقت المتبقي' : 'Time Remaining'}</span>
+                  <span>{t('str_1108')}</span>
                   <span className={`font-bold ${assignmentTimer <= 10 ? 'text-red-500 animate-pulse' : 'text-primary'}`}>
                     {assignmentTimer}s
                   </span>
@@ -475,13 +478,13 @@ export const DriverDashboard: React.FC = () => {
                   onClick={() => handleRejectOrder(incomingOrder.id)}
                   className="btn-secondary w-full"
                 >
-                  {isRTL ? 'رفض' : 'Reject'}
+                  {t('str_1109')}
                 </button>
                 <button
                   onClick={() => handleAcceptOrder(incomingOrder.id)}
                   className="btn-primary w-full shadow-lg shadow-primary/25"
                 >
-                  {isRTL ? 'قبول' : 'Accept'}
+                  {t('str_159')}
                 </button>
               </div>
             </div>

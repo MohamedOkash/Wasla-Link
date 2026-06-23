@@ -18,7 +18,7 @@ interface TrackingScreenProps {
 }
 
 export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack }) => {
-  const { t, isRTL, location, orders } = useApp();
+  const { isRTL, location, orders } = useApp();
   const { stores } = useStores();;
   const [trackingState, setTrackingState] = useState<TrackingState | null>(null);
   
@@ -159,7 +159,7 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
   }
 
   const getOrderStepNumber = (status: string) => {
-  const { t } = useTranslation();
+  const {} = useTranslation();
 
     switch (status) {
       case 'pending': return 1;

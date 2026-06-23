@@ -21,12 +21,12 @@ interface CustomerCartProps {
 }
 
 export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout }) => {
-  const { cart, setCart, t, isRTL, coupons, activeCoupon, setActiveCoupon, currentUser, orders, showToast } = useApp();
+  const { cart, setCart,  isRTL, coupons, activeCoupon, setActiveCoupon, currentUser, orders, showToast } = useApp();
   const { stores } = useStores();
   const { products } = useProducts();;
 
   const handleIncrement = (id: string) => {
-  const { t } = useTranslation();
+  const {} = useTranslation();
 
     setCart(prev => {
       const items = prev.items.map(item => {

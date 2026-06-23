@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState, useRef } from 'react';
 import { Download, Upload, AlertCircle, CheckCircle, HelpCircle, FileText, ChevronDown, Check, X, ShieldAlert } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -60,9 +61,9 @@ export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
         updatedCount: newUpdated,
         rows: processedRows
       });
-      showToast(isRTL ? 'تم تحليل الملف بنجاح' : 'Spreadsheet parsed successfully');
+      showToast(t('str_681'));
     } catch (err: any) {
-      alert(isRTL ? `خطأ أثناء قراءة الملف: ${err.message}` : `Error reading spreadsheet: ${err.message}`);
+      alert(t('str_682'));
       setFile(null);
       setSummary(null);
     } finally {
@@ -71,6 +72,8 @@ export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
   };
 
   const handleDragOver = (e: React.DragEvent) => {
+  const {} = useTranslation();
+
     e.preventDefault();
     setDragOver(true);
   };
@@ -94,7 +97,7 @@ export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
 
     const validRows = summary.rows.filter(r => r.status !== 'skip');
     if (validRows.length === 0) {
-      alert(isRTL ? 'لا توجد صفوف صالحة للاستيراد' : 'No valid products to import');
+      alert(t('str_683'));
       return;
     }
 
@@ -141,14 +144,14 @@ export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
 
         // Add Stock Ledger log
         if (row.currentStock > 0) {
-          addStockMovement(newProd.id, row.currentStock, 'Purchase', isRTL ? 'استيراد رصيد افتتاحي عبر إكسل' : 'Initial stock imported via Excel');
+          addStockMovement(newProd.id, row.currentStock, 'Purchase', t('str_684'));
         }
       });
 
       return updatedProducts;
     });
 
-    showToast(isRTL ? `تم استيراد ${validRows.length} منتج بنجاح` : `Imported ${validRows.length} products successfully`);
+    showToast(t('str_685'));
     onClose();
   };
 
@@ -158,8 +161,8 @@ export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
         {/* Title Header */}
         <div className="flex justify-between items-center pb-3 border-b border-theme-border">
           <div>
-            <h3 className="font-black text-theme-text text-base">{isRTL ? 'استيراد المنتجات المتقدم' : 'Bulk Excel/CSV Importer'}</h3>
-            <p className="text-[10px] text-theme-muted font-bold mt-0.5">{isRTL ? 'تحديث وتنزيل مخزن المنتجات عبر جداول البيانات' : 'Batch load catalog lists using xlsx spreadsheets'}</p>
+            <h3 className="font-black text-theme-text text-base">{t('str_686')}</h3>
+            <p className="text-[10px] text-theme-muted font-bold mt-0.5">{t('str_687')}</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-theme-bg rounded-xl transition"><X size={18} /></button>
         </div>
@@ -184,16 +187,16 @@ export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
                 className="hidden" 
               />
               <Upload size={36} className="mx-auto text-theme-muted mb-3" />
-              <h4 className="font-black text-xs text-theme-text mb-1">{isRTL ? 'اسحب وأفلت جدول البيانات هنا' : 'Drag & drop your catalog spreadsheet'}</h4>
-              <p className="text-[9px] text-theme-muted font-bold">{isRTL ? 'يدعم ملفات Excel (.xlsx, .xls) وجداول (.csv) حتى 5 ميجابايت' : 'Supports Excel worksheets & CSV lists up to 5MB'}</p>
+              <h4 className="font-black text-xs text-theme-text mb-1">{t('str_688')}</h4>
+              <p className="text-[9px] text-theme-muted font-bold">{t('str_689')}</p>
             </div>
 
             <div className="flex justify-between items-center bg-theme-bg p-4 rounded-2xl border border-theme-border">
               <div className="flex items-center gap-2">
                 <FileText size={20} className="text-primary" />
                 <div>
-                  <h5 className="font-black text-xs text-theme-text">{isRTL ? 'نموذج جدول الاستيراد الجاهز' : 'Standard Spreadsheet Template'}</h5>
-                  <p className="text-[9px] text-theme-muted font-bold">{isRTL ? 'قم بتنزيل النموذج وتعبئة بيانات سلعك لتفادي الأخطاء' : 'Get the bilingual sheet layout to configure fields accurately'}</p>
+                  <h5 className="font-black text-xs text-theme-text">{t('str_690')}</h5>
+                  <p className="text-[9px] text-theme-muted font-bold">{t('str_691')}</p>
                 </div>
               </div>
               <button
@@ -201,7 +204,7 @@ export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
                 className="bg-primary/10 border border-primary/20 text-primary font-black px-4 py-2.5 rounded-xl text-xs hover:bg-primary/20 transition flex items-center gap-1.5"
               >
                 <Download size={14} />
-                {isRTL ? 'تنزيل النموذج الفارغ' : 'Download Template'}
+                {t('str_692')}
               </button>
             </div>
           </div>
@@ -210,7 +213,7 @@ export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
         {loading && (
           <div className="text-center py-10">
             <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="font-bold text-xs text-theme-muted">{isRTL ? 'جاري قراءة وتحليل بيانات الجدول...' : 'Parsing spreadsheet contents...'}</p>
+            <p className="font-bold text-xs text-theme-muted">{t('str_693')}</p>
           </div>
         )}
 
@@ -228,26 +231,26 @@ export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
                 onClick={() => { setFile(null); setSummary(null); }} 
                 className="text-[10px] text-red-500 hover:underline font-black"
               >
-                {isRTL ? 'إلغاء وتغيير الملف' : 'Clear & Change File'}
+                {t('str_694')}
               </button>
             </div>
 
             {/* Statistics Row */}
             <div className="grid grid-cols-4 gap-3 text-center">
               <div className="bg-green-500/10 border border-green-500/20 text-green-500 rounded-2xl p-3">
-                <span className="text-[9px] font-bold block">{isRTL ? 'سيتم إضافتها' : 'Imported (New)'}</span>
+                <span className="text-[9px] font-bold block">{t('str_695')}</span>
                 <span className="text-lg font-black block mt-0.5">{summary.importedCount}</span>
               </div>
               <div className="bg-blue-500/10 border border-blue-500/20 text-blue-500 rounded-2xl p-3">
-                <span className="text-[9px] font-bold block">{isRTL ? 'سيتم تحديثها' : 'Updated (Overrides)'}</span>
+                <span className="text-[9px] font-bold block">{t('str_696')}</span>
                 <span className="text-lg font-black block mt-0.5">{summary.updatedCount}</span>
               </div>
               <div className="bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl p-3">
-                <span className="text-[9px] font-bold block">{isRTL ? 'تجاوز وتخطي' : 'Skipped'}</span>
+                <span className="text-[9px] font-bold block">{t('str_697')}</span>
                 <span className="text-lg font-black block mt-0.5">{summary.skippedCount}</span>
               </div>
               <div className="bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-2xl p-3">
-                <span className="text-[9px] font-bold block">{isRTL ? 'إجمالي الأخطاء' : 'Validation Errors'}</span>
+                <span className="text-[9px] font-bold block">{t('str_698')}</span>
                 <span className="text-lg font-black block mt-0.5">{summary.errorsCount}</span>
               </div>
             </div>
@@ -257,7 +260,7 @@ export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
               <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-4 space-y-2">
                 <h4 className="text-xs font-black text-red-500 flex items-center gap-1.5">
                   <AlertCircle size={14} />
-                  {isRTL ? 'تفاصيل أخطاء التنسيق والصياغة' : 'Validation Diagnostics Log'}
+                  {t('str_699')}
                 </h4>
                 <div className="max-h-24 overflow-y-auto text-[9px] font-bold text-red-500/80 space-y-1 pr-1 font-mono">
                   {summary.rows.flatMap(r => r.errors).map((err, i) => (
@@ -270,14 +273,14 @@ export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
             {/* Preview Grid Table */}
             <div className="space-y-2.5">
               <div className="flex justify-between items-center">
-                <h4 className="text-xs font-black text-theme-text">{isRTL ? 'معاينة المنتجات المدرجة بالملف' : 'Spreadsheet Verification Preview'}</h4>
+                <h4 className="text-xs font-black text-theme-text">{t('str_700')}</h4>
                 <button 
                   onClick={() => setShowOnlyErrors(!showOnlyErrors)} 
                   className={`text-[9px] font-black px-2 py-1 rounded-lg border transition ${
                     showOnlyErrors ? 'bg-red-500 border-red-500 text-white' : 'border-theme-border text-theme-muted hover:text-theme-text'
                   }`}
                 >
-                  {isRTL ? 'عرض الصفوف التي بها أخطاء فقط' : 'Show Errors Only'}
+                  {t('str_701')}
                 </button>
               </div>
 
@@ -285,11 +288,11 @@ export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
                 <table className="w-full text-right text-[10px] border-collapse theme-transition">
                   <thead className="bg-theme-bg border-b border-theme-border text-theme-muted font-black sticky top-0">
                     <tr>
-                      <th className="p-2.5">{isRTL ? 'الاسم' : 'Name'}</th>
-                      <th className="p-2.5">{isRTL ? 'التصنيف' : 'Category'}</th>
-                      <th className="p-2.5">{isRTL ? 'سعر البيع' : 'Price'}</th>
+                      <th className="p-2.5">{t('str_702')}</th>
+                      <th className="p-2.5">{t('str_703')}</th>
+                      <th className="p-2.5">{t('str_704')}</th>
                       <th className="p-2.5">SKU</th>
-                      <th className="p-2.5">{isRTL ? 'الحالة' : 'Status'}</th>
+                      <th className="p-2.5">{t('str_705')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-theme-border/60">
@@ -309,7 +312,7 @@ export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
                                 ? 'bg-blue-500/10 text-blue-500' 
                                 : 'bg-red-500/10 text-red-500'
                             }`}>
-                              {row.status === 'new' ? (isRTL ? 'جديد' : 'New') : row.status === 'update' ? (isRTL ? 'تعديل' : 'Update') : (isRTL ? 'تخطي' : 'Skip')}
+                              {row.status === 'new' ? (t('str_706')) : row.status === 'update' ? (t('str_513')) : (t('str_707'))}
                             </span>
                           </td>
                         </tr>
@@ -327,13 +330,13 @@ export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
                 className="flex-1 bg-primary disabled:opacity-50 hover:bg-primary-hover text-white font-black py-3 rounded-2xl text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition"
               >
                 <CheckCircle size={16} />
-                {isRTL ? 'تأكيد واستيراد المنتجات' : 'Confirm & Complete Import'}
+                {t('str_708')}
               </button>
               <button 
                 onClick={onClose}
                 className="bg-theme-bg hover:bg-theme-border text-theme-text font-black px-5 py-3 rounded-2xl text-xs transition"
               >
-                {isRTL ? 'إلغاء' : 'Cancel'}
+                {t('str_56')}
               </button>
             </div>
           </div>

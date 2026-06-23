@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState } from 'react';
 import { User, Phone, Bike, Star, DollarSign, LogOut, ShieldAlert } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -21,6 +22,8 @@ export const DriverProfile: React.FC = () => {
     : '4.8';
 
   const handleSave = (e: React.FormEvent) => {
+  const {} = useTranslation();
+
     e.preventDefault();
     if (currentUser) {
       setCurrentUser({
@@ -28,7 +31,7 @@ export const DriverProfile: React.FC = () => {
         phone,
         vehicleType: vehicle
       });
-      alert(isRTL ? 'تم حفظ التعديلات بنجاح' : 'Changes saved successfully');
+      alert(t('str_219'));
     }
   };
 
@@ -49,7 +52,7 @@ export const DriverProfile: React.FC = () => {
           <div className="flex items-center gap-1 mt-2 text-amber-500 font-bold text-xs">
             <Star size={14} fill="currentColor" />
             <span>{avgDriverRating}</span>
-            <span className="text-[10px] text-theme-muted font-bold">({driverOrders.length} {isRTL ? 'توصيلة' : 'trips'})</span>
+            <span className="text-[10px] text-theme-muted font-bold">({driverOrders.length} {t('str_1125')})</span>
           </div>
         </div>
       </div>
@@ -57,25 +60,25 @@ export const DriverProfile: React.FC = () => {
       {/* Finance Stats widget */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-theme-card border border-theme-border p-4 rounded-[24px] theme-transition shadow-sm">
-          <span className="text-[10px] text-theme-muted font-black block uppercase tracking-wider">{isRTL ? 'أرباح اليوم' : 'Daily Earnings'}</span>
+          <span className="text-[10px] text-theme-muted font-black block uppercase tracking-wider">{t('str_1113')}</span>
           <p className="text-lg font-black text-theme-text mt-2">{totalEarnings} ج.م</p>
-          <span className="text-[8px] text-green-500 font-bold block mt-1">{isRTL ? 'مكتمل بنسبة 100%' : '100% completed'}</span>
+          <span className="text-[8px] text-green-500 font-bold block mt-1">{t('str_1126')}</span>
         </div>
         <div className="bg-theme-card border border-theme-border p-4 rounded-[24px] theme-transition shadow-sm">
-          <span className="text-[10px] text-theme-muted font-black block uppercase tracking-wider">{isRTL ? 'أرباح الأسبوع' : 'Weekly Earnings'}</span>
+          <span className="text-[10px] text-theme-muted font-black block uppercase tracking-wider">{t('str_1127')}</span>
           <p className="text-lg font-black text-theme-text mt-2">{totalEarnings + 145} ج.م</p>
-          <span className="text-[8px] text-primary font-bold block mt-1">{isRTL ? '+18% زيادة عن الأسبوع الماضي' : '+18% vs last week'}</span>
+          <span className="text-[8px] text-primary font-bold block mt-1">{t('str_1128')}</span>
         </div>
       </div>
 
       {/* Info Form */}
       <div className="bg-theme-card border border-theme-border rounded-[30px] p-5 space-y-4 shadow-sm theme-transition">
         <h4 className="font-black text-theme-text text-sm border-b border-theme-border/60 pb-3">
-          {isRTL ? 'تحديث بيانات الحساب والمركبة' : 'Update Vehicle & Contact Details'}
+          {t('str_1129')}
         </h4>
         <form onSubmit={handleSave} className="space-y-4">
           <div>
-            <label className="text-[10px] text-theme-muted font-bold block mb-1.5">{isRTL ? 'رقم الهاتف المعتمد' : 'Registered Phone Number'}</label>
+            <label className="text-[10px] text-theme-muted font-bold block mb-1.5">{t('str_1130')}</label>
             <input 
               type="text" 
               value={phone} 
@@ -84,7 +87,7 @@ export const DriverProfile: React.FC = () => {
             />
           </div>
           <div>
-            <label className="text-[10px] text-theme-muted font-bold block mb-1.5">{isRTL ? 'نوع وسيلة التوصيل والرقم' : 'Vehicle Type & Details'}</label>
+            <label className="text-[10px] text-theme-muted font-bold block mb-1.5">{t('str_1131')}</label>
             <input 
               type="text" 
               value={vehicle} 
@@ -96,7 +99,7 @@ export const DriverProfile: React.FC = () => {
             type="submit"
             className="w-full bg-primary hover:bg-primary-hover text-white font-black py-3.5 rounded-xl text-xs shadow-md transition"
           >
-            {isRTL ? 'حفظ التعديلات' : 'Save Details'}
+            {t('str_413')}
           </button>
         </form>
       </div>
@@ -107,7 +110,7 @@ export const DriverProfile: React.FC = () => {
         className="w-full bg-red-500/10 border border-red-500/20 text-red-500 font-black py-4 rounded-2xl flex items-center justify-center gap-1.5 hover:bg-red-500/15 transition active:scale-95 shadow-sm"
       >
         <LogOut size={16} />
-        <span>{isRTL ? 'تسجيل الخروج من الحساب' : 'Log Out Account'}</span>
+        <span>{t('str_1132')}</span>
       </button>
     </div>
   );

@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState } from 'react';
 import { X, Bell, Check, Trash2, ShoppingBag, Tag, Info, ShieldAlert, ArrowRightLeft } from 'lucide-react';
 import { useApp, Notification } from '../../contexts/AppContext';
@@ -10,7 +11,7 @@ interface NotificationsDrawerProps {
 }
 
 export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({ onClose, navigate }) => {
-  const { notifications, markNotificationRead, markAllNotificationsRead, deleteNotification, clearAllNotifications, t, isRTL } = useApp();
+  const { notifications, markNotificationRead, markAllNotificationsRead, deleteNotification, clearAllNotifications,  isRTL } = useApp();
   const { stores } = useStores();
   const { products } = useProducts();;
 
@@ -28,6 +29,8 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({ onClos
   });
 
   const getIcon = (type: string) => {
+  const {} = useTranslation();
+
     switch (type) {
       case 'order':
       case 'delivery':
@@ -126,7 +129,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({ onClos
         <div className="px-5 pt-12 pb-4 border-b border-theme-border flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Bell size={22} className="text-primary" />
-            <h2 className="text-base font-black text-theme-text">{isRTL ? 'مركز الإشعارات' : 'Notification Center'}</h2>
+            <h2 className="text-base font-black text-theme-text">{t('str_1159')}</h2>
           </div>
           <button 
             onClick={onClose} 
@@ -143,13 +146,13 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({ onClos
               onClick={markAllNotificationsRead} 
               className="text-primary hover:underline font-bold flex items-center gap-1"
             >
-              <Check size={14} strokeWidth={3} /> {isRTL ? 'تحديد الكل كمقروء' : 'Mark all read'}
+              <Check size={14} strokeWidth={3} /> {t('str_1160')}
             </button>
             <button 
               onClick={clearAllNotifications} 
               className="text-red-500 hover:underline font-bold flex items-center gap-1"
             >
-              <Trash2 size={12} /> {isRTL ? 'مسح الكل' : 'Clear all'}
+              <Trash2 size={12} /> {t('str_429')}
             </button>
           </div>
         )}
@@ -157,12 +160,12 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({ onClos
         {/* Tabs */}
         <div className="px-4 py-2 border-b border-theme-border flex gap-1.5 overflow-x-auto no-scrollbar bg-theme-card">
           {[
-            { id: 'all', label: isRTL ? 'الكل' : 'All' },
-            { id: 'unread', label: isRTL ? 'غير المقروء' : 'Unread' },
-            { id: 'offer', label: isRTL ? 'العروض' : 'Offers' },
-            { id: 'order', label: isRTL ? 'الطلبات' : 'Orders' },
-            { id: 'promotion', label: isRTL ? 'الترويج' : 'Promotions' },
-            { id: 'system', label: isRTL ? 'النظام' : 'System' }
+            { id: 'all', label: t('str_1161') },
+            { id: 'unread', label: t('str_1162') },
+            { id: 'offer', label: t('str_766') },
+            { id: 'order', label: t('str_365') },
+            { id: 'promotion', label: t('str_1163') },
+            { id: 'system', label: t('str_1164') }
           ].map(tab => (
             <button
               key={tab.id}
@@ -185,8 +188,8 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({ onClos
               <div className="w-16 h-16 rounded-full bg-theme-border flex items-center justify-center mb-4 text-theme-muted">
                 <Bell size={28} />
               </div>
-              <p className="font-black text-sm text-theme-text">{isRTL ? 'لا توجد إشعارات مطابقة' : 'No matching notifications'}</p>
-              <p className="text-xs mt-1">{isRTL ? 'سنخبرك فور وصول أي تحديثات للطلب أو عروض!' : 'We will notify you on order updates and offers!'}</p>
+              <p className="font-black text-sm text-theme-text">{t('str_1165')}</p>
+              <p className="text-xs mt-1">{t('str_1166')}</p>
             </div>
           ) : (
             filtered.map((noti) => (
@@ -229,7 +232,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({ onClos
                         }}
                         className="text-red-500 hover:text-red-600 font-bold"
                       >
-                        {isRTL ? 'حذف' : 'Delete'}
+                        {t('str_514')}
                       </button>
                     </div>
                   </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React from 'react';
 import { Gift, Wallet2, HelpCircle } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -21,8 +22,8 @@ export const LoyaltyWallet: React.FC = () => {
             <Wallet2 size={20} />
           </div>
           <div>
-            <h4 className="font-black text-xs text-theme-text">{isRTL ? 'القيمة النقدية المقابلة' : 'Equivalent Cash Balance'}</h4>
-            <p className="text-[10px] text-theme-muted font-bold mt-0.5">{isRTL ? 'تخصم تلقائياً من قيمة الفاتورة عند رغبتك' : 'Deducted directly from checkout invoice'}</p>
+            <h4 className="font-black text-xs text-theme-text">{t('str_1168')}</h4>
+            <p className="text-[10px] text-theme-muted font-bold mt-0.5">{t('str_1169')}</p>
           </div>
         </div>
         <div className="text-right">
@@ -34,13 +35,13 @@ export const LoyaltyWallet: React.FC = () => {
       <div className="bg-theme-bg/40 border border-theme-border/60 rounded-2xl p-4 space-y-2">
         <h5 className="font-black text-xs text-theme-text flex items-center gap-1.5 leading-none">
           <HelpCircle size={14} className="text-primary" />
-          {isRTL ? 'كيف يعمل برنامج النقاط والولاء؟' : 'How does the Loyalty Club work?'}
+          {t('str_1170')}
         </h5>
         <ul className="text-[10px] font-bold text-theme-muted list-disc list-inside space-y-1 pl-1">
-          <li>{isRTL ? 'تكسب نقطة واحدة مقابل كل 1 جنيه تنفقه في عمليات الشراء.' : 'Earn 1 Loyalty Point for every 1 EGP spent on the app.'}</li>
-          <li>{isRTL ? 'كل 100 نقطة تساوي خصماً بقيمة 5 جنيهات عند الدفع.' : 'Every 100 points can be redeemed for a 5 EGP checkout discount.'}</li>
-          <li>{isRTL ? 'يتم تحويل النقاط في كتل من 100 نقطة وتخصم من مجموع سلتك.' : 'Points are redeemed in blocks of 100 points during checkout.'}</li>
-          <li>{isRTL ? 'تضاف النقاط لرصيدك فقط بعد توصيل واستلام الطلب بنجاح.' : 'Points are credited only after your order is marked as delivered.'}</li>
+          <li>{t('str_1171')}</li>
+          <li>{t('str_1172')}</li>
+          <li>{t('str_1173')}</li>
+          <li>{t('str_1174')}</li>
         </ul>
       </div>
 

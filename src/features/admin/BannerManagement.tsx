@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState } from 'react';
 import { Tag, Edit, Plus, Trash2, X, Check } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -17,6 +18,8 @@ export const BannerManagement: React.FC = () => {
   const [imgUrl, setImgUrl] = useState('');
 
   const handleOpenAdd = () => {
+  const {} = useTranslation();
+
     setTitleAr('');
     setTitleEn('');
     setSubAr('');
@@ -88,8 +91,7 @@ export const BannerManagement: React.FC = () => {
           onClick={handleOpenAdd}
           className="bg-primary hover:bg-primary-hover text-white font-black px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition"
         >
-          <Plus size={14} strokeWidth={3} /> إضافة إعلان جديد
-        </button>
+          <Plus size={14} strokeWidth={3} />{t('str_405')}</button>
       </div>
 
       {/* Banners List */}
@@ -131,34 +133,34 @@ export const BannerManagement: React.FC = () => {
             className="bg-theme-card border border-theme-border rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl animate-slide-up theme-transition"
           >
             <div className="flex justify-between items-center pb-2 border-b border-theme-border">
-              <h4 className="font-black text-theme-text text-sm">إضافة إعلان جديد</h4>
+              <h4 className="font-black text-theme-text text-sm">{t('str_405')}</h4>
               <button type="button" onClick={() => setShowAddForm(false)} className="text-theme-muted hover:text-theme-text"><X size={20} /></button>
             </div>
 
             <div className="space-y-3">
               <div>
-                <label className="text-[10px] font-black text-theme-muted block mb-1">العنوان بالعربية</label>
+                <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_406')}</label>
                 <input type="text" value={titleAr} onChange={e=>setTitleAr(e.target.value)} className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs font-bold outline-none focus:border-primary text-theme-text" placeholder="مثال: عروض مطاعم الصيف" />
               </div>
               <div>
-                <label className="text-[10px] font-black text-theme-muted block mb-1">العنوان بالإنجليزية</label>
+                <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_407')}</label>
                 <input type="text" value={titleEn} onChange={e=>setTitleEn(e.target.value)} className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs font-bold outline-none focus:border-primary text-theme-text" placeholder="مثال: Summer Restaurant Offers" />
               </div>
               <div>
-                <label className="text-[10px] font-black text-theme-muted block mb-1">العنوان الفرعي بالعربية</label>
+                <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_408')}</label>
                 <input type="text" value={subAr} onChange={e=>setSubAr(e.target.value)} className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs font-bold outline-none focus:border-primary text-theme-text" placeholder="مثال: خصم حتى 50%" />
               </div>
               <div>
-                <label className="text-[10px] font-black text-theme-muted block mb-1">العنوان الفرعي بالإنجليزية</label>
+                <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_409')}</label>
                 <input type="text" value={subEn} onChange={e=>setSubEn(e.target.value)} className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs font-bold outline-none focus:border-primary text-theme-text" placeholder="مثال: Up to 50% Off" />
               </div>
               <div>
-                <label className="text-[10px] font-black text-theme-muted block mb-1">رابط صورة البانر</label>
+                <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_410')}</label>
                 <input type="text" value={imgUrl} onChange={e=>setImgUrl(e.target.value)} className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs font-mono outline-none focus:border-primary text-theme-text" />
               </div>
             </div>
 
-            <button type="submit" className="w-full bg-primary hover:bg-primary-hover text-white font-black py-3.5 rounded-xl text-xs shadow-md transition flex items-center justify-center gap-1.5"><Check size={16} strokeWidth={3} /> تأكيد وحفظ الإعلان</button>
+            <button type="submit" className="w-full bg-primary hover:bg-primary-hover text-white font-black py-3.5 rounded-xl text-xs shadow-md transition flex items-center justify-center gap-1.5"><Check size={16} strokeWidth={3} />{t('str_411')}</button>
           </form>
         </div>
       )}
@@ -171,34 +173,34 @@ export const BannerManagement: React.FC = () => {
             className="bg-theme-card border border-theme-border rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl animate-slide-up theme-transition"
           >
             <div className="flex justify-between items-center pb-2 border-b border-theme-border">
-              <h4 className="font-black text-theme-text text-sm">تعديل بيانات الإعلان</h4>
+              <h4 className="font-black text-theme-text text-sm">{t('str_412')}</h4>
               <button type="button" onClick={() => setEditingBanner(null)} className="text-theme-muted hover:text-theme-text"><X size={20} /></button>
             </div>
 
             <div className="space-y-3">
               <div>
-                <label className="text-[10px] font-black text-theme-muted block mb-1">العنوان بالعربية</label>
+                <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_406')}</label>
                 <input type="text" value={titleAr} onChange={e=>setTitleAr(e.target.value)} className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs font-bold outline-none focus:border-primary text-theme-text" />
               </div>
               <div>
-                <label className="text-[10px] font-black text-theme-muted block mb-1">العنوان بالإنجليزية</label>
+                <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_407')}</label>
                 <input type="text" value={titleEn} onChange={e=>setTitleEn(e.target.value)} className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs font-bold outline-none focus:border-primary text-theme-text" />
               </div>
               <div>
-                <label className="text-[10px] font-black text-theme-muted block mb-1">العنوان الفرعي بالعربية</label>
+                <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_408')}</label>
                 <input type="text" value={subAr} onChange={e=>setSubAr(e.target.value)} className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs font-bold outline-none focus:border-primary text-theme-text" />
               </div>
               <div>
-                <label className="text-[10px] font-black text-theme-muted block mb-1">العنوان الفرعي بالإنجليزية</label>
+                <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_409')}</label>
                 <input type="text" value={subEn} onChange={e=>setSubEn(e.target.value)} className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs font-bold outline-none focus:border-primary text-theme-text" />
               </div>
               <div>
-                <label className="text-[10px] font-black text-theme-muted block mb-1">رابط صورة البانر</label>
+                <label className="text-[10px] font-black text-theme-muted block mb-1">{t('str_410')}</label>
                 <input type="text" value={imgUrl} onChange={e=>setImgUrl(e.target.value)} className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs font-mono outline-none focus:border-primary text-theme-text" />
               </div>
             </div>
 
-            <button type="submit" className="w-full bg-primary hover:bg-primary-hover text-white font-black py-3.5 rounded-xl text-xs shadow-md transition flex items-center justify-center gap-1.5"><Check size={16} strokeWidth={3} /> حفظ التعديلات</button>
+            <button type="submit" className="w-full bg-primary hover:bg-primary-hover text-white font-black py-3.5 rounded-xl text-xs shadow-md transition flex items-center justify-center gap-1.5"><Check size={16} strokeWidth={3} />{t('str_413')}</button>
           </form>
         </div>
       )}

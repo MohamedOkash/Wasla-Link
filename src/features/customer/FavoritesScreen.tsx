@@ -10,7 +10,7 @@ interface FavoritesScreenProps {
 }
 
 export const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigate }) => {
-  const { favoriteStores, favoriteProducts, toggleFavoriteStore, toggleFavoriteProduct, t, isRTL } = useApp();
+  const { favoriteStores, favoriteProducts, toggleFavoriteStore, toggleFavoriteProduct,  isRTL } = useApp();
   const { stores } = useStores();
   const { products } = useProducts();;
 

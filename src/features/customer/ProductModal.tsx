@@ -26,7 +26,7 @@ interface ProductModalProps {
 }
 
 export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProduct, shop: initialShop, goBack }) => {
-  const { cart, setCart, addToCartGlobal, t, isRTL, favoriteProducts, toggleFavoriteProduct, orders, showToast } = useApp();
+  const { cart, setCart, addToCartGlobal,  isRTL, favoriteProducts, toggleFavoriteProduct, orders, showToast } = useApp();
   const { stores } = useStores();
   const { products } = useProducts();;
   
@@ -63,7 +63,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
   const frequentlyBought = recommendationService.getFrequentlyBoughtTogether(product, products, orders, 6);
 
   const handleConfirm = () => {
-  const { t } = useTranslation();
+  const {} = useTranslation();
 
     addToCartGlobal(product, shop, quantity, true);
     goBack();

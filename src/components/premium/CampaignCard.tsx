@@ -9,9 +9,7 @@ interface CampaignCardProps {
 
 export const CampaignCard: React.FC<CampaignCardProps> = ({
   banner,
-  onClick,
-  t
-}) => {
+  onClick }) => {
   const titleText = banner.title && typeof banner.title === 'object'
     ? (banner.title as any).ar || (banner.title as any).en
     : banner.title;

@@ -11,7 +11,7 @@ interface GlobalSearchProps {
 }
 
 export const GlobalSearch: React.FC<GlobalSearchProps> = ({ closeSearch, navigate }) => {
-  const { categories, t, isRTL } = useApp();
+  const { categories,  isRTL } = useApp();
   const { stores } = useStores();
   const { products } = useProducts();;
   const [query, setQuery] = useState('');

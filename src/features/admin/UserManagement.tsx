@@ -1,3 +1,4 @@
+import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState, useEffect } from 'react';
 import { Users, Shield, UserCheck, Key, Ban, ShieldAlert, Check, Trash2, ShieldCheck, UserX } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -94,12 +95,10 @@ export const UserManagement: React.FC = () => {
       {/* Users List Panel */}
       <div className="bg-theme-card rounded-[30px] border border-theme-border p-5 shadow-sm space-y-4 animate-fade-in theme-transition">
         <h3 className="font-black text-theme-text text-sm flex items-center gap-2 border-b border-theme-border/60 pb-2.5">
-          <Users size={18} className="text-primary" />
-          إدارة مستخدمي المنصة
-        </h3>
+          <Users size={18} className="text-primary" />{t('str_673')}</h3>
         
         {filteredUsers.length === 0 ? (
-          <p className="text-xs text-theme-muted text-center py-6 font-bold">لا يوجد أعضاء مسجلين بهذا الدور</p>
+          <p className="text-xs text-theme-muted text-center py-6 font-bold">{t('str_674')}</p>
         ) : (
           <div className="divide-y divide-theme-border/60">
             {filteredUsers.map(user => (
@@ -113,9 +112,7 @@ export const UserManagement: React.FC = () => {
                 
                 <div className="flex items-center gap-2">
                   {user.status === 'suspended' && (
-                    <span className="text-[9px] font-black px-2 py-0.5 rounded-lg border border-red-500/25 bg-red-500/10 text-red-500 animate-pulse">
-                      محظور
-                    </span>
+                    <span className="text-[9px] font-black px-2 py-0.5 rounded-lg border border-red-500/25 bg-red-500/10 text-red-500 animate-pulse">{t('str_675')}</span>
                   )}
                   
                   {/* Actions */}
@@ -125,16 +122,16 @@ export const UserManagement: React.FC = () => {
                       onChange={(e) => handleRoleChange(user.id, e.target.value)}
                       className="bg-theme-bg border border-theme-border/50 rounded-lg text-[9px] font-bold px-1.5 py-1"
                     >
-                      <option value="customer">عميل</option>
-                      <option value="vendor">بائع</option>
-                      <option value="driver">مندوب</option>
-                      <option value="admin">مدير</option>
+                      <option value="customer">{t('str_44')}</option>
+                      <option value="vendor">{t('str_676')}</option>
+                      <option value="driver">{t('str_677')}</option>
+                      <option value="admin">{t('str_678')}</option>
                     </select>
 
                     <button
                       onClick={() => handleResetPassword(user.email)}
                       className="p-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg text-blue-500 hover:bg-blue-500/20 transition"
-                      title="إرسال رابط إعادة كلمة المرور"
+                      title={t('str_679')}
                     >
                       <Key size={12} />
                     </button>
@@ -154,7 +151,7 @@ export const UserManagement: React.FC = () => {
                     <button
                       onClick={() => handleDeleteUser(user.id)}
                       className="p-1.5 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 hover:bg-red-500/20 transition"
-                      title="حذف نهائي"
+                      title={t('str_680')}
                     >
                       <Trash2 size={12} />
                     </button>
