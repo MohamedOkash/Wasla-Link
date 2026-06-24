@@ -1213,7 +1213,7 @@
   "str_1212": "لم تقم بدعوة أي صديق بعد. شارك كودك لتكسب نقاط مكافآت!",
   "str_1213": "عضو مسجل",
   "str_1214": "شراء مكتمل",
-  "appName": "سوق البلد",
+  "appName": "وصلة لينك",
   "finance": "المالية",
   "settlements": "التسويات",
   "payments": "المدفوعات",
@@ -1249,5 +1249,17 @@
   "paymobCard": "بطاقة بنكية",
   "paymobWallet": "محفظة إلكترونية",
   "paymobCardDesc": "ادفع بأمان عبر باي موب",
-  "paymobWalletDesc": "فودافون/أورانج كاش عبر باي موب"
+  "paymobWalletDesc": "فودافون/أورانج كاش عبر باي موب",
+  "currencyEGP": "ج.م",
+  "product": "منتج",
+  "active": "نشط",
+  "inactive": "متوقف",
+  "underReview": "قيد المراجعة",
+  "ordersLabel": "طلبات",
+  "earningsLabel": "أرباح",
+  "salesLabel": "مبيعات",
+  "addFromCatalog": "إضافة من الكتالوج",
+  "searchTemplates": "ابحث بالاسم أو الباركود أو SKU...",
+  "filterByCategory": "تصفية حسب القسم",
+  "filterByBrand": "تصفية حسب الماركة"
 }

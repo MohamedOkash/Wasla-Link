@@ -1,11 +1,12 @@
 import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState } from 'react';
-import { Plus, Trash2, Edit, Save, X, ClipboardList, Check, TrendingUp, History, Archive, AlertTriangle, Layers, FileSpreadsheet, Image as ImageIcon, Trash, ChevronDown, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Edit, Save, X, ClipboardList, Check, TrendingUp, History, Archive, AlertTriangle, Layers, FileSpreadsheet, Image as ImageIcon, Trash, ChevronDown, Loader2, Package } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { useProducts } from '../../hooks/useProducts';
 import { Product } from '../../types/product.types';
 import { ProductImport } from './ProductImport';
 import { mediaService } from '../../services/media.service';
+import { VendorTemplatePicker } from './VendorTemplatePicker';
 
 export const VendorProducts: React.FC = () => {
   const { t } = useTranslation();
@@ -18,6 +19,7 @@ export const VendorProducts: React.FC = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [adjustingStockProduct, setAdjustingStockProduct] = useState<Product | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
 
   // Form states
   const [name, setName] = useState('');
@@ -94,6 +96,27 @@ export const VendorProducts: React.FC = () => {
     setProductWeight('');
     setUnit('جرام');
     setProductImages([]);
+    setActiveFormTab('info');
+    setShowAddForm(true);
+  };
+
+  const handleSelectTemplate = (template: any) => {
+    setShowTemplatePicker(false);
+    
+    setName(isRTL ? template.nameAr : template.nameEn);
+    setPrice(''); // Force vendor to enter price
+    setPurchasePrice('');
+    setCat(isRTL ? template.category : (template.categoryEn || template.category));
+    setDesc(isRTL ? (template.descriptionAr || '') : (template.descriptionEn || ''));
+    setSku(template.sku || `SKU-${Math.floor(100000 + Math.random() * 900000)}`);
+    setBarcode(template.barcode || `622${Math.floor(100000000 + Math.random() * 900000000)}`);
+    setStock('50');
+    setThreshold('10');
+    setProductBrand(isRTL ? template.brand : (template.brandEn || template.brand));
+    setProductWeight(template.weight || '');
+    setUnit(template.unit || 'قطعة');
+    setProductImages(template.imageUrl ? [template.imageUrl] : (template.fallbackImageUrl ? [template.fallbackImageUrl] : []));
+    
     setActiveFormTab('info');
     setShowAddForm(true);
   };
@@ -422,6 +445,12 @@ export const VendorProducts: React.FC = () => {
                 {t('str_916')}
               </button>
               <button 
+                onClick={() => setShowTemplatePicker(true)}
+                className="bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 font-black px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition"
+              >
+                <Package size={16} /> {t('addFromCatalog')}
+              </button>
+              <button 
                 onClick={handleOpenAdd}
                 className="bg-primary hover:bg-primary-hover text-white font-black px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition"
               >
@@ -499,11 +528,11 @@ export const VendorProducts: React.FC = () => {
                       <div className="flex gap-4">
                         <div>
                           <span className="text-[9px] text-theme-muted block font-bold">{t('str_925')}</span>
-                          <span className="font-bold text-theme-text">{product.costPrice || product.purchasePrice || Math.round(product.price * 0.7)} ج.م</span>
+                          <span className="font-bold text-theme-text">{product.costPrice || product.purchasePrice || Math.round(product.price * 0.7)} {t('currencyEGP')}</span>
                         </div>
                         <div>
                           <span className="text-[9px] text-theme-muted block font-bold">{t('str_704')}</span>
-                          <span className="font-black text-primary">{product.price} ج.م</span>
+                          <span className="font-black text-primary">{product.price} {t('currencyEGP')}</span>
                         </div>
                         <div>
                           <span className="text-[9px] text-theme-muted block font-bold">{t('str_926')}</span>
@@ -717,6 +746,13 @@ export const VendorProducts: React.FC = () => {
             </button>
           </div>
         </div>
+      )}
+      {/* Template Picker Modal */}
+      {showTemplatePicker && (
+        <VendorTemplatePicker 
+          onClose={() => setShowTemplatePicker(false)}
+          onSelect={handleSelectTemplate}
+        />
       )}
 
       {/* Add Product Modal Overlay */}

@@ -303,7 +303,7 @@ export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
                         <tr key={idx} className={`font-bold hover:bg-theme-bg/30 ${row.status === 'skip' ? 'bg-red-500/5' : ''}`}>
                           <td className="p-2.5 text-theme-text max-w-[150px] truncate">{row.name}</td>
                           <td className="p-2.5">{row.cat}</td>
-                          <td className="p-2.5 text-theme-text font-black">{row.price} ج.م</td>
+                          <td className="p-2.5 text-theme-text font-black">{row.price} {t('currencyEGP')}</td>
                           <td className="p-2.5 font-mono">{row.sku}</td>
                           <td className="p-2.5">
                             <span className={`px-2 py-0.5 rounded text-[8px] font-black leading-none ${

@@ -155,7 +155,7 @@ export const VendorDashboard: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <PremiumStatCard 
                 title={t('str_773')}
-                value={`${totalSales} ج.م`}
+                value={`${totalSales} ${t('currencyEGP')}`}
                 change={t('str_774')}
                 changeType="positive"
                 icon={<DollarSign size={16} />}
@@ -165,8 +165,8 @@ export const VendorDashboard: React.FC = () => {
 
               <PremiumStatCard 
                 title={t('str_775')}
-                value={`${vendorOrders.length} طلب`}
-                change={isRTL ? `${vendorOrders.filter(o => o.status !== 'delivered' && o.status !== 'cancelled').length} طلب نشط` : `${vendorOrders.filter(o => o.status !== 'delivered' && o.status !== 'cancelled').length} active`}
+                value={`${vendorOrders.length} ${t('ordersLabel')}`}
+                change={`${vendorOrders.filter(o => o.status !== 'delivered' && o.status !== 'cancelled').length} ${t('active')}`}
                 changeType="neutral"
                 icon={<ClipboardList size={16} />}
                 sparklinePath="M 10 20 Q 30 25, 50 15 T 90 22"
@@ -175,7 +175,7 @@ export const VendorDashboard: React.FC = () => {
 
               <PremiumStatCard 
                 title={t('str_776')}
-                value={`${vendorProducts.length} صنف`}
+                value={`${vendorProducts.length} ${t('product')}`}
                 change={t('str_777')}
                 changeType={lowStockProducts.length > 0 ? 'negative' : 'neutral'}
                 icon={<ShoppingBag size={16} />}
@@ -252,7 +252,7 @@ export const VendorDashboard: React.FC = () => {
                           </p>
                         </div>
                         <div className="text-left">
-                          <p className="text-xs font-black text-[#F9FAFB] font-sans">{order.total} ج.م</p>
+                          <p className="text-xs font-black text-[#F9FAFB] font-sans">{order.total} {t('currencyEGP')}</p>
                           <span className="text-[9px] font-bold text-primary">
                             {order.status === 'delivered' ? (t('str_190')) : (t('str_659'))}
                           </span>
@@ -277,13 +277,13 @@ export const VendorDashboard: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <PremiumCard hoverable={false} className="bg-[#111827] border-[#1F2937] p-5">
                 <span className="text-[10px] font-black text-[#9CA3AF] uppercase tracking-wider block mb-1">{t('str_788')}</span>
-                <h2 className="text-3xl font-black text-primary font-sans">{withdrawableBalance} ج.م</h2>
+                <h2 className="text-3xl font-black text-primary font-sans">{withdrawableBalance} {t('currencyEGP')}</h2>
                 <p className="text-[9px] text-[#9CA3AF] font-bold mt-1.5">{t('str_789')}</p>
               </PremiumCard>
 
               <PremiumCard hoverable={false} className="bg-[#111827] border-[#1F2937] p-5">
                 <span className="text-[10px] font-black text-[#9CA3AF] uppercase tracking-wider block mb-1">{t('str_790')}</span>
-                <h2 className="text-3xl text-amber-500 font-black font-sans">{pendingBalance} ج.م</h2>
+                <h2 className="text-3xl text-amber-500 font-black font-sans">{pendingBalance} {t('currencyEGP')}</h2>
                 <p className="text-[9px] text-[#9CA3AF] font-bold mt-1.5">{t('str_791')}</p>
               </PremiumCard>
             </div>
@@ -434,7 +434,7 @@ export const VendorDashboard: React.FC = () => {
                       <div>
                         <h4 className="font-black text-xs text-[#F9FAFB]">{t('str_810')}</h4>
                         <span className="text-[9px] text-[#9CA3AF] font-bold mt-1 block">
-                          {isRTL ? `النوع: ${req.type === 'replacement' ? 'استبدال' : 'رد أموال'}` : `Type: ${req.type}`}
+                          {t('typeLabel')}: {req.type}
                         </span>
                       </div>
                       <PremiumBadge 

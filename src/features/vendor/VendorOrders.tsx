@@ -163,7 +163,7 @@ export const VendorOrders: React.FC = () => {
                   {activeInvoice.items.map((item, idx) => (
                     <div key={idx} className="flex justify-between items-center text-xs font-bold text-theme-text print:text-black">
                       <span>{item.quantity}x {item.name}</span>
-                      <span>{item.price * item.quantity} ج.م</span>
+                      <span>{item.price * item.quantity} {t('currencyEGP')}</span>
                     </div>
                   ))}
                 </div>
@@ -171,14 +171,14 @@ export const VendorOrders: React.FC = () => {
 
               {/* Totals */}
               <div className="space-y-1.5 text-xs font-bold text-theme-muted print:text-black">
-                <div className="flex justify-between"><span>{t('str_128')}</span> <span>{activeInvoice.subtotal} ج.م</span></div>
+                <div className="flex justify-between"><span>{t('str_128')}</span> <span>{activeInvoice.subtotal} {t('currencyEGP')}</span></div>
                 {activeInvoice.discount !== undefined && activeInvoice.discount > 0 && (
-                  <div className="flex justify-between text-green-500"><span>{t('str_61')}</span> <span>-{activeInvoice.discount} ج.م</span></div>
+                  <div className="flex justify-between text-green-500"><span>{t('str_61')}</span> <span>-{activeInvoice.discount} {t('currencyEGP')}</span></div>
                 )}
-                <div className="flex justify-between"><span>{t('str_868')}</span> <span>{activeInvoice.deliveryFee} ج.م</span></div>
+                <div className="flex justify-between"><span>{t('str_868')}</span> <span>{activeInvoice.deliveryFee} {t('currencyEGP')}</span></div>
                 <div className="flex justify-between text-xs font-black text-theme-text border-t border-theme-border pt-2 print:border-black print:text-black">
                   <span>{t('str_869')}</span>
-                  <span className="text-primary font-black print:text-black">{activeInvoice.total} ج.م</span>
+                  <span className="text-primary font-black print:text-black">{activeInvoice.total} {t('currencyEGP')}</span>
                 </div>
               </div>
 
@@ -255,7 +255,7 @@ export const VendorOrders: React.FC = () => {
                 {order.items.map(item => (
                   <div key={item.id} className="flex justify-between text-theme-text">
                     <span>{item.quantity}x {item.name}</span>
-                    <span>{item.price * item.quantity} ج.م</span>
+                    <span>{item.price * item.quantity} {t('currencyEGP')}</span>
                   </div>
                 ))}
               </div>

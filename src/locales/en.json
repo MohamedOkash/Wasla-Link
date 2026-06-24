@@ -1213,7 +1213,7 @@
   "str_1212": "No referred friends yet. Share your code to earn reward points!",
   "str_1213": "Registered Member",
   "str_1214": "Purchase Completed",
-  "appName": "SOUQ EL BALAD",
+  "appName": "WaslaLink",
   "finance": "Finance",
   "settlements": "Settlements",
   "payments": "Payments",
@@ -1249,5 +1249,17 @@
   "paymobCard": "Credit/Debit Card",
   "paymobWallet": "Mobile Wallet",
   "paymobCardDesc": "Pay securely with Paymob",
-  "paymobWalletDesc": "Vodafone Cash / Orange Cash via Paymob"
+  "paymobWalletDesc": "Vodafone Cash / Orange Cash via Paymob",
+  "currencyEGP": "EGP",
+  "product": "Product",
+  "active": "Active",
+  "inactive": "Inactive",
+  "underReview": "Under Review",
+  "ordersLabel": "Orders",
+  "earningsLabel": "Earnings",
+  "salesLabel": "Sales",
+  "addFromCatalog": "Add from Catalog",
+  "searchTemplates": "Search by Name, Barcode, or SKU...",
+  "filterByCategory": "Filter by Category",
+  "filterByBrand": "Filter by Brand"
 }
