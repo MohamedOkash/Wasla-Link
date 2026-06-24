@@ -20,14 +20,14 @@ export const LanguageContext = createContext<LanguageContextType>({
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
-    const saved = localStorage.getItem('wasla_lang');
-    return (saved === 'ar' || saved === 'en') ? saved : 'en';
+    const saved = localStorage.getItem('waslalink_lang');
+    return (saved === 'ar' || saved === 'en') ? saved : 'ar';
   });
 
   const isRTL = language === 'ar';
 
   useEffect(() => {
-    localStorage.setItem('wasla_lang', language);
+    localStorage.setItem('waslalink_lang', language);
     document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
     document.documentElement.lang = language;
     if (isRTL) {
@@ -39,9 +39,10 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
+    localStorage.setItem('waslalink_lang', lang);
   };
 
-  const t = (key: string, variables?: Record<string, string | number>): string => {
+  const t = (key: string, variables?: Record<string, any>): string => {
     const dict = language === 'ar' ? ar : en;
     // @ts-ignore
     let translation = dict[key];
@@ -50,11 +51,22 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return key; // Fallback to key if missing
     }
 
-    if (variables) {
-      Object.keys(variables).forEach((varKey) => {
-        translation = translation.replace(new RegExp(`{{${varKey}}}`, 'g'), String(variables[varKey]));
-      });
-    }
+    const vars = variables || {};
+    translation = translation.replace(/\{\{([^}]+)\}\}|\$\{([^}]+)\}/g, (match: string, p1: string | undefined, p2: string | undefined) => {
+      const path = (p1 || p2 || '').trim();
+      const parts = path.split('.');
+      let current: any = vars;
+      for (const part of parts) {
+        if (current == null) return '';
+        // Remove question marks (optional chaining) and split on fallback
+        const cleanPart = part.replace(/\?/g, '').split('||')[0].trim();
+        if (!isNaN(Number(cleanPart))) {
+          return cleanPart;
+        }
+        current = current[cleanPart];
+      }
+      return current !== undefined && current !== null ? String(current) : '';
+    });
 
     return translation;
   };

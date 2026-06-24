@@ -228,7 +228,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
                     <div>
                       <h3 className="font-black text-sm text-theme-text">{order.shopName}</h3>
                       <p className="text-[9px] text-theme-muted font-bold mt-0.5">
-                        {t('str_157')}
+                        {t('str_157', { orderId: order.id })}
                       </p>
                     </div>
                     <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg border leading-none ${statusInfo.color}`}>
@@ -387,7 +387,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
                   <div>
                     <h3 className="font-black text-xs text-theme-text">{ret.storeName}</h3>
                     <p className="text-[8px] text-theme-muted mt-0.5">
-                      {t('str_172')}
+                      {t('str_172', { requestId: ret.id })}
                     </p>
                   </div>
                   <span className={`text-[8px] font-black px-2 py-0.5 rounded border leading-none ${

@@ -128,7 +128,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
       showToast(t('str_65'));
       return;
     }
-    if (paymentMethod !== 'cash' && !receiptImage) {
+    if (paymentMethod !== 'cash_on_delivery' && !receiptImage) {
       showToast(t('str_66'));
       return;
     }
@@ -138,7 +138,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
       const orderId = `ord_${Math.floor(100000 + Math.random() * 900000)}`;
       let paymentReceiptUrl = '';
 
-      if (paymentMethod !== 'cash' && receiptFile) {
+      if (paymentMethod !== 'cash_on_delivery' && receiptFile) {
         paymentReceiptUrl = await mediaService.uploadImage(receiptFile, `receipts/${orderId}`);
       }
 
@@ -509,7 +509,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
             <div className="text-[10px] font-black leading-relaxed">
               {isCovered ? (
                 <span>
-                  {t('str_95')}
+                  {t('str_95', { deliveryFee, deliveryETA })}
                 </span>
               ) : (
                 <span>
@@ -615,11 +615,11 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
             
             <div className="flex justify-between items-center text-xs flex-wrap gap-2">
               <div>
-                <p className="font-black text-theme-text">{t('str_110')}</p>
+                <p className="font-black text-theme-text">{t('str_110', { points: currentUser?.points || 0 })}</p>
                 <p className="text-[9px] text-theme-muted font-bold mt-0.5">{t('str_111')}</p>
               </div>
               <span className="bg-primary/10 text-primary font-black text-[10px] px-2.5 py-1 rounded-xl border border-primary/15">
-                {t('str_112')}
+                {t('str_112', { available: Math.floor((currentUser?.points || 0) / 100) * 5 })}
               </span>
             </div>
 
@@ -654,7 +654,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
 
             {pointsToRedeem > 0 && (
               <p className="text-[9.5px] font-black text-green-600 text-center bg-green-500/5 py-2 rounded-xl animate-pop-in">
-                {t('str_114')}
+                {t('str_114', { pointsDiscount: (pointsToRedeem / 100) * 5, pointsToRedeem })}
               </p>
             )}
           </PremiumCard>
@@ -694,7 +694,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
             <div className="flex justify-between">
               <span className="text-theme-muted">{t('str_122')}</span>
               <span className="font-black text-theme-text">
-                {paymentMethod === 'cash' ? (t('str_123')) : paymentMethod === 'vodafone' ? (t('str_124')) : (t('str_125'))}
+                {paymentMethod === 'cash_on_delivery' ? (t('str_123')) : paymentMethod === 'paymob_wallet' ? (t('str_124')) : (t('str_125'))}
               </span>
             </div>
           </div>

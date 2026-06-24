@@ -101,7 +101,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
     setLoading(true);
     try {
       await sendPasswordResetEmail(auth, emailToReset);
-      showToast(t('str_216'));
+      showToast(t('str_216', { emailToReset }));
       setShowForgotModal(false);
     } catch (err: any) {
       console.error(err);
@@ -611,7 +611,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
               <div>
                 <h3 className="font-black text-xs text-theme-text leading-none">{t('str_268')}</h3>
                 <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">
-                  {t('str_269')}
+                  {t('str_269', { points: currentUser?.points || 0 })}
                 </p>
               </div>
             </PremiumCard>
@@ -847,7 +847,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
                   <p className="text-xs font-black">{t('str_297')}</p>
                 </div>
                 <p className="text-[11px] text-theme-muted font-bold leading-relaxed text-center">
-                  {t('str_298')}
+                  {t('str_298', { forgotEmail })}
                 </p>
                 <PremiumButton 
                   onClick={() => setShowForgotModal(false)} 

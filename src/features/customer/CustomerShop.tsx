@@ -260,7 +260,7 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
           {totalPrice > 0 && totalPrice < (shop.minOrder || 0) && (
             <div className="bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-2xl text-[10px] py-3 px-4 flex items-center justify-center gap-2 font-bold mb-4">
               <ShieldAlert size={14} />
-              <span>{t('str_21')}</span>
+              <span>{t('str_21', { minOrder: shop.minOrder, remaining: (shop.minOrder || 0) - totalPrice })}</span>
             </div>
           )}
         </div>

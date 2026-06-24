@@ -158,11 +158,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
           <h2 className="text-lg font-black text-theme-text leading-tight mb-1">{product.name}</h2>
           
           <div className="flex flex-wrap gap-x-2.5 gap-y-1 text-[10px] font-bold text-theme-muted mb-4 border-b border-theme-border/50 pb-3">
-            <span>{t('str_37')}</span>
+            <span>{t('str_37', { name: shop.name })}</span>
             {product.productBrand && (
               <>
                 <span>•</span>
-                <span>{t('str_38')}</span>
+                <span>{t('str_38', { brand: product.productBrand })}</span>
               </>
             )}
             {product.productWeight && (
@@ -180,8 +180,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
                 {t('str_39')}
               </span>
               <p className="text-[11px] font-medium text-theme-text leading-relaxed">
-                {t('str_40')
-                }
+                {t('str_40', { discountedPrice, productPrice: product.price })}
               </p>
             </div>
           )}

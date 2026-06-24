@@ -201,7 +201,7 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
           
           <div className="bg-theme-card/90 backdrop-blur-md px-4.5 py-2.5 rounded-2xl border border-theme-border/60 shadow-md flex-1">
             <h1 className="text-xs font-black text-theme-text truncate leading-none">
-              {t('str_187')}
+              {t('str_187', { orderId })}
             </h1>
             <span className="text-[9px] text-theme-muted font-bold block mt-1 animate-pulse text-green-500 leading-none">
               ● {t('str_188')}
@@ -316,13 +316,13 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
             {t('str_199')}
           </span>
           {[
-            { id: 1, label: t('str_200'), desc: t('str_201') },
-            { id: 2, label: t('str_202'), desc: t('str_203') },
-            { id: 3, label: t('str_204'), desc: t('str_205') },
-            { id: 4, label: t('str_206'), desc: t('str_207') },
-            { id: 5, label: t('str_208'), desc: t('str_209') },
-            { id: 6, label: t('str_193'), desc: t('str_210') },
-            { id: 7, label: t('str_211'), desc: t('str_212') }
+            { id: 1, label: t('orderStatusSent'), desc: t('str_201') },
+            { id: 2, label: t('orderStatusAccepted'), desc: t('str_203') },
+            { id: 3, label: t('orderStatusPreparing'), desc: t('str_205') },
+            { id: 4, label: t('orderStatusReady'), desc: t('str_207') },
+            { id: 5, label: t('orderStatusPickedUp'), desc: t('str_209') },
+            { id: 6, label: t('orderStatusTransit'), desc: t('str_210') },
+            { id: 7, label: t('orderStatusDelivered'), desc: t('str_212') }
           ].map((s) => {
             const isCompleted = currentStepNum >= s.id;
             const isActive = currentStepNum === s.id;

@@ -29,7 +29,7 @@ export const VendorReports: React.FC = () => {
       o.subtotal,
       o.deliveryFee,
       o.total,
-      o.paymentMethod === 'cash' ? 'نقدي' : o.paymentMethod === 'vodafone' ? 'فودافون كاش' : 'إنستاباي',
+      o.paymentMethod === 'cash_on_delivery' ? 'نقدي' : o.paymentMethod === 'paymob_wallet' ? 'فودافون كاش' : 'إنستاباي',
       o.status
     ]);
 

@@ -152,7 +152,7 @@ export const MarketplaceMonitor: React.FC = () => {
                       <div className="flex items-center sm:justify-end gap-1">
                         <DollarSign size={11} className="text-primary" />
                         <span className="text-theme-text font-black text-xs">{order.total} ج.م</span>
-                        <span>({order.paymentMethod === 'cash' ? (t('str_595')) : order.paymentMethod})</span>
+                        <span>({order.paymentMethod === 'cash_on_delivery' ? (t('str_595')) : order.paymentMethod})</span>
                       </div>
                     </div>
                   </div>
