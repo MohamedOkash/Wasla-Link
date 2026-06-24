@@ -26,8 +26,8 @@ export const ReferralCenter: React.FC = () => {
       navigator.share({
         title: t('str_1201'),
         text: isRTL 
-          ? `اشترك في سوق البلد واستخدم كود الدعوة الخاص بي: ${referralCode} لتحصل على 100 نقطة ولاء (خصم 5 جنيهات) ترحيبية فوراً!` 
-          : `Join Souq El Balad and use my invite code: ${referralCode} to get 100 loyalty points (5 EGP discount) welcome bonus instantly!`,
+          ? `اشترك في وصلة لينك واستخدم كود الدعوة الخاص بي: ${referralCode} لتحصل على 100 نقطة ولاء (خصم 5 جنيهات) ترحيبية فوراً!` 
+          : `Join Wasla-Link and use my invite code: ${referralCode} to get 100 loyalty points (5 EGP discount) welcome bonus instantly!`,
         url: window.location.origin
       }).catch(console.error);
     } else {

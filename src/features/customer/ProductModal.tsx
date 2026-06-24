@@ -79,7 +79,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
       }).catch(console.error);
     } else {
       // Fallback copy to clipboard
-      navigator.clipboard.writeText(`${product.name} - SOUQ EL BALAD`);
+      navigator.clipboard.writeText(`${product.name} - WASLA-LINK`);
       showToast(t('str_33'));
     }
   };

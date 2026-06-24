@@ -64,7 +64,7 @@ export class PlaceholderService {
     }
   }
 
-  getPlaceholder(category: string, labelAr = 'سوق البلد', labelEn = 'SOUQ EL BALAD'): string {
+  getPlaceholder(category: string, labelAr = 'وصلة لينك', labelEn = 'WASLA-LINK'): string {
     const icon = this.getIconPath(category);
     const bgGradientStart = '#FF7A00'; // Wasla Orange
     const bgGradientEnd = '#FF9E46';
@@ -138,7 +138,7 @@ export class PlaceholderService {
     }
     
     // Default fallback
-    return this.getPlaceholder('default', 'منتج سوق البلد', 'SOUQ EL BALAD Product');
+    return this.getPlaceholder('default', 'منتج وصلة لينك', 'WASLA-LINK Product');
   }
 }
 

@@ -591,7 +591,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
                 <div className="text-center p-4">
                   <Upload size={24} className="text-theme-muted mx-auto mb-2" />
                   <p className="text-xs font-black text-theme-text">{t('str_108')}</p>
-                  <p className="text-[9px] text-theme-muted mt-0.5 font-bold">PNG, JPG (max 5MB)</p>
+                  <p className="text-[9px] text-theme-muted mt-0.5 font-bold">{t('str_1250')}</p>
                 </div>
               )}
               <input 
