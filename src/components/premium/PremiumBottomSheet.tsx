@@ -30,7 +30,7 @@ export const PremiumBottomSheet: React.FC<PremiumBottomSheetProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="absolute inset-0 z-50 flex flex-col justify-end">
+    <div className="fixed inset-0 z-[9999] flex flex-col justify-end">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/60 backdrop-blur-[2px] transition-opacity duration-300 animate-fade-in"

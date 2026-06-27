@@ -1,6 +1,6 @@
 import { useTranslation } from '../../hooks/useTranslation';
 import React from 'react';
-import { MapPin, Bell, Heart, ChevronLeft, Sparkles, ShoppingCart } from 'lucide-react';
+import { MapPin, Bell, Heart, ChevronLeft, Sparkles, ShoppingCart, Sun, Moon } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 
 interface PremiumHeaderProps {
@@ -19,7 +19,7 @@ export const PremiumHeader: React.FC<PremiumHeaderProps> = ({
   onLogoClick
 }) => {
   const { t } = useTranslation();
-  const { location,  notifications, isRTL, currentUser, cart } = useApp();
+  const { location,  notifications, isRTL, currentUser, cart, theme, toggleTheme } = useApp();
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
   const cartCount = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
@@ -80,6 +80,21 @@ export const PremiumHeader: React.FC<PremiumHeaderProps> = ({
 
         {/* Action Controls */}
         <div className="flex items-center gap-2">
+          {/* Theme Toggle (cycles immediately) */}
+          <button 
+            onClick={toggleTheme}
+            className="p-3 bg-theme-bg/60 border border-theme-border/60 hover:border-primary/20 text-theme-text rounded-2xl transition hover:scale-105 active:scale-95 shadow-sm theme-transition"
+            title="Toggle Theme"
+          >
+            {theme === 'orange' ? (
+              <Moon size={18} strokeWidth={2.2} />
+            ) : theme === 'midnight' ? (
+              <Sparkles size={18} className="text-purple-400" strokeWidth={2.2} />
+            ) : (
+              <Sun size={18} className="text-amber-500" strokeWidth={2.2} />
+            )}
+          </button>
+
           {/* Favorites Shortcut */}
           <button 
             onClick={openFavorites}

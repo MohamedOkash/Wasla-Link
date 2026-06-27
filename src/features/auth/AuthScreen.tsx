@@ -1,6 +1,6 @@
 import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState } from 'react';
-import { Globe, ArrowRight, ArrowLeft, Check, Store as StoreIcon, ShieldAlert } from 'lucide-react';
+import { Globe, ArrowRight, ArrowLeft, Check, Store as StoreIcon, ShieldAlert, Sun, Moon, Sparkles } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { auth, db } from '../../services/firebase';
 import { 
@@ -48,7 +48,7 @@ const EGYPT_REGIONS: Record<string, { cities: Record<string, string[]> }> = {
 
 export const AuthScreen: React.FC = () => {
   const { t } = useTranslation();
-  const { setRole, setCurrentUser, lang, setLang, theme, categories, showToast } = useApp();
+  const { setRole, setCurrentUser, lang, setLang, theme, toggleTheme, categories, showToast } = useApp();
   const [view, setView] = useState<'login' | 'register' | 'vendor_register' | 'forgot_password'>('login');
   
   // Form states
@@ -369,6 +369,21 @@ export const AuthScreen: React.FC = () => {
         className="absolute top-6 left-6 bg-theme-card border border-theme-border/60 p-2.5 rounded-2xl text-xs font-black flex items-center gap-2 hover:border-primary/20 transition active:scale-95 shadow-sm z-10"
       >
         <Globe size={15}/> {t('str_250')}
+      </button>
+
+      {/* Theme Switch (cycles immediately) */}
+      <button 
+        onClick={toggleTheme} 
+        className="absolute top-6 right-6 bg-theme-card border border-theme-border/60 p-2.5 rounded-2xl text-xs font-black flex items-center justify-center hover:border-primary/20 transition active:scale-95 shadow-sm z-10 text-theme-text"
+        title="Toggle Theme"
+      >
+        {theme === 'orange' ? (
+          <Moon size={15} />
+        ) : theme === 'midnight' ? (
+          <Sparkles size={15} className="text-purple-400" />
+        ) : (
+          <Sun size={15} className="text-amber-500" />
+        )}
       </button>
 
       <img 
