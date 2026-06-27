@@ -79,39 +79,39 @@ export const PremiumHeader: React.FC<PremiumHeaderProps> = ({
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {/* Theme Toggle (cycles immediately) */}
           <button 
             onClick={toggleTheme}
-            className="p-3 bg-theme-bg/60 border border-theme-border/60 hover:border-primary/20 text-theme-text rounded-2xl transition hover:scale-105 active:scale-95 shadow-sm theme-transition"
+            className="p-2 bg-theme-bg/60 border border-theme-border/60 hover:border-primary/20 text-theme-text rounded-[14px] transition hover:scale-105 active:scale-95 shadow-sm theme-transition"
             title="Toggle Theme"
           >
             {theme === 'orange' ? (
-              <Moon size={18} strokeWidth={2.2} />
+              <Moon size={15} strokeWidth={2.2} />
             ) : theme === 'midnight' ? (
-              <Sparkles size={18} className="text-purple-400" strokeWidth={2.2} />
+              <Sparkles size={15} className="text-purple-400" strokeWidth={2.2} />
             ) : (
-              <Sun size={18} className="text-amber-500" strokeWidth={2.2} />
+              <Sun size={15} className="text-amber-500" strokeWidth={2.2} />
             )}
           </button>
 
           {/* Favorites Shortcut */}
           <button 
             onClick={openFavorites}
-            className="p-3 bg-theme-bg/60 border border-theme-border/60 hover:border-primary/20 text-theme-text rounded-2xl transition hover:scale-105 active:scale-95 shadow-sm theme-transition"
+            className="p-2 bg-theme-bg/60 border border-theme-border/60 hover:border-primary/20 text-theme-text rounded-[14px] transition hover:scale-105 active:scale-95 shadow-sm theme-transition"
           >
-            <Heart size={18} className="text-theme-text hover:text-red-500 hover:fill-red-500/20 transition-colors" strokeWidth={2.2} />
+            <Heart size={15} className="text-theme-text hover:text-red-500 hover:fill-red-500/20 transition-colors" strokeWidth={2.2} />
           </button>
 
           {/* Cart Button */}
           {openCart && (
             <button 
               onClick={openCart}
-              className="p-3 bg-theme-bg/60 border border-theme-border/60 hover:border-primary/20 text-theme-text rounded-2xl relative transition hover:scale-105 active:scale-95 shadow-sm theme-transition"
+              className="p-2 bg-theme-bg/60 border border-theme-border/60 hover:border-primary/20 text-theme-text rounded-[14px] relative transition hover:scale-105 active:scale-95 shadow-sm theme-transition"
             >
-              <ShoppingCart size={18} className={`text-theme-text ${cartCount > 0 ? 'text-primary' : ''}`} strokeWidth={2.2} />
+              <ShoppingCart size={15} className={`text-theme-text ${cartCount > 0 ? 'text-primary' : ''}`} strokeWidth={2.2} />
               {cartCount > 0 && (
-                <span className={`absolute -top-1.5 ${isRTL ? '-right-1.5' : '-left-1.5'} bg-red-500 text-white text-[10px] font-black min-w-[24px] h-[24px] px-1 rounded-full flex items-center justify-center border-2 border-theme-card animate-pulse shadow-md font-sans`}>
+                <span className={`absolute -top-1 ${isRTL ? '-right-1' : '-left-1'} bg-red-500 text-white text-[8px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border border-theme-card animate-pulse shadow-md font-sans`}>
                   {cartCount > 99 ? '99+' : cartCount}
                 </span>
               )}
@@ -121,11 +121,11 @@ export const PremiumHeader: React.FC<PremiumHeaderProps> = ({
           {/* Notifications Bell */}
           <button 
             onClick={openNotifications}
-            className="p-3 bg-theme-bg/60 border border-theme-border/60 hover:border-primary/20 text-theme-text rounded-2xl relative transition hover:scale-105 active:scale-95 shadow-sm theme-transition"
+            className="p-2 bg-theme-bg/60 border border-theme-border/60 hover:border-primary/20 text-theme-text rounded-[14px] relative transition hover:scale-105 active:scale-95 shadow-sm theme-transition"
           >
-            <Bell size={18} className={`text-theme-text ${unreadCount > 0 ? 'animate-bounce-slight' : ''}`} strokeWidth={2.2} />
+            <Bell size={15} className={`text-theme-text ${unreadCount > 0 ? 'animate-bounce-slight' : ''}`} strokeWidth={2.2} />
             {unreadCount > 0 && (
-              <span className={`absolute -top-1.5 ${isRTL ? '-right-1.5' : '-left-1.5'} bg-primary text-white text-[10px] font-black min-w-[24px] h-[24px] px-1 rounded-full flex items-center justify-center border-2 border-theme-card animate-pulse shadow-md font-sans`}>
+              <span className={`absolute -top-1 ${isRTL ? '-right-1' : '-left-1'} bg-primary text-white text-[8px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border border-theme-card animate-pulse shadow-md font-sans`}>
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}

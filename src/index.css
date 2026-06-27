@@ -98,8 +98,6 @@
 /* Dynamic Purple Background Shift */
 .theme-purple-glass .bg-theme-bg {
   background: linear-gradient(135deg, #0b071e 0%, #170d35 40%, #200f49 70%, #070314 100%);
-  background-size: 200% 200%;
-  animation: dynamicPurpleBg 15s ease infinite;
 }
 
 body {
@@ -223,21 +221,23 @@ body {
 }
 
 @keyframes pulseSlow {
-  0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.7; }
-  50% { transform: scale(1.15) translate(40px, -30px); opacity: 0.9; }
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.85; }
 }
 
 @keyframes pulseSlowDelay {
-  0%, 100% { transform: scale(1.1) translate(0, 0); opacity: 0.6; }
-  50% { transform: scale(0.95) translate(-40px, 30px); opacity: 0.8; }
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.75; }
 }
 
 .animate-pulse-slow {
   animation: pulseSlow 12s ease-in-out infinite;
+  will-change: opacity;
 }
 
 .animate-pulse-slow-delay {
   animation: pulseSlowDelay 15s ease-in-out infinite;
+  will-change: opacity;
 }
 
 /* Shimmer skeleton (Component 13) */
