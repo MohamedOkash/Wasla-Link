@@ -35,6 +35,7 @@ import {
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth, db } from '../services/firebase';
 import { cacheService } from '../services/cache.service';
+import { themes, ThemeName } from '../theme/themes';
 
 export interface CartItem {
   id: string;
@@ -145,8 +146,8 @@ interface AppContextType {
   stockMovements: StockMovement[];
   addStockMovement: (productId: string, quantity: number, type: StockMovement['type'], reason: string) => void;
   
-  theme: 'orange' | 'midnight';
-  setTheme: (t: 'orange' | 'midnight') => void;
+  theme: ThemeName;
+  setTheme: (t: ThemeName) => void;
   toggleTheme: () => void;
 
   notifications: Notification[];
@@ -261,9 +262,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
   
   const [toasts, setToasts] = useState<ToastItem[]>([]);
-  const [theme, setThemeState] = useState<'orange' | 'midnight'>(() => {
-    return (localStorage.getItem('waslalink_theme') as 'orange' | 'midnight') || 'orange';
+  const [theme, setThemeState] = useState<ThemeName>(() => {
+    return (localStorage.getItem('waslalink_theme') as ThemeName) || 'orange';
   });
+
+  useEffect(() => {
+    const applyThemeTokens = (themeName: ThemeName) => {
+      const root = document.documentElement;
+      const themeVars = themes[themeName];
+      if (themeVars) {
+        Object.entries(themeVars).forEach(([key, val]) => {
+          root.style.setProperty(key, val);
+        });
+      }
+    };
+    applyThemeTokens(theme);
+  }, [theme]);
 
   const [activeCoupon, setActiveCoupon] = useState<Coupon | null>(null);
 
@@ -760,13 +774,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     window.location.reload();
   };
 
-  const setTheme = (t: 'orange' | 'midnight') => {
+  const setTheme = (t: ThemeName) => {
     setThemeState(t);
     localStorage.setItem('waslalink_theme', t);
   };
 
   const toggleTheme = () => {
-    setTheme(theme === 'orange' ? 'midnight' : 'orange');
+    if (theme === 'orange') setTheme('midnight');
+    else if (theme === 'midnight') setTheme('purple-glass');
+    else setTheme('orange');
   };
 
   const toggleFavoriteStore = async (storeId: string) => {

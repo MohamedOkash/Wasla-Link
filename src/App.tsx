@@ -15,11 +15,23 @@ function AppContent() {
   return (
     <div 
       dir={isRTL ? 'rtl' : 'ltr'} 
-      className={`bg-black min-h-screen font-sans theme-transition ${theme === 'midnight' ? 'theme-midnight text-white' : 'text-gray-950'}`}
+      className={`bg-black min-h-screen font-sans theme-transition ${
+        theme === 'midnight' 
+          ? 'theme-midnight text-white' 
+          : theme === 'purple-glass' 
+          ? 'theme-purple-glass text-white' 
+          : 'text-gray-950'
+      }`}
     >
       <div 
         className={`${isDesktop ? 'max-w-[1200px] min-h-screen' : 'max-w-[400px] h-screen'} mx-auto bg-theme-bg theme-transition relative shadow-[0_0_50px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col`}
       >
+        {theme === 'purple-glass' && (
+          <>
+            <div className="absolute top-[-10%] left-[-20%] w-[90%] h-[60%] rounded-full bg-purple-600/20 blur-[100px] pointer-events-none animate-pulse-slow z-0"></div>
+            <div className="absolute bottom-[-10%] right-[-20%] w-[90%] h-[60%] rounded-full bg-pink-600/15 blur-[100px] pointer-events-none animate-pulse-slow-delay z-0"></div>
+          </>
+        )}
         <ErrorBoundary>
           <AppRoutes />
           <CartConflictModal />

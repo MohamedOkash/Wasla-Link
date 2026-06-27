@@ -19,12 +19,12 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const baseStyle = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 active:scale-98 disabled:opacity-50 disabled:pointer-events-none focus:outline-none';
+  const baseStyle = 'inline-flex items-center justify-center font-black rounded-xl transition-all duration-[var(--motion-duration-fast,150ms)] ease-[var(--motion-timing-ease-out,ease-out)] active:scale-[0.96] hover:scale-[1.02] hover:-translate-y-[1px] disabled:opacity-50 disabled:pointer-events-none focus:outline-none';
   
   const variants = {
-    primary: 'bg-primary text-white hover:bg-primary-hover shadow-sm shadow-primary/20 hover:shadow-md hover:shadow-primary/30',
+    primary: 'bg-primary text-white hover:bg-primary-hover shadow-sm hover:shadow-[0_4px_16px_var(--color-primary-glow)]',
     secondary: 'bg-theme-card text-theme-text border border-theme-border hover:bg-theme-border-hover',
-    outline: 'bg-transparent text-theme-text border border-theme-border hover:border-primary/45 hover:bg-theme-border/20',
+    outline: 'bg-transparent text-theme-text border border-theme-border hover:border-primary/50 hover:bg-theme-border/20',
     danger: 'bg-red-500 text-white hover:bg-red-600 shadow-sm shadow-red-500/20 hover:shadow-md',
     ghost: 'bg-transparent text-theme-muted hover:text-theme-text hover:bg-theme-border/40',
     glass: 'glass-effect text-theme-text hover:bg-theme-border-hover/30',

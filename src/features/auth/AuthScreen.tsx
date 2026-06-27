@@ -48,7 +48,7 @@ const EGYPT_REGIONS: Record<string, { cities: Record<string, string[]> }> = {
 
 export const AuthScreen: React.FC = () => {
   const { t } = useTranslation();
-  const { setRole, setCurrentUser, lang, setLang,  categories, showToast } = useApp();
+  const { setRole, setCurrentUser, lang, setLang, theme, categories, showToast } = useApp();
   const [view, setView] = useState<'login' | 'register' | 'vendor_register' | 'forgot_password'>('login');
   
   // Form states
@@ -349,10 +349,24 @@ export const AuthScreen: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-6 bg-theme-bg text-theme-text relative overflow-y-auto animate-fade-in theme-transition font-sans">
+      {/* Ambient background glows for premium experience (Component 14) */}
+      {theme === 'purple-glass' && (
+        <>
+          <div className="absolute top-[-10%] left-[-15%] w-[80%] h-[50%] rounded-full bg-purple-600/20 blur-[100px] pointer-events-none animate-pulse-slow z-0"></div>
+          <div className="absolute bottom-[-10%] right-[-15%] w-[80%] h-[50%] rounded-full bg-pink-600/15 blur-[100px] pointer-events-none animate-pulse-slow-delay z-0"></div>
+        </>
+      )}
+      {theme === 'midnight' && (
+        <>
+          <div className="absolute top-[-10%] left-[-15%] w-[80%] h-[50%] rounded-full bg-blue-600/10 blur-[120px] pointer-events-none animate-pulse-slow z-0"></div>
+          <div className="absolute bottom-[-10%] right-[-15%] w-[80%] h-[50%] rounded-full bg-indigo-600/10 blur-[120px] pointer-events-none animate-pulse-slow-delay z-0"></div>
+        </>
+      )}
+
       {/* Lang Switch */}
       <button 
         onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')} 
-        className="absolute top-6 left-6 bg-theme-card border border-theme-border/60 p-2.5 rounded-2xl text-xs font-black flex items-center gap-2 hover:border-primary/20 transition active:scale-95 shadow-sm"
+        className="absolute top-6 left-6 bg-theme-card border border-theme-border/60 p-2.5 rounded-2xl text-xs font-black flex items-center gap-2 hover:border-primary/20 transition active:scale-95 shadow-sm z-10"
       >
         <Globe size={15}/> {t('str_250')}
       </button>
@@ -360,122 +374,126 @@ export const AuthScreen: React.FC = () => {
       <img 
         src="/logo.jpg" 
         alt="Logo"
-        className="w-24 h-24 rounded-full mb-8 shadow-lg"
+        className="w-24 h-24 object-cover rounded-full mb-8 shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-theme-border/40 hover:scale-105 hover:rotate-3 transition duration-300 relative z-10"
       />
 
       {/* LOGIN VIEW */}
       {view === 'login' && (
-        <form onSubmit={handleEmailLogin} className="w-full max-w-sm space-y-4">
-          <PremiumInput 
-            type="email" 
-            placeholder={t('email')} 
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={loading}
-          />
-          <PremiumInput 
-            type="password" 
-            placeholder={t('password')} 
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={loading}
-          />
-          <PremiumButton 
-            type="submit"
-            isLoading={loading}
-            className="w-full py-3.5"
-          >
-            {t('login')}
-          </PremiumButton>
-
-          <div className="border-t border-theme-border/60 my-6 pt-4 text-center">
-            <span className="text-[10px] font-black text-theme-muted uppercase tracking-wider">{t('str_317')}</span>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-2">
-            <button 
-              type="button"
-              onClick={() => handleDemoLogin('vendor')} 
-              className="bg-primary/10 text-primary font-black py-3 rounded-xl border border-primary/20 hover:bg-primary/15 transition text-[10px] truncate"
+        <PremiumCard className="w-full max-w-sm p-6 bg-theme-card/75 border border-theme-border/60 shadow-lg relative z-10 animate-pop-in">
+          <form onSubmit={handleEmailLogin} className="space-y-4">
+            <PremiumInput 
+              type="email" 
+              placeholder={t('email')} 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+            />
+            <PremiumInput 
+              type="password" 
+              placeholder={t('password')} 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+            />
+            <PremiumButton 
+              type="submit"
+              isLoading={loading}
+              className="w-full py-3.5"
             >
-              {t('str_318')}
-            </button>
-            <button 
-              type="button"
-              onClick={() => handleDemoLogin('driver')} 
-              className="bg-primary/10 text-primary font-black py-3 rounded-xl border border-primary/20 hover:bg-primary/15 transition text-[10px] truncate"
-            >
-              {t('str_319')}
-            </button>
-          </div>
+              {t('login')}
+            </PremiumButton>
 
-          <p 
-            className="text-center text-xs font-bold text-theme-muted mt-6 cursor-pointer hover:text-primary transition" 
-            onClick={() => { setView('register'); setEmail(''); setPassword(''); }}
-          >
-            {t('str_320')}
-          </p>
-          <p 
-            className="text-center text-xs font-black text-primary cursor-pointer hover:underline" 
-            onClick={() => { setView('vendor_register'); setEmail(''); setPassword(''); setRegStep(1); }}
-          >
-            {t('str_321')}
-          </p>
-        </form>
+            <div className="border-t border-theme-border/60 my-6 pt-4 text-center">
+              <span className="text-[10px] font-black text-theme-muted uppercase tracking-wider">{t('str_317')}</span>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2">
+              <button 
+                type="button"
+                onClick={() => handleDemoLogin('vendor')} 
+                className="bg-primary/10 text-primary font-black py-3 rounded-xl border border-primary/20 hover:bg-primary/15 transition text-[10px] truncate"
+              >
+                {t('str_318')}
+              </button>
+              <button 
+                type="button"
+                onClick={() => handleDemoLogin('driver')} 
+                className="bg-primary/10 text-primary font-black py-3 rounded-xl border border-primary/20 hover:bg-primary/15 transition text-[10px] truncate"
+              >
+                {t('str_319')}
+              </button>
+            </div>
+
+            <p 
+              className="text-center text-xs font-bold text-theme-muted mt-6 cursor-pointer hover:text-primary transition" 
+              onClick={() => { setView('register'); setEmail(''); setPassword(''); }}
+            >
+              {t('str_320')}
+            </p>
+            <p 
+              className="text-center text-xs font-black text-primary cursor-pointer hover:underline" 
+              onClick={() => { setView('vendor_register'); setEmail(''); setPassword(''); setRegStep(1); }}
+            >
+              {t('str_321')}
+            </p>
+          </form>
+        </PremiumCard>
       )}
 
       {/* CUSTOMER REGISTER VIEW */}
       {view === 'register' && (
-        <form onSubmit={handleCustomerRegister} className="w-full max-w-sm space-y-4">
-          <PremiumInput 
-            type="text" 
-            placeholder={t('name')} 
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            disabled={loading}
-          />
-          <PremiumInput 
-            type="email" 
-            placeholder={t('email')} 
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={loading}
-          />
-          <PremiumInput 
-            type="text" 
-            placeholder={t('str_322')} 
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            disabled={loading}
-          />
-          <PremiumInput 
-            type="text" 
-            placeholder={t('str_323')} 
-            value={referralCodeInput}
-            onChange={(e) => setReferralCodeInput(e.target.value)}
-            disabled={loading}
-          />
-          <PremiumInput 
-            type="password" 
-            placeholder={t('password')} 
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={loading}
-          />
-          <PremiumButton 
-            type="submit"
-            isLoading={loading}
-            className="w-full py-3.5"
-          >
-            {t('register')}
-          </PremiumButton>
-          <p 
-            className="text-center text-xs font-bold text-theme-muted mt-4 cursor-pointer hover:text-primary transition" 
-            onClick={() => setView('login')}
-          >
-            {t('str_324')}
-          </p>
-        </form>
+        <PremiumCard className="w-full max-w-sm p-6 bg-theme-card/75 border border-theme-border/60 shadow-lg relative z-10 animate-pop-in">
+          <form onSubmit={handleCustomerRegister} className="space-y-4">
+            <PremiumInput 
+              type="text" 
+              placeholder={t('name')} 
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={loading}
+            />
+            <PremiumInput 
+              type="email" 
+              placeholder={t('email')} 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+            />
+            <PremiumInput 
+              type="text" 
+              placeholder={t('str_322')} 
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              disabled={loading}
+            />
+            <PremiumInput 
+              type="text" 
+              placeholder={t('str_323')} 
+              value={referralCodeInput}
+              onChange={(e) => setReferralCodeInput(e.target.value)}
+              disabled={loading}
+            />
+            <PremiumInput 
+              type="password" 
+              placeholder={t('password')} 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+            />
+            <PremiumButton 
+              type="submit"
+              isLoading={loading}
+              className="w-full py-3.5"
+            >
+              {t('register')}
+            </PremiumButton>
+            <p 
+              className="text-center text-xs font-bold text-theme-muted mt-4 cursor-pointer hover:text-primary transition" 
+              onClick={() => setView('login')}
+            >
+              {t('str_324')}
+            </p>
+          </form>
+        </PremiumCard>
       )}
 
       {/* SMART VENDOR ONBOARDING WIZARD */}

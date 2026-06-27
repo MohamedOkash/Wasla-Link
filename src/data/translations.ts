@@ -69,6 +69,7 @@ export const translations: Record<string, Record<string, string>> = {
     theme: 'مظهر التطبيق',
     themeOrange: 'وصلة برتقالي 🍊',
     themeMidnight: 'ميدنايت لينك 🌙',
+    themePurpleGlass: 'أرجواني جلاسي 🔮',
 
     // Favorites
     favorites: 'المفضلة',
@@ -184,6 +185,7 @@ export const translations: Record<string, Record<string, string>> = {
     theme: 'App Visual Theme',
     themeOrange: 'Wasla Orange 🍊',
     themeMidnight: 'Midnight Link 🌙',
+    themePurpleGlass: 'Purple Glass 🔮',
 
     // Favorites
     favorites: 'Favorites',

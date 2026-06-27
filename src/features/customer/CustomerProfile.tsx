@@ -18,6 +18,7 @@ import { PremiumInput } from '../../components/premium/PremiumInput';
 import { PremiumCard } from '../../components/premium/PremiumCard';
 import { PremiumBadge } from '../../components/premium/PremiumBadge';
 import { PremiumEmptyState } from '../../components/premium/PremiumEmptyState';
+import { PremiumBottomSheet } from '../../components/premium/PremiumBottomSheet';
 
 interface CustomerProfileProps {
   navigate?: (name: string, params?: any) => void;
@@ -34,6 +35,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
     isRTL, 
     goHome,
     theme,
+    setTheme,
     toggleTheme,
     savedAddresses,
     addAddress,
@@ -78,6 +80,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
 
   // Forgot Password Modal States
   const [showForgotModal, setShowForgotModal] = useState(false);
+  const [showThemeModal, setShowThemeModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotStep, setForgotStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -674,16 +677,22 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
 
             {/* Grid item: Theme settings */}
             <PremiumCard 
-              onClick={toggleTheme}
+              onClick={() => setShowThemeModal(true)}
               className="p-4 flex flex-col justify-between h-32 bg-theme-card/65"
             >
-              <div className="bg-amber-500/10 p-2.5 rounded-xl text-amber-500 w-max transition-transform duration-300 hover:scale-105">
+              <div className={`p-2.5 rounded-xl w-max transition-transform duration-300 hover:scale-105 ${
+                theme === 'orange' 
+                  ? 'bg-amber-500/10 text-amber-500' 
+                  : theme === 'midnight'
+                  ? 'bg-indigo-500/10 text-indigo-400'
+                  : 'bg-purple-500/10 text-purple-400'
+              }`}>
                 <Settings size={18} />
               </div>
               <div>
                 <h3 className="font-black text-xs text-theme-text leading-none">{t('str_278')}</h3>
                 <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">
-                  {theme === 'orange' ? (t('str_279')) : (t('str_280'))}
+                  {theme === 'orange' ? t('str_279') : theme === 'midnight' ? t('str_280') : t('str_purple_glass')}
                 </p>
               </div>
             </PremiumCard>
@@ -860,6 +869,93 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
           </div>
         </div>
       )}
+
+      {/* THEME SELECTION BOTTOM SHEET (Component 15) */}
+      <PremiumBottomSheet 
+        isOpen={showThemeModal} 
+        onClose={() => setShowThemeModal(false)} 
+        title={t('str_278')}
+      >
+        <div className="space-y-4 text-right">
+          {/* Orange Theme Option */}
+          <button
+            onClick={() => { setTheme('orange'); setShowThemeModal(false); }}
+            className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all text-right theme-transition ${
+              theme === 'orange' 
+                ? 'border-orange-500 bg-orange-500/10 ring-1 ring-orange-500/50' 
+                : 'border-theme-border/60 bg-theme-card hover:bg-theme-border/30'
+            }`}
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white shadow-md shadow-orange-500/20 shrink-0">
+                🍊
+              </div>
+              <div className="text-right">
+                <span className="text-xs font-black text-theme-text block">{t('str_279')}</span>
+                <span className="text-[9px] text-theme-muted font-bold block mt-0.5">
+                  {lang === 'ar' ? 'اللون البرتقالي الكلاسيكي اللامع' : 'Classic bright orange experience'}
+                </span>
+              </div>
+            </div>
+            <div className="flex gap-1 shrink-0">
+              <span className="w-4 h-4 rounded-full bg-[#FF7A00] border border-white/20"></span>
+              <span className="w-4 h-4 rounded-full bg-[#4F46E5] border border-white/20 -ml-2"></span>
+            </div>
+          </button>
+
+          {/* Midnight Theme Option */}
+          <button
+            onClick={() => { setTheme('midnight'); setShowThemeModal(false); }}
+            className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all text-right theme-transition ${
+              theme === 'midnight' 
+                ? 'border-[#4F7BFF] bg-[#4F7BFF]/10 ring-1 ring-[#4F7BFF]/50' 
+                : 'border-theme-border/60 bg-theme-card hover:bg-theme-border/30'
+            }`}
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1E293B] to-[#0F172A] flex items-center justify-center text-white shadow-md border border-[#293548] shrink-0">
+                🌙
+              </div>
+              <div className="text-right">
+                <span className="text-xs font-black text-theme-text block">{t('str_280')}</span>
+                <span className="text-[9px] text-theme-muted font-bold block mt-0.5">
+                  {lang === 'ar' ? 'مظهر داكن كربوني مريح للعين' : 'Elegant deep charcoal blue-slate'}
+                </span>
+              </div>
+            </div>
+            <div className="flex gap-1 shrink-0">
+              <span className="w-4 h-4 rounded-full bg-[#4F7BFF] border border-white/20"></span>
+              <span className="w-4 h-4 rounded-full bg-[#7C3AED] border border-white/20 -ml-2"></span>
+            </div>
+          </button>
+
+          {/* Purple Glass Theme Option */}
+          <button
+            onClick={() => { setTheme('purple-glass'); setShowThemeModal(false); }}
+            className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all text-right theme-transition ${
+              theme === 'purple-glass' 
+                ? 'border-purple-500 bg-purple-500/10 ring-1 ring-purple-500/50' 
+                : 'border-theme-border/60 bg-theme-card hover:bg-theme-border/30'
+            }`}
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white shadow-md shadow-purple-500/20 shrink-0">
+                🔮
+              </div>
+              <div className="text-right">
+                <span className="text-xs font-black text-theme-text block">{t('str_purple_glass')}</span>
+                <span className="text-[9px] text-theme-muted font-bold block mt-0.5">
+                  {lang === 'ar' ? 'مظهر أرجواني زجاجي ديناميكي' : 'Cosmic glassmorphic neon gradients'}
+                </span>
+              </div>
+            </div>
+            <div className="flex gap-1 shrink-0">
+              <span className="w-4 h-4 rounded-full bg-[#A855F7] border border-white/20"></span>
+              <span className="w-4 h-4 rounded-full bg-[#EC4899] border border-white/20 -ml-2"></span>
+            </div>
+          </button>
+        </div>
+      </PremiumBottomSheet>
     </div>
   );
 };
