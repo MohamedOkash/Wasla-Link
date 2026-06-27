@@ -21,6 +21,6 @@ e6d625a Add firebase hosting config
 6aebbfc Fix AdminDashboard imports and add gitignore
 c8b8a53 Refactor application and add missing components
 d1b4656 Clean up workspace
-e8d88fa Setup initial Vite + React project with complete Souq El Balad structure
+e8d88fa Setup initial Vite + React project with complete Wasla Link structure
 ```
 *(Note: Project history was recently initialized or squashed, so only 7 commits are currently present in the immediate log of this refactor).*

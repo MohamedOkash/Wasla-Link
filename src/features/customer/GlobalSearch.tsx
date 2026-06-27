@@ -288,7 +288,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ closeSearch, navigat
                         <h4 className="font-black text-xs text-theme-text truncate leading-tight">{prod.name}</h4>
                         <p className="text-[10px] text-theme-muted font-bold truncate mt-1">{prod.desc}</p>
                         <p className="text-xs font-black text-primary mt-1.5 flex items-center gap-2">
-                          <span>{prod.price} ج.م</span>
+                          <span>{prod.price} {t('currencyEGP')}</span>
                           <span className="text-theme-muted font-bold text-[9px] bg-theme-bg px-2 py-0.5 rounded border border-theme-border">
                             {prod.shop?.name || 'المتجر'}
                           </span>

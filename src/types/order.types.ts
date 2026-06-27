@@ -16,8 +16,8 @@ export interface Order {
   subtotal: number;
   deliveryFee: number;
   total: number;
-  paymentMethod: 'cash_on_delivery' | 'instapay' | 'paymob_card' | 'paymob_wallet';
-  paymentStatus?: 'pending' | 'authorized' | 'paid' | 'failed' | 'refunded' | 'cancelled';
+  paymentMethod: 'cash_on_delivery' | 'vodafone_cash' | 'instapay';
+  paymentStatus?: 'pending' | 'pending_verification' | 'paid' | 'failed' | 'payment_failed' | 'refunded' | 'cancelled';
   paymentId?: string;
   paymentMetadata?: Record<string, any>;
   paymentVerifiedAt?: any;
@@ -48,4 +48,12 @@ export interface Order {
   storeLocation?: { lat: number; lng: number };
   completedAt?: string;
   updatedAt?: string;
+  deliveryDistance?: number;
+  deliveryDuration?: number;
+  estimatedDriverEarnings?: number;
+  verificationStatus?: 'pending' | 'approved' | 'rejected';
+  receiptUrl?: string;
+  receiptMetadata?: Record<string, any>;
+  financialProcessed?: boolean;
+  financialProcessedAt?: any;
 }

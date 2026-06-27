@@ -62,12 +62,12 @@ export const DriverProfile: React.FC = () => {
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-theme-card border border-theme-border p-4 rounded-[24px] theme-transition shadow-sm">
           <span className="text-[10px] text-theme-muted font-black block uppercase tracking-wider">{t('str_1113')}</span>
-          <p className="text-lg font-black text-theme-text mt-2">{totalEarnings} ج.م</p>
+          <p className="text-lg font-black text-theme-text mt-2">{totalEarnings} {t('currencyEGP')}</p>
           <span className="text-[8px] text-green-500 font-bold block mt-1">{t('str_1126')}</span>
         </div>
         <div className="bg-theme-card border border-theme-border p-4 rounded-[24px] theme-transition shadow-sm">
           <span className="text-[10px] text-theme-muted font-black block uppercase tracking-wider">{t('str_1127')}</span>
-          <p className="text-lg font-black text-theme-text mt-2">{totalEarnings + 145} ج.م</p>
+          <p className="text-lg font-black text-theme-text mt-2">{totalEarnings + 145} {t('currencyEGP')}</p>
           <span className="text-[8px] text-primary font-bold block mt-1">{t('str_1128')}</span>
         </div>
       </div>

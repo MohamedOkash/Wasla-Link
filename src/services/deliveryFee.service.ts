@@ -1,102 +1,114 @@
 import { db } from './firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { PlatformSettings } from '../types/financial';
 
-export interface DeliveryFeeConfig {
-  sameVillageFee: number;
-  nearVillageFee: number;
-  farVillageFee: number;
-  sameVillageEta: string;
-  nearVillageEta: string;
-  farVillageEta: string;
-  villageClassifications: Record<string, 'same' | 'near' | 'far'>;
-}
-
-export const DEFAULT_DELIVERY_FEE_CONFIG: DeliveryFeeConfig = {
-  sameVillageFee: 5,
-  nearVillageFee: 15,
-  farVillageFee: 25,
-  sameVillageEta: '15-20 دقيقة',
-  nearVillageEta: '25-35 دقيقة',
-  farVillageEta: '40-60 دقيقة',
-  villageClassifications: {
-    'ميت غراب': 'same',
-    'السنبلاوين': 'near',
-    'برقين': 'near',
-    'البوها': 'far',
-    'طماي الزهايرة': 'far',
-    'ميت علي': 'far'
-  }
+export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
+  commissionPercent: 10,
+  driverBonusPercent: 0,
+  freeDeliveryEnabled: false,
+  promotionSubsidyEnabled: false,
+  maintenanceRevenueLock: false,
+  baseDeliveryFee: 10,
+  pricePerKm: 3,
+  minimumDeliveryFee: 10,
+  maximumDeliveryFee: 100,
+  peakHourMultiplier: 5, // Flat fee added
+  nightMultiplier: 5,    // Flat fee added
+  holidayMultiplier: 10,  // Flat fee added
+  rainMultiplier: 15,    // Flat fee added
+  remoteAreaMultiplier: 10, // Flat fee added
+  freeDeliveryThreshold: 250,
+  roadFactor: 1.35,
+  averageSpeed: 30
 };
 
 class DeliveryFeeService {
-  private config: DeliveryFeeConfig | null = null;
+  private settings: PlatformSettings | null = null;
 
-  async getConfig(): Promise<DeliveryFeeConfig> {
-    if (this.config) return this.config;
+  async getSettings(): Promise<PlatformSettings> {
+    if (this.settings) return this.settings;
     try {
-      const docRef = doc(db, 'config', 'deliveryFees');
+      const docRef = doc(db, 'platformSettings', 'default');
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        this.config = docSnap.data() as DeliveryFeeConfig;
+        this.settings = { ...DEFAULT_PLATFORM_SETTINGS, ...docSnap.data() } as PlatformSettings;
       } else {
-        await setDoc(docRef, DEFAULT_DELIVERY_FEE_CONFIG);
-        this.config = DEFAULT_DELIVERY_FEE_CONFIG;
+        await setDoc(docRef, DEFAULT_PLATFORM_SETTINGS);
+        this.settings = DEFAULT_PLATFORM_SETTINGS;
       }
-      return this.config;
+      return this.settings;
     } catch (err) {
-      console.error('Error fetching delivery fee config:', err);
-      return DEFAULT_DELIVERY_FEE_CONFIG;
+      console.error('Error fetching platform settings:', err);
+      return DEFAULT_PLATFORM_SETTINGS;
     }
   }
 
-  async saveConfig(newConfig: DeliveryFeeConfig): Promise<void> {
-    const docRef = doc(db, 'config', 'deliveryFees');
-    await setDoc(docRef, newConfig);
-    this.config = newConfig;
+  async saveSettings(newSettings: PlatformSettings): Promise<void> {
+    const docRef = doc(db, 'platformSettings', 'default');
+    await setDoc(docRef, newSettings);
+    this.settings = newSettings;
   }
 
+  // Retain for fallback / backwards compatibility
   calculateFeeAndEta(
     storeVillage: string,
     customerVillage: string,
     storeBaseFee: number,
     storeBaseEta: string,
-    config: DeliveryFeeConfig
+    config: any
   ): { fee: number; eta: string } {
-    if (!customerVillage) {
-      return { fee: storeBaseFee, eta: storeBaseEta };
+    const baseFee = storeBaseFee || 15;
+    const eta = storeBaseEta || '25-35 دقيقة';
+    return { fee: baseFee, eta };
+  }
+
+  calculateSmartFee(
+    roadDistanceKm: number,
+    settings: PlatformSettings,
+    conditions: {
+      isPeak?: boolean;
+      isNight?: boolean;
+      isHoliday?: boolean;
+      isRain?: boolean;
+      isRemote?: boolean;
+      orderSubtotal?: number;
+    } = {}
+  ): number {
+    if (settings.freeDeliveryEnabled) return 0;
+    if (
+      conditions.orderSubtotal !== undefined &&
+      settings.freeDeliveryThreshold > 0 &&
+      conditions.orderSubtotal >= settings.freeDeliveryThreshold
+    ) {
+      return 0;
     }
 
-    if (storeVillage === customerVillage) {
-      return {
-        fee: config.sameVillageFee,
-        eta: config.sameVillageEta
-      };
+    // Formula: Base Fee + (Road Distance * Price Per KM)
+    let fee = settings.baseDeliveryFee + (roadDistanceKm * settings.pricePerKm);
+
+    // Apply flat additions for Peak, Night, Holiday, Rain, Remote
+    if (conditions.isPeak) {
+      fee += settings.peakHourMultiplier || 0;
+    }
+    if (conditions.isNight) {
+      fee += settings.nightMultiplier || 0;
+    }
+    if (conditions.isHoliday) {
+      fee += settings.holidayMultiplier || 0;
+    }
+    if (conditions.isRain) {
+      fee += settings.rainMultiplier || 0;
+    }
+    if (conditions.isRemote) {
+      fee += settings.remoteAreaMultiplier || 0;
     }
 
-    const classification = config.villageClassifications[customerVillage];
-    if (classification === 'same') {
-      return {
-        fee: config.sameVillageFee,
-        eta: config.sameVillageEta
-      };
-    } else if (classification === 'near') {
-      return {
-        fee: config.nearVillageFee,
-        eta: config.nearVillageEta
-      };
-    } else if (classification === 'far') {
-      return {
-        fee: config.farVillageFee,
-        eta: config.farVillageEta
-      };
-    }
+    // Constrain between min and max fees
+    fee = Math.max(settings.minimumDeliveryFee, Math.min(settings.maximumDeliveryFee, fee));
 
-    // Default fallback
-    return {
-      fee: storeBaseFee || config.nearVillageFee,
-      eta: storeBaseEta || config.nearVillageEta
-    };
+    return Math.round(fee);
   }
 }
 
 export const deliveryFeeService = new DeliveryFeeService();
+export default deliveryFeeService;

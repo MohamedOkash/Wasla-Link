@@ -19,6 +19,31 @@ export const DriverDashboard: React.FC = () => {
   const { orders, updateOrderStatus } = useApp();
   const [incomingOrder, setIncomingOrder] = useState<any>(null);
   const [assignmentTimer, setAssignmentTimer] = useState<number>(30);
+
+  // Sync active driver profile from 'drivers' collection in real-time
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+
+    const unsub = onSnapshot(doc(db, 'drivers', currentUser.uid), (docSnap) => {
+      if (docSnap.exists()) {
+        setDriver({ id: docSnap.id, ...docSnap.data() });
+      } else {
+        // Fallback profile if drivers document is not created yet
+        setDriver({
+          id: currentUser.uid,
+          name: currentUser.name || 'سائق وصلة لينك',
+          availability: 'offline',
+          completedOrders: 0,
+          rating: 5.0,
+          totalEarnings: 0
+        });
+      }
+    }, (err) => {
+      console.error("Failed to sync driver profile:", err);
+    });
+
+    return () => unsub();
+  }, [currentUser?.uid]);
   
   // Listen for assigned orders
   useEffect(() => {
@@ -451,10 +476,9 @@ export const DriverDashboard: React.FC = () => {
                 </div>
                 <div className="h-8 w-px bg-theme-border" />
                 <div className="text-center">
-                  <span className="block text-theme-secondary text-xs">{t('str_1106')}</span>
+                  <span className="block text-theme-secondary text-xs">{isRTL ? 'الأرباح المقدرة' : 'Estimated Earnings'}</span>
                   <span className="font-bold text-green-500">
-                    {(incomingOrder.assignmentDistance || 5) > 12 ? 50 : (incomingOrder.assignmentDistance || 5) > 8 ? 35 : (incomingOrder.assignmentDistance || 5) > 5 ? 25 : (incomingOrder.assignmentDistance || 5) > 3 ? 20 : 15}
-                    {t('str_1107')}
+                    {incomingOrder.estimatedEarnings ?? incomingOrder.driverEarnings ?? Math.round(15 + (incomingOrder.assignmentDistance || 5) * 3)} {t('currencyEGP') || 'ج.م'}
                   </span>
                 </div>
               </div>

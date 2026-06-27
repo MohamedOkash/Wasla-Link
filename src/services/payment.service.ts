@@ -1,51 +1,84 @@
 import { db } from './firebase';
-import { collection, doc, addDoc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { collection, doc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
-export type PaymentMethod = 'cash_on_delivery' | 'instapay' | 'paymob_card' | 'paymob_wallet';
-export type PaymentStatus = 'pending' | 'authorized' | 'paid' | 'failed' | 'refunded' | 'cancelled';
+import { PaymentResult } from '../types/providers.types';
 
-export const initiatePayment = async (orderId: string, method: PaymentMethod, amount: number, metadata?: any) => {
+export type PaymentMethod = 'cash_on_delivery' | 'vodafone_cash' | 'instapay';
+export type PaymentStatus = 'pending' | 'pending_verification' | 'paid' | 'failed' | 'payment_failed' | 'refunded' | 'cancelled';
+
+export const initiatePayment = async (
+  orderId: string,
+  method: PaymentMethod,
+  amount: number,
+  metadata?: any
+): Promise<PaymentResult> => {
   try {
+    const initialStatus: PaymentStatus = method === 'cash_on_delivery' ? 'pending' : 'pending_verification';
+    
     const paymentRef = await addDoc(collection(db, 'payments'), {
       orderId,
       method,
       amount,
-      status: 'pending',
+      status: initialStatus,
       metadata: metadata || {},
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
 
     await updateDoc(doc(db, 'orders', orderId), {
-      paymentStatus: 'pending',
+      paymentStatus: initialStatus,
       paymentMethod: method,
       paymentId: paymentRef.id,
       updatedAt: serverTimestamp()
     });
 
-    // Simulated Paymob URL return
-    if (method.startsWith('paymob')) {
-      return { success: true, paymentId: paymentRef.id, redirectUrl: `https://accept.paymob.com/api/acceptance/iframes/dummy?payment_token=dummy_${paymentRef.id}` };
-    }
-
-    return { success: true, paymentId: paymentRef.id };
+    return {
+      success: true,
+      paymentStatus: initialStatus,
+      receiptUrl: metadata?.receiptUrl || undefined,
+      receiptMetadata: metadata || undefined,
+      transactionId: paymentRef.id
+    };
   } catch (error) {
     console.error('Payment Initiation Failed:', error);
     throw error;
   }
 };
 
+import { getDoc } from 'firebase/firestore';
+import { processOrderSettlement } from './revenue.service';
+
 export const verifyPayment = async (paymentId: string, orderId: string, status: PaymentStatus, verifierId?: string) => {
   try {
+    const orderRef = doc(db, 'orders', orderId);
+    const orderSnap = await getDoc(orderRef);
+    if (!orderSnap.exists()) {
+      throw new Error('Order not found');
+    }
+    const orderData = orderSnap.data();
+
+    // Map verification status to order statuses per requirements
+    let orderStatus = orderData.status;
+    let paymentStatus = status;
+
+    if (status === 'paid') {
+      orderStatus = 'new'; // Move order to processing flow
+      paymentStatus = 'paid';
+    } else if (status === 'failed' || status === 'payment_failed') {
+      orderStatus = 'cancelled';
+      paymentStatus = 'payment_failed';
+    }
+
     await updateDoc(doc(db, 'payments', paymentId), {
-      status,
+      status: paymentStatus,
       verifiedAt: serverTimestamp(),
       verifiedBy: verifierId || 'system',
       updatedAt: serverTimestamp()
     });
 
-    await updateDoc(doc(db, 'orders', orderId), {
-      paymentStatus: status,
+    await updateDoc(orderRef, {
+      status: orderStatus,
+      paymentStatus: paymentStatus,
       paymentVerifiedAt: serverTimestamp(),
       paymentVerifiedBy: verifierId || 'system',
       updatedAt: serverTimestamp()
@@ -55,10 +88,26 @@ export const verifyPayment = async (paymentId: string, orderId: string, status: 
       paymentId,
       orderId,
       action: 'verify',
-      status,
+      status: paymentStatus,
       userId: verifierId || 'system',
       timestamp: serverTimestamp()
     });
+
+    if (status === 'paid') {
+      // Process financial settlement for the order
+      await processOrderSettlement(orderId);
+    } else if (status === 'failed' || status === 'payment_failed') {
+      // Send notification to customer
+      await addDoc(collection(db, 'notifications'), {
+        userId: orderData.customerId,
+        title: 'تم إلغاء الطلب - فشل الدفع',
+        titleEn: 'Order Cancelled - Payment Failed',
+        message: `تم رفض إيصال الدفع لطلبك رقم ${orderId}. تم إلغاء الطلب.`,
+        messageEn: `The payment receipt for your order ${orderId} was rejected. The order has been cancelled.`,
+        isRead: false,
+        createdAt: serverTimestamp()
+      });
+    }
 
     return { success: true };
   } catch (error) {

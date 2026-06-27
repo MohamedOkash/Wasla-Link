@@ -58,7 +58,8 @@ export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
       });
 
       if (newStatus === 'delivered') {
-        const fee = 20; // Example delivery fee
+        const orderObj = orders.find(o => o.id === orderId);
+        const fee = orderObj?.estimatedDriverEarnings ?? orderObj?.deliveryFee ?? 20;
         batch.update(doc(db, 'drivers', driver.id), {
           availability: 'online',
           currentOrderId: null,

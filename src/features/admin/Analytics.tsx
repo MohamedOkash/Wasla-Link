@@ -88,7 +88,7 @@ export const Analytics: React.FC = () => {
           <PremiumStatCard title={t('str_348')} value={kpi.totalStores.toString()} icon={<StoreIcon size={16} />} />
           <PremiumStatCard title={t('str_351')} value={kpi.totalDrivers.toString()} icon={<Bike size={16} />} />
           <PremiumStatCard title={t('str_365')} value={kpi.totalOrdersCount.toString()} icon={<ClipboardList size={16} />} />
-          <PremiumStatCard title={t('str_366')} value={`${kpi.totalGMV} ج.م`} icon={<Wallet size={16} />} />
+          <PremiumStatCard title={t('str_366')} value={`${kpi.totalGMV} ${t('currencyEGP')}`} icon={<Wallet size={16} />} />
         </div>
       </section>
 
@@ -189,7 +189,7 @@ export const Analytics: React.FC = () => {
                 <span className="font-bold truncate pr-2">#{idx+1} {c.name}</span>
                 <div className="flex items-center gap-2">
                   <PremiumBadge variant="info" pill>{c.retentionStatus}</PremiumBadge>
-                  <span className="font-black text-primary">{c.totalSpending} ج.م</span>
+                  <span className="font-black text-primary">{c.totalSpending} {t('currencyEGP')}</span>
                 </div>
               </div>
             ))}

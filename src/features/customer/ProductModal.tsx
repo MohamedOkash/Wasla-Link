@@ -372,11 +372,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
             </span>
             <div className="flex items-baseline gap-2.5">
               <span className="text-base font-black text-primary font-sans leading-none">
-                {calculateDiscountedPrice(product, quantity)} ج.م
+                {calculateDiscountedPrice(product, quantity)} {t('currencyEGP')}
               </span>
               {hasDiscount && (
                 <span className="text-[10px] text-theme-muted line-through font-black font-sans leading-none">
-                  {product.price * quantity} ج.م
+                  {product.price * quantity} {t('currencyEGP')}
                 </span>
               )}
             </div>

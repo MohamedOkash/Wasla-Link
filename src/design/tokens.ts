@@ -1,6 +1,6 @@
 /**
- * Design System 2.0 Tokens for SOUQ EL BALAD
- * Inspired by Linear, Stripe, Framer, Talabat, and Noon.
+ * Design System 2.0 Tokens for Wasla Link
+ * Inspired by Linear, Framer, Talabat, and Noon.
  */
 
 export const tokens = {

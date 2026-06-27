@@ -45,8 +45,6 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
   } = useApp();
 
   const handleLogout = () => {
-  const {} = useTranslation();
-
     setCurrentUser(null);
     setRole('login');
     showToast(t('str_213'));
@@ -572,7 +570,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
 
           <div className="grid grid-cols-2 gap-3.5">
             
-            {/* Grid item: Personal Info */}
+            {/* Grid item: profile_info_card */}
             <PremiumCard 
               onClick={() => setActiveSection('info')}
               className="p-4 flex flex-col justify-between h-32 bg-theme-card/65"

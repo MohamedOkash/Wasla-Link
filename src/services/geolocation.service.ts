@@ -1,4 +1,4 @@
-import { doc, setDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, collection, addDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
 import * as geofire from 'geofire-common';
 
@@ -23,13 +23,17 @@ class GeolocationService {
   private lastSyncTime: number = 0;
 
   // Configuration
-  private readonly MIN_MOVEMENT_METERS = 25;
-  private readonly MIN_SYNC_INTERVAL_MS = 15 * 1000;
-  private readonly FORCE_SYNC_INTERVAL_MS = 120 * 1000;
+  private readonly MIN_MOVEMENT_METERS = 5;
+  private readonly MIN_SYNC_INTERVAL_MS = 3000;
+  private readonly FORCE_SYNC_INTERVAL_MS = 3000;
   private readonly MAX_ACCURACY_METERS = 100;
 
   private statusCallback: ((status: GpsStatus) => void) | null = null;
   private locationCallback: ((loc: LocationData) => void) | null = null;
+
+  // History batch buffer
+  private historyBuffer: any[] = [];
+  private historyFlushInterval: any = null;
 
   startTracking(driverId: string, onStatusChange: (s: GpsStatus) => void, onLocationUpdate: (l: LocationData) => void) {
     this.driverId = driverId;
@@ -48,18 +52,32 @@ class GeolocationService {
     window.addEventListener('online', this.handleOnline);
     window.addEventListener('offline', this.handleOffline);
 
+    // Watch position with high accuracy, no cache age, and 10 second timeout
     this.watchId = navigator.geolocation.watchPosition(
       this.handlePosition.bind(this),
       this.handleError.bind(this),
       {
         enableHighAccuracy: true,
-        maximumAge: 10000,
-        timeout: 15000
+        maximumAge: 0,
+        timeout: 10000
       }
     );
+
+    // Start 5-minute history flushing interval (300000 ms)
+    this.historyFlushInterval = setInterval(() => {
+      this.flushHistory();
+    }, 300000);
   }
 
-  stopTracking() {
+  async stopTracking() {
+    if (this.historyFlushInterval) {
+      clearInterval(this.historyFlushInterval);
+      this.historyFlushInterval = null;
+    }
+    
+    // Flush any remaining history points before stopping
+    await this.flushHistory();
+
     if (this.watchId !== null) {
       navigator.geolocation.clearWatch(this.watchId);
       this.watchId = null;
@@ -96,7 +114,7 @@ class GeolocationService {
 
     const now = Date.now();
     
-    // Check if we need to sync based on time or distance
+    // Check if we need to sync based on time (3s) or distance (5m)
     let shouldSync = false;
 
     if (!this.lastLat || !this.lastLng) {
@@ -166,7 +184,7 @@ class GeolocationService {
     if (!this.driverId) return;
 
     try {
-      // 1. Update Current Location with Geohash
+      // 1. Update Current Location in real-time
       const hash = geofire.geohashForLocation([loc.lat, loc.lng]);
       const locRef = doc(db, 'driverLocations', this.driverId);
       await setDoc(locRef, {
@@ -175,20 +193,41 @@ class GeolocationService {
         geohash: hash
       }, { merge: true });
 
-      // 2. Append to History ONLY if it's a specific event
-      if (event) {
-        const historyRef = collection(db, `driverLocationHistory/${this.driverId}/points`);
-        await addDoc(historyRef, {
-          lat: loc.lat,
-          lng: loc.lng,
-          speed: loc.speed,
-          heading: loc.heading,
-          event,
-          timestamp: serverTimestamp()
-        });
-      }
+      // 2. Buffer history point in memory (never write history on every update)
+      this.historyBuffer.push({
+        lat: loc.lat,
+        lng: loc.lng,
+        speed: loc.speed,
+        heading: loc.heading,
+        event: event || null,
+        timestamp: new Date().toISOString()
+      });
     } catch (e) {
       console.error("Failed to sync location to firestore", e);
+    }
+  }
+
+  public async flushHistory() {
+    if (!this.driverId || this.historyBuffer.length === 0) return;
+
+    const pointsToWrite = [...this.historyBuffer];
+    this.historyBuffer = [];
+
+    try {
+      const batch = writeBatch(db);
+      const historyCollectionRef = collection(db, `driverLocationHistory/${this.driverId}/points`);
+      
+      pointsToWrite.forEach((pt) => {
+        const newDocRef = doc(historyCollectionRef);
+        batch.set(newDocRef, pt);
+      });
+
+      await batch.commit();
+      console.log(`Flushed ${pointsToWrite.length} history points to Firestore.`);
+    } catch (e) {
+      console.error("Failed to write location history batch, buffering back:", e);
+      // Put them back in front of the buffer
+      this.historyBuffer = [...pointsToWrite, ...this.historyBuffer];
     }
   }
 
@@ -210,3 +249,4 @@ class GeolocationService {
 }
 
 export const geoService = new GeolocationService();
+export default geoService;

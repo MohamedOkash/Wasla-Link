@@ -326,7 +326,7 @@ const SplashScreen = () => (
     <div className="w-32 h-32 bg-white rounded-[40px] shadow-2xl flex items-center justify-center mb-6 relative z-10 animate-bounce-slight">
       <Store size={64} className="text-orange-500" strokeWidth={1.5} />
     </div>
-    <h1 className="text-5xl font-black text-white tracking-tight relative z-10">سوق البلد</h1>
+    <h1 className="text-5xl font-black text-white tracking-tight relative z-10">وصلة لينك</h1>
     <div className="absolute bottom-12 w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
   </div>
 );
@@ -349,7 +349,7 @@ const AuthScreen = () => {
       <div className="w-24 h-24 bg-orange-500 rounded-[30px] shadow-xl flex items-center justify-center mb-6 mt-10">
         <Store size={48} className="text-white" />
       </div>
-      <h1 className="text-3xl font-black mb-8">سوق البلد</h1>
+      <h1 className="text-3xl font-black mb-8">وصلة لينك</h1>
 
       {view === 'login' && (
         <div className="w-full space-y-4">

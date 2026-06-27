@@ -10,7 +10,12 @@ export interface EgyptianAddress {
   apartment?: string;
   landmark?: string;
   notes?: string;
-  gpsCoords?: { lat: number; lng: number } | null;
+  gpsCoords?: {
+    latitude: number;
+    longitude: number;
+    accuracy?: number;
+    timestamp?: number;
+  } | null;
   isDefault: boolean;
 }
 

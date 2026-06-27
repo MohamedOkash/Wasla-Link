@@ -8,7 +8,7 @@ import { useTranslation } from '../../hooks/useTranslation';
 
 export function DriverWallet() {
   const { t } = useTranslation();
-  const { currentUser: user } = useApp();
+  const { currentUser: user, showToast } = useApp();
   const [balance, setBalance] = useState(0);
   const [pendingBalance, setPendingBalance] = useState(0);
   const [paidBalance, setPaidBalance] = useState(0);
@@ -43,10 +43,20 @@ export function DriverWallet() {
     loadData();
   }, [user]);
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'pending': return t('statusPending');
+      case 'approved': return t('statusApproved');
+      case 'paid': return t('statusPaid');
+      case 'rejected': return t('statusRejected');
+      default: return status;
+    }
+  };
+
   const requestWithdrawal = async () => {
     const amt = parseFloat(amountInput);
-    if (isNaN(amt) || amt <= 0) return alert('Enter a valid amount');
-    if (amt > balance) return alert('Insufficient balance');
+    if (isNaN(amt) || amt <= 0) { showToast(t('enterValidAmount')); return; }
+    if (amt > balance) { showToast(t('insufficientBalance')); return; }
     
     try {
       await addDoc(collection(db, 'settlementRequests'), {
@@ -56,7 +66,7 @@ export function DriverWallet() {
         status: 'pending',
         requestedAt: serverTimestamp()
       });
-      alert('Withdrawal request submitted successfully.');
+      showToast(t('withdrawalSubmitted'));
       setAmountInput('');
       setHistory(prev => [{
         id: 'temp',
@@ -68,7 +78,7 @@ export function DriverWallet() {
       }, ...prev]);
     } catch (err) {
       console.error(err);
-      alert('Failed to request withdrawal');
+      showToast(t('withdrawalFailed'));
     }
   };
 
@@ -76,31 +86,31 @@ export function DriverWallet() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6 text-theme-text pb-20">
-      <h1 className="text-2xl font-bold mb-6">Driver Wallet</h1>
+      <h1 className="text-2xl font-bold mb-6">{t('driverWallet')}</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-6 rounded-2xl text-white shadow-lg">
-          <p className="text-white/80 font-medium">Available Earnings</p>
-          <p className="text-4xl font-bold mt-1">{balance.toFixed(2)} EGP</p>
+          <p className="text-white/80 font-medium">{t('availableEarnings')}</p>
+          <p className="text-4xl font-bold mt-1">{balance.toFixed(2)} {t('currencyEGP')}</p>
         </div>
         <div className="bg-theme-card p-6 rounded-2xl border border-theme-border/60 shadow-sm">
-          <p className="text-theme-text/70 font-medium">Pending Approvals</p>
-          <p className="text-3xl font-bold mt-1 text-yellow-500">{pendingBalance.toFixed(2)} EGP</p>
+          <p className="text-theme-text/70 font-medium">{t('pendingApprovals')}</p>
+          <p className="text-3xl font-bold mt-1 text-yellow-500">{pendingBalance.toFixed(2)} {t('currencyEGP')}</p>
         </div>
         <div className="bg-theme-card p-6 rounded-2xl border border-theme-border/60 shadow-sm">
-          <p className="text-theme-text/70 font-medium">Total Paid Out</p>
-          <p className="text-3xl font-bold mt-1 text-green-500">{paidBalance.toFixed(2)} EGP</p>
+          <p className="text-theme-text/70 font-medium">{t('totalPaidOut')}</p>
+          <p className="text-3xl font-bold mt-1 text-green-500">{paidBalance.toFixed(2)} {t('currencyEGP')}</p>
         </div>
       </div>
 
       <div className="bg-theme-card p-6 rounded-2xl border border-theme-border/60 mt-6">
-        <h2 className="text-xl font-bold mb-4">Request Withdrawal</h2>
+        <h2 className="text-xl font-bold mb-4">{t('requestWithdrawal')}</h2>
         <div className="flex gap-4">
           <input 
             type="number" 
             value={amountInput}
             onChange={e => setAmountInput(e.target.value)}
-            placeholder="Amount in EGP"
+            placeholder={t('amountInEGP')}
             className="flex-1 bg-theme-bg border border-theme-border rounded-xl px-4 py-3 text-theme-text"
           />
           <button 
@@ -108,18 +118,18 @@ export function DriverWallet() {
             className="bg-theme-primary text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:opacity-90"
           >
             <ArrowUpRight className="w-5 h-5" />
-            Withdraw
+            {t('withdrawBtn')}
           </button>
         </div>
       </div>
 
       <div className="bg-theme-card rounded-2xl border border-theme-border/60 overflow-hidden mt-6">
         <div className="p-6 border-b border-theme-border/60">
-          <h2 className="text-xl font-bold">Withdrawal History</h2>
+          <h2 className="text-xl font-bold">{t('withdrawalHistory')}</h2>
         </div>
         <div className="divide-y divide-theme-border/60">
           {history.length === 0 ? (
-            <div className="p-6 text-center text-theme-text/60">No withdrawal requests found</div>
+            <div className="p-6 text-center text-theme-text/60">{t('noWithdrawalRequests')}</div>
           ) : (
             history.map((req, i) => (
               <div key={req.id || i} className="p-6 flex items-center justify-between">
@@ -129,9 +139,9 @@ export function DriverWallet() {
                   {req.status === 'paid' && <CheckCircle className="w-8 h-8 text-green-500" />}
                   {req.status === 'rejected' && <XCircle className="w-8 h-8 text-red-500" />}
                   <div>
-                    <p className="font-bold">{req.amount.toFixed(2)} EGP</p>
+                    <p className="font-bold">{req.amount.toFixed(2)} {t('currencyEGP')}</p>
                     <p className="text-sm text-theme-text/60">
-                      {req.requestedAt?.toDate ? req.requestedAt.toDate().toLocaleDateString() : 'Just now'}
+                      {req.requestedAt?.toDate ? req.requestedAt.toDate().toLocaleDateString() : t('justNow')}
                     </p>
                   </div>
                 </div>
@@ -141,7 +151,7 @@ export function DriverWallet() {
                   ${req.status === 'paid' ? 'bg-green-500/10 text-green-500' : ''}
                   ${req.status === 'rejected' ? 'bg-red-500/10 text-red-500' : ''}
                 `}>
-                  {req.status}
+                  {getStatusLabel(req.status)}
                 </div>
               </div>
             ))

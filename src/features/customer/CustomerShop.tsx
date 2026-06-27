@@ -241,11 +241,11 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
           <div className="flex items-center gap-2 mb-4 bg-theme-card border border-theme-border/60 p-3 rounded-2xl">
              <div className="flex-1 flex flex-col items-center border-r border-theme-border/50">
                <span className="text-[10px] text-theme-muted font-bold">{t('str_17')}</span>
-               <span className="text-xs font-black text-theme-text">{activeZone ? activeZone.eta : `${shop.time} دقيقة`}</span>
+               <span className="text-xs font-black text-theme-text">{activeZone ? activeZone.eta : `${shop.time} ${t('str_191')}`}</span>
              </div>
              <div className="flex-1 flex flex-col items-center">
                <span className="text-[10px] text-theme-muted font-bold">{t('str_18')}</span>
-               <span className="text-xs font-black text-theme-text">{activeZone ? `${activeZone.fee} ج.م` : (t('str_19'))}</span>
+               <span className="text-xs font-black text-theme-text">{activeZone ? `${activeZone.fee} ${t('currencyEGP')}` : (t('str_19'))}</span>
              </div>
           </div>
 
@@ -498,7 +498,7 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
             </div>
             <div>
               <p className="text-[9px] text-gray-400 font-bold leading-none mb-1">{t('cart')}</p>
-              <p className="text-xs font-black leading-none">{totalPrice} ج.م</p>
+              <p className="text-xs font-black leading-none">{totalPrice} {t('currencyEGP')}</p>
             </div>
           </div>
           <PremiumButton 

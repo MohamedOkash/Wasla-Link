@@ -4,21 +4,18 @@ import { db } from '../../services/firebase';
 import { collection, doc, getDoc, getDocs, updateDoc, query, where, orderBy, limit } from 'firebase/firestore';
 import { PlatformSettings, LedgerTransaction, SettlementRequest } from '../../types/financial';
 import { useTranslation } from '../../hooks/useTranslation';
+import { useApp } from '../../contexts/AppContext';
+import { DEFAULT_PLATFORM_SETTINGS } from '../../services/deliveryFee.service';
 
 export function FinancialCenter() {
   const { t } = useTranslation();
+  const { showToast } = useApp();
   const [platformRevenue, setPlatformRevenue] = useState(0);
   const [vendorLiabilities, setVendorLiabilities] = useState(0);
   const [driverLiabilities, setDriverLiabilities] = useState(0);
   const [pendingSettlements, setPendingSettlements] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [settings, setSettings] = useState<PlatformSettings>({
-    commissionPercent: 10,
-    driverBonusPercent: 0,
-    freeDeliveryEnabled: false,
-    promotionSubsidyEnabled: false,
-    maintenanceRevenueLock: false
-  });
+  const [settings, setSettings] = useState<PlatformSettings>({ ...DEFAULT_PLATFORM_SETTINGS });
   
   useEffect(() => {
     async function loadFinances() {
@@ -60,10 +57,10 @@ export function FinancialCenter() {
   const saveSettings = async () => {
     try {
       await updateDoc(doc(db, 'platformSettings', 'default'), { ...settings });
-      alert('Platform settings updated successfully.');
+      showToast(t('settingsUpdated'));
     } catch (err) {
       console.error(err);
-      alert('Failed to save settings.');
+      showToast(t('settingsFailed'));
     }
   };
 
@@ -72,52 +69,52 @@ export function FinancialCenter() {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 text-theme-text pb-20">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold">Financial Center</h1>
+        <h1 className="text-2xl font-bold">{t('financialCenter')}</h1>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-gradient-to-br from-theme-primary to-purple-600 p-6 rounded-2xl text-white shadow-lg">
           <div className="flex items-center gap-3 mb-2 opacity-80">
             <TrendingUp className="w-5 h-5" />
-            <p className="font-medium">Platform Revenue</p>
+            <p className="font-medium">{t('platformRevenue')}</p>
           </div>
-          <p className="text-4xl font-bold">{platformRevenue.toFixed(2)} EGP</p>
+          <p className="text-4xl font-bold">{platformRevenue.toFixed(2)} {t('currencyEGP')}</p>
         </div>
 
         <div className="bg-theme-card p-6 rounded-2xl border border-theme-border/60 shadow-sm">
           <div className="flex items-center gap-3 mb-2 text-theme-text/70">
             <CreditCard className="w-5 h-5" />
-            <p className="font-medium">Vendor Liabilities</p>
+            <p className="font-medium">{t('vendorLiabilities')}</p>
           </div>
-          <p className="text-3xl font-bold text-red-500">{vendorLiabilities.toFixed(2)} EGP</p>
+          <p className="text-3xl font-bold text-red-500">{vendorLiabilities.toFixed(2)} {t('currencyEGP')}</p>
         </div>
 
         <div className="bg-theme-card p-6 rounded-2xl border border-theme-border/60 shadow-sm">
           <div className="flex items-center gap-3 mb-2 text-theme-text/70">
             <CreditCard className="w-5 h-5" />
-            <p className="font-medium">Driver Liabilities</p>
+            <p className="font-medium">{t('driverLiabilities')}</p>
           </div>
-          <p className="text-3xl font-bold text-red-500">{driverLiabilities.toFixed(2)} EGP</p>
+          <p className="text-3xl font-bold text-red-500">{driverLiabilities.toFixed(2)} {t('currencyEGP')}</p>
         </div>
 
         <div className="bg-theme-card p-6 rounded-2xl border border-theme-border/60 shadow-sm">
           <div className="flex items-center gap-3 mb-2 text-theme-text/70">
             <Activity className="w-5 h-5" />
-            <p className="font-medium">Pending Settlements</p>
+            <p className="font-medium">{t('pendingSettlements')}</p>
           </div>
-          <p className="text-3xl font-bold text-yellow-500">{pendingSettlements.toFixed(2)} EGP</p>
+          <p className="text-3xl font-bold text-yellow-500">{pendingSettlements.toFixed(2)} {t('currencyEGP')}</p>
         </div>
       </div>
 
       <div className="bg-theme-card rounded-2xl border border-theme-border/60 overflow-hidden mt-8">
         <div className="p-6 border-b border-theme-border/60 flex items-center gap-3">
           <Settings className="w-6 h-6 text-theme-primary" />
-          <h2 className="text-xl font-bold">Monetization Controls</h2>
+          <h2 className="text-xl font-bold">{t('monetizationControls')}</h2>
         </div>
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
           
           <div>
-            <label className="block text-sm font-medium mb-2">Platform Commission (%)</label>
+            <label className="block text-sm font-medium mb-2">{t('platformCommission')}</label>
             <input 
               type="number" 
               value={settings.commissionPercent} 
@@ -127,7 +124,7 @@ export function FinancialCenter() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Driver Bonus (%)</label>
+            <label className="block text-sm font-medium mb-2">{t('driverBonus')}</label>
             <input 
               type="number" 
               value={settings.driverBonusPercent} 
@@ -138,8 +135,8 @@ export function FinancialCenter() {
 
           <div className="flex items-center justify-between p-4 bg-theme-bg rounded-xl border border-theme-border/60">
             <div>
-              <p className="font-medium">Free Delivery Global Subsidy</p>
-              <p className="text-sm text-theme-text/60">Platform covers delivery cost</p>
+              <p className="font-medium">{t('freeDeliverySubsidy')}</p>
+              <p className="text-sm text-theme-text/60">{t('freeDeliverySubsidyDesc')}</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" className="sr-only peer" checked={settings.freeDeliveryEnabled} onChange={e => setSettings({...settings, freeDeliveryEnabled: e.target.checked})} />
@@ -149,8 +146,8 @@ export function FinancialCenter() {
 
           <div className="flex items-center justify-between p-4 bg-theme-bg rounded-xl border border-theme-border/60">
             <div>
-              <p className="font-medium">Financial Maintenance Lock</p>
-              <p className="text-sm text-theme-text/60">Halt all new earnings calculation</p>
+              <p className="font-medium">{t('financialMaintenanceLock')}</p>
+              <p className="text-sm text-theme-text/60">{t('financialMaintenanceLockDesc')}</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" className="sr-only peer" checked={settings.maintenanceRevenueLock} onChange={e => setSettings({...settings, maintenanceRevenueLock: e.target.checked})} />
@@ -164,7 +161,7 @@ export function FinancialCenter() {
             onClick={saveSettings}
             className="bg-theme-primary text-white px-8 py-3 rounded-xl font-bold hover:opacity-90 transition-opacity"
           >
-            Save Monetization Settings
+            {t('saveMonetizationSettings')}
           </button>
         </div>
       </div>

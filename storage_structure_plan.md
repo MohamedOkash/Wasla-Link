@@ -6,7 +6,7 @@ This document outlines the organization and security configurations for files, p
 
 ## 1. Storage Folder Hierarchy
 
-All assets in SOUQ EL BALAD Storage are organized into isolated folder structures by concern and identifier:
+All assets in Wasla Link Storage are organized into isolated folder structures by concern and identifier:
 
 ```
 /uploads

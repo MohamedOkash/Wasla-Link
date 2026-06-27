@@ -1,6 +1,8 @@
 import { db } from './firebase';
 import { collection, query, where, getDocs, doc, runTransaction, getDoc } from 'firebase/firestore';
 import { Order } from '../types/order.types';
+import { PlatformSettings } from '../types/financial';
+import { DEFAULT_PLATFORM_SETTINGS } from './deliveryFee.service';
 import etaService from './eta.service';
 import * as geofire from 'geofire-common';
 
@@ -9,25 +11,35 @@ export interface DriverAssignmentCandidate {
   lat: number;
   lng: number;
   distance: number;
+  score?: number;
+  eta?: number;
 }
 
 class DispatchService {
   private readonly MAX_ASSIGNMENT_ATTEMPTS = 3;
 
-  async getAvailableDrivers(storeLat: number, storeLng: number, rejectedBy: string[] = [], radiusKm: number = 5): Promise<DriverAssignmentCandidate[]> {
-    const radiusInMeters = radiusKm * 1000;
-    const center: [number, number] = [storeLat, storeLng];
-    const bounds = geofire.geohashQueryBounds(center, radiusInMeters);
+  async getAvailableDrivers(storeLat: number, storeLng: number, rejectedBy: string[] = [], radiusKm: number | null = 5): Promise<DriverAssignmentCandidate[]> {
     const promises = [];
 
-    // 1. Get drivers within geohash bounds
-    for (const b of bounds) {
+    // 1. Get driver locations within geohash bounds or query all online if radiusKm is null
+    if (radiusKm === null) {
       const q = query(
         collection(db, 'driverLocations'),
-        where('geohash', '>=', b[0]),
-        where('geohash', '<=', b[1])
+        where('status', '==', 'online')
       );
       promises.push(getDocs(q));
+    } else {
+      const radiusInMeters = radiusKm * 1000;
+      const center: [number, number] = [storeLat, storeLng];
+      const bounds = geofire.geohashQueryBounds(center, radiusInMeters);
+      for (const b of bounds) {
+        const q = query(
+          collection(db, 'driverLocations'),
+          where('geohash', '>=', b[0]),
+          where('geohash', '<=', b[1])
+        );
+        promises.push(getDocs(q));
+      }
     }
     
     const snapshots = await Promise.all(promises);
@@ -42,30 +54,47 @@ class DispatchService {
         if (locData.status !== 'online') continue;
         if (rejectedBy.includes(driverId)) continue;
 
-        // Double check exact distance (geohash boxes are larger than the circle)
+        // Double check exact distance if radius filter is active
         const distance = etaService.calculateDistance(storeLat, storeLng, locData.lat, locData.lng);
-        if (distance > radiusInMeters) continue;
+        if (radiusKm !== null && distance > (radiusKm * 1000)) continue;
 
         // Check user document for availability
-        const driverDoc = await getDoc(doc(db, 'users', driverId));
-        if (!driverDoc.exists()) continue;
+        const userDoc = await getDoc(doc(db, 'users', driverId));
+        if (!userDoc.exists()) continue;
         
-        const driverData = driverDoc.data();
-        if (driverData.role !== 'driver' || !driverData.isOnline || driverData.status !== 'approved') continue;
-        if (driverData.currentOrderId) continue;
-        if (driverData.batteryLevel !== undefined && driverData.batteryLevel < 15) continue;
+        const userData = userDoc.data();
+        if (userData.role !== 'driver' || !userData.isOnline || userData.status !== 'approved') continue;
+        if (userData.currentOrderId) continue;
+        if (userData.batteryLevel !== undefined && userData.batteryLevel < 15) continue;
+
+        // Fetch statistics from the 'drivers' collection for weighted ranking
+        const driverDoc = await getDoc(doc(db, 'drivers', driverId));
+        const driverStats = driverDoc.exists() ? driverDoc.data() : {};
+
+        const rating = driverStats.rating !== undefined ? Number(driverStats.rating) : 5.0;
+        const acceptanceRate = driverStats.acceptanceRate !== undefined ? Number(driverStats.acceptanceRate) : 100;
+        const completedDeliveries = driverStats.completedOrders !== undefined ? Number(driverStats.completedOrders) : 0;
+        const workload = userData.currentOrderId ? 1 : 0;
+        
+        const distanceKm = distance / 1000;
+        const etaMins = Math.max(3, Math.ceil(distanceKm * 2)); // Estimated travel time (2 mins per KM, min 3 mins)
+
+        // Weighted Ranking Formula
+        const score = (rating * 15) + (acceptanceRate * 0.1) + (completedDeliveries * 0.05) - (distanceKm * 3) - (etaMins * 1) - (workload * 50);
 
         candidates.push({
           id: driverId,
           lat: locData.lat,
           lng: locData.lng,
-          distance: distance
+          distance: distance,
+          eta: etaMins,
+          score: Number(score.toFixed(2))
         });
       }
     }
 
-    // 3. Sort by distance (nearest first)
-    candidates.sort((a, b) => a.distance - b.distance);
+    // 3. Sort by score descending (highest score first)
+    candidates.sort((a, b) => (b.score || 0) - (a.score || 0));
     return candidates;
   }
 
@@ -96,12 +125,11 @@ class DispatchService {
             assignedDriverId: null,
             assignedAt: null
           });
-          // Note: In a full app, this would trigger a vendor notification.
           return false;
         }
 
-        // Find nearest available driver with expanding radius
-        const radiusLevels = [5, 10, 20];
+        // Find nearest available driver with expanding radius: 5km -> 10km -> 20km -> 40km -> nearest available driver (null)
+        const radiusLevels: (number | null)[] = [5, 10, 20, 40, null];
         let candidates: DriverAssignmentCandidate[] = [];
         
         for (const radius of radiusLevels) {
@@ -126,6 +154,12 @@ class DispatchService {
           throw new Error('Selected driver became unavailable during assignment.');
         }
 
+        const settingsRef = doc(db, 'platformSettings', 'default');
+        const settingsSnap = await transaction.get(settingsRef);
+        const settings = settingsSnap.exists() ? (settingsSnap.data() as PlatformSettings) : DEFAULT_PLATFORM_SETTINGS;
+        const driverBonus = settings.driverBonusPercent > 0 ? ((order.deliveryFee || 0) * (settings.driverBonusPercent / 100)) : 0;
+        const fallbackEarnings = Math.round((order.deliveryFee || 0) + driverBonus);
+
         // Apply Assignment!
         const now = new Date().toISOString();
         
@@ -134,7 +168,8 @@ class DispatchService {
           assignedDriverId: selectedDriver.id,
           assignedAt: now,
           assignmentDistance: selectedDriver.distance,
-          assignmentAttempts: attempts + 1
+          assignmentAttempts: attempts + 1,
+          estimatedDriverEarnings: order.estimatedDriverEarnings || fallbackEarnings
         });
 
         // Also update the driver so they are locked to this order

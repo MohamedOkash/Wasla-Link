@@ -6,7 +6,7 @@ import { calculateDiscountedPrice } from '../../utils/promo';
 import { Product } from '../../types/product.types';
 import { couponService } from '../../services/coupon.service';
 import { mediaService } from '../../services/media.service';
-import { deliveryFeeService } from '../../services/deliveryFee.service';
+import { deliveryFeeService, DEFAULT_PLATFORM_SETTINGS } from '../../services/deliveryFee.service';
 import { doc, writeBatch, increment, setDoc } from 'firebase/firestore';
 import { db, auth, sanitizeFirestoreData } from '../../services/firebase';
 import { initiatePayment, PaymentMethod } from '../../services/payment.service';
@@ -27,7 +27,7 @@ interface CustomerCheckoutProps {
 
 export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, placeOrder }) => {
   const { t } = useTranslation();
-  const { cart, setCart, location, showToast,  isRTL, activeCoupon, setActiveCoupon, savedAddresses, addAddress, currentUser, deliveryFeeConfig } = useApp();
+  const { cart, setCart, location, showToast,  isRTL, activeCoupon, setActiveCoupon, savedAddresses, addAddress, currentUser, platformSettings } = useApp();
   const { stores } = useStores();
   const { products } = useProducts();;
 
@@ -77,14 +77,14 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
   const isCovered = store && activeAddress 
     ? (store.coveredVillages ? store.coveredVillages.includes(activeAddress.village) : true)
     : false;
-
-  const { fee: deliveryFee, eta: deliveryETA } = store && activeAddress && isCovered && deliveryFeeConfig
+  const currentSettings = platformSettings || DEFAULT_PLATFORM_SETTINGS;
+  const { fee: deliveryFee, eta: deliveryETA } = store && activeAddress && isCovered
     ? deliveryFeeService.calculateFeeAndEta(
         store.village || store.coveredVillages?.[0] || '',
         activeAddress.village || '',
         store.fee,
         `${store.time} دقيقة`,
-        deliveryFeeConfig
+        currentSettings
       )
     : {
         fee: store && activeAddress && isCovered
@@ -258,8 +258,8 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
         // Phase 16E: Initiate Payment after order creation
         const paymentRes = await initiatePayment(orderId, paymentMethod, total, { receiptUrl: paymentReceiptUrl });
         
-        if (paymentRes.redirectUrl) {
-          window.location.href = paymentRes.redirectUrl;
+        if (!paymentRes.success) {
+          showToast(paymentRes.message || 'فشلت عملية إنشاء الدفع');
           return;
         }
 
@@ -529,10 +529,9 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
           
           <div className="space-y-2.5">
             {[
-              { id: 'cash_on_delivery', title: t('cash'), desc: t('str_97') },
-              { id: 'instapay', title: t('instapay'), desc: t('str_99') },
-              { id: 'paymob_card', title: t('paymobCard'), desc: t('paymobCardDesc') },
-              { id: 'paymob_wallet', title: t('paymobWallet'), desc: t('paymobWalletDesc') }
+              { id: 'cash_on_delivery', title: t('cash') || 'الدفع عند الاستلام', desc: t('str_97') },
+              { id: 'vodafone_cash', title: t('str_124') || 'فودافون كاش', desc: t('str_98') },
+              { id: 'instapay', title: t('str_125') || 'إنستاباي', desc: t('str_99') }
             ].map(method => {
               const isSelected = paymentMethod === method.id;
               return (
@@ -694,7 +693,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
             <div className="flex justify-between">
               <span className="text-theme-muted">{t('str_122')}</span>
               <span className="font-black text-theme-text">
-                {paymentMethod === 'cash_on_delivery' ? (t('str_123')) : paymentMethod === 'paymob_wallet' ? (t('str_124')) : (t('str_125'))}
+                {paymentMethod === 'cash_on_delivery' ? (t('str_123')) : paymentMethod === 'vodafone_cash' ? (t('str_124')) : (t('str_125'))}
               </span>
             </div>
           </div>

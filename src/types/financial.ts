@@ -23,6 +23,18 @@ export interface PlatformSettings {
   freeDeliveryEnabled: boolean;
   promotionSubsidyEnabled: boolean;
   maintenanceRevenueLock: boolean;
+  baseDeliveryFee: number;
+  pricePerKm: number;
+  minimumDeliveryFee: number;
+  maximumDeliveryFee: number;
+  peakHourMultiplier: number;
+  nightMultiplier: number;
+  holidayMultiplier: number;
+  rainMultiplier: number;
+  remoteAreaMultiplier: number;
+  freeDeliveryThreshold: number;
+  roadFactor: number;
+  averageSpeed: number;
 }
 
 export interface SettlementRequest {

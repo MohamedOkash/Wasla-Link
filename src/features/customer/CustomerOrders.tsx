@@ -34,7 +34,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
   const customerReturns = returnRequests.filter(r => r.customerId === (currentUser?.id || 'customer_1'));
 
   const handleReorder = (order: any) => {
-  const {} = useTranslation();
+
 
     setCart({
       shopId: order.shopId,
@@ -246,7 +246,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
                           </span>
                           <span className="line-clamp-1">{item.name}</span>
                         </div>
-                        <span>{item.price * item.quantity} ج.م</span>
+                        <span>{item.price * item.quantity} {t('currencyEGP')}</span>
                       </div>
                     ))}
                   </div>
@@ -318,7 +318,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
                     </span>
                     <span className="font-black text-theme-text">
                       {t('str_166')}
-                      <span className="text-primary font-black text-sm">{order.total} ج.م</span>
+                      <span className="text-primary font-black text-sm">{order.total} {t('currencyEGP')}</span>
                     </span>
                   </div>
 
@@ -404,7 +404,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
                   {ret.items.map(item => (
                     <div key={item.productId} className="flex justify-between text-[11px] font-bold text-theme-text">
                       <span>{item.quantity}x {item.name}</span>
-                      <span>{item.price * item.quantity} ج.م</span>
+                      <span>{item.price * item.quantity} {t('currencyEGP')}</span>
                     </div>
                   ))}
                 </div>

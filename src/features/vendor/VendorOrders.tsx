@@ -153,7 +153,7 @@ export const VendorOrders: React.FC = () => {
                 <div className="flex justify-between"><span>{t('str_864')}</span> <span className="font-black text-theme-text print:text-black">{invoiceService.generateInvoiceNumber(activeInvoice.id)}</span></div>
                 <div className="flex justify-between"><span>{t('str_865')}</span> <span>{new Date(activeInvoice.createdAt).toLocaleString(isRTL ? 'ar-EG' : 'en-US')}</span></div>
                 <div className="flex justify-between"><span>{t('str_866')}</span> <span className="font-black">{activeInvoice.shopName}</span></div>
-                <div className="flex justify-between"><span>{t('str_122')}</span> <span>{activeInvoice.paymentMethod === 'cash_on_delivery' ? (t('str_149')) : activeInvoice.paymentMethod === 'paymob_wallet' ? 'Vodafone Cash' : 'InstaPay'}</span></div>
+                <div className="flex justify-between"><span>{t('str_122')}</span> <span>{activeInvoice.paymentMethod === 'cash_on_delivery' ? (t('str_149')) : activeInvoice.paymentMethod === 'vodafone_cash' ? 'Vodafone Cash' : 'InstaPay'}</span></div>
               </div>
 
               {/* Items Table */}
@@ -317,7 +317,7 @@ export const VendorOrders: React.FC = () => {
                 <div className="flex items-center gap-1.5"><MapPin size={12} className="text-theme-muted" /> <span className="truncate">{order.location.name}</span></div>
                 <div className="flex items-center gap-1.5"><Phone size={12} className="text-theme-muted" /> <span>+20 101 234 5678</span></div>
                 <div className="pt-2 flex items-center justify-between text-[9px] text-theme-muted font-bold border-t border-theme-border mt-1.5">
-                  <span>{t('str_165')}{order.paymentMethod === 'cash_on_delivery' ? (t('str_595')) : order.paymentMethod === 'paymob_wallet' ? 'Vodafone Cash' : 'InstaPay'}</span>
+                  <span>{t('str_165')}{order.paymentMethod === 'cash_on_delivery' ? (t('str_595')) : order.paymentMethod === 'vodafone_cash' ? 'Vodafone Cash' : 'InstaPay'}</span>
                   {order.paymentReceipt && (
                     <button 
                       onClick={() => setActiveReceipt(order.paymentReceipt || null)}

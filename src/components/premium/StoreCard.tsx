@@ -93,7 +93,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
 
         <div className="text-[9px] font-bold text-theme-text flex items-center gap-1">
           <Clock size={10} className="text-primary" />
-          <span>{shop.fee} ج.م</span>
+          <span>{shop.fee} {t('currencyEGP')}</span>
         </div>
       </div>
     </div>

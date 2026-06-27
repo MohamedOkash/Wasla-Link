@@ -1,6 +1,6 @@
 # Firestore Collections Architecture Plan
 
-This document outlines the Firestore Collections and Document schemas designed to transition the local `AppContext` state and service layer of SOUQ EL BALAD to Firebase.
+This document outlines the Firestore Collections and Document schemas designed to transition the local `AppContext` state and service layer of Wasla Link to Firebase.
 
 ---
 

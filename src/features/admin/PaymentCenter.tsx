@@ -8,7 +8,7 @@ import { useApp } from '../../contexts/AppContext';
 
 export function PaymentCenter() {
   const { t } = useTranslation();
-  const { currentUser: admin } = useApp();
+  const { currentUser: admin, isRTL } = useApp();
   const [payments, setPayments] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'pending' | 'verified' | 'failed' | 'refunds' | 'reconciliation'>('pending');
   const [mismatches, setMismatches] = useState<any[]>([]);
@@ -25,7 +25,7 @@ export function PaymentCenter() {
         const res = await detectMismatches();
         setMismatches(res.mismatches);
       } else {
-        let statusFilter = activeTab === 'verified' ? 'paid' : activeTab;
+        let statusFilter = activeTab === 'pending' ? 'pending_verification' : (activeTab === 'verified' ? 'paid' : activeTab);
         if (activeTab === 'refunds') statusFilter = 'refunded';
         
         const q = query(collection(db, 'payments'), where('status', '==', statusFilter), orderBy('createdAt', 'desc'));
@@ -52,7 +52,7 @@ export function PaymentCenter() {
 
   const handleReject = async (paymentId: string, orderId: string) => {
     try {
-      await verifyPayment(paymentId, orderId, 'failed', admin?.uid);
+      await verifyPayment(paymentId, orderId, 'payment_failed', admin?.uid);
       setPayments(prev => prev.filter(p => p.id !== paymentId));
       alert(t('paymentRejected'));
     } catch (err) {
@@ -85,7 +85,7 @@ export function PaymentCenter() {
               activeTab === tab ? 'bg-theme-primary text-white' : 'bg-theme-bg text-theme-text/70'
             }`}
           >
-            {t(tab)}
+            {tab === 'pending' ? (isRTL ? 'تحقق الإيصالات' : 'Verify Receipts') : t(tab)}
           </button>
         ))}
       </div>
@@ -121,26 +121,39 @@ export function PaymentCenter() {
                 <th className="p-4">{t('method')}</th>
                 <th className="p-4">{t('amount')}</th>
                 <th className="p-4">{t('status')}</th>
+                <th className="p-4">{isRTL ? 'إيصال الدفع' : 'Receipt Preview'}</th>
                 <th className="p-4">{t('actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-theme-border/60">
               {payments.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-6 text-center text-theme-text/50">{t('noPaymentsFound')}</td>
+                  <td colSpan={6} className="p-6 text-center text-theme-text/50">{t('noPaymentsFound')}</td>
                 </tr>
               ) : (
                 payments.map(p => (
                   <tr key={p.id}>
                     <td className="p-4 font-mono text-sm">{p.id}</td>
                     <td className="p-4">{p.method}</td>
-                    <td className="p-4 font-bold">{p.amount} EGP</td>
+                    <td className="p-4 font-bold">{p.amount} {t('currencyEGP')}</td>
                     <td className="p-4 uppercase text-xs font-bold">{p.status}</td>
+                    <td className="p-4">
+                      {p.metadata?.receiptUrl ? (
+                        <img 
+                          src={p.metadata.receiptUrl} 
+                          alt="Receipt Preview" 
+                          className="w-16 h-16 object-cover rounded-lg border border-theme-border cursor-pointer hover:scale-105 transition"
+                          onClick={() => window.open(p.metadata.receiptUrl)}
+                        />
+                      ) : (
+                        <span className="text-xs text-theme-muted italic">{isRTL ? 'لا يوجد إيصال' : 'No Receipt'}</span>
+                      )}
+                    </td>
                     <td className="p-4 flex gap-2">
                       {activeTab === 'pending' && (
                         <>
-                          <button onClick={() => handleVerify(p.id, p.orderId)} className="bg-green-500 text-white px-3 py-1 rounded">{t('verify')}</button>
-                          <button onClick={() => handleReject(p.id, p.orderId)} className="bg-red-500 text-white px-3 py-1 rounded">{t('reject')}</button>
+                          <button onClick={() => handleVerify(p.id, p.orderId)} className="bg-green-500 text-white px-3 py-1 rounded">{isRTL ? 'موافقة' : 'Approve'}</button>
+                          <button onClick={() => handleReject(p.id, p.orderId)} className="bg-red-500 text-white px-3 py-1 rounded">{isRTL ? 'رفض' : 'Reject'}</button>
                         </>
                       )}
                       {activeTab === 'verified' && (

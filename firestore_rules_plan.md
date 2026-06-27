@@ -1,6 +1,6 @@
 # Firestore Security Rules Plan
 
-This document outlines the security rules configuration (`firestore.rules`) required to protect and isolate SOUQ EL BALAD's multi-role data structures on Firebase.
+This document outlines the security rules configuration (`firestore.rules`) required to protect and isolate Wasla Link's multi-role data structures on Firebase.
 
 ---
 

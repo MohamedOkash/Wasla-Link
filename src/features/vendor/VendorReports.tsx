@@ -29,7 +29,7 @@ export const VendorReports: React.FC = () => {
       o.subtotal,
       o.deliveryFee,
       o.total,
-      o.paymentMethod === 'cash_on_delivery' ? 'نقدي' : o.paymentMethod === 'paymob_wallet' ? 'فودافون كاش' : 'إنستاباي',
+      o.paymentMethod === 'cash_on_delivery' ? 'نقدي' : o.paymentMethod === 'vodafone_cash' ? 'فودافون كاش' : 'إنستاباي',
       o.status
     ]);
 
@@ -202,7 +202,7 @@ export const VendorReports: React.FC = () => {
       <div className="grid grid-cols-2 gap-4">
         <PremiumStatCard
           title={t('str_1002')}
-          value={`${kpi.totalSales} ج.م`}
+          value={`${kpi.totalSales} ${t('currencyEGP')}`}
           change={t('str_1003')}
           changeType="positive"
           icon={<DollarSign size={16} />}
@@ -210,7 +210,7 @@ export const VendorReports: React.FC = () => {
 
         <PremiumStatCard
           title={t('str_1004')}
-          value={`${kpi.totalProfit} ج.م`}
+          value={`${kpi.totalProfit} ${t('currencyEGP')}`}
           change={t('str_1005')}
           changeType="positive"
           icon={<TrendingUp size={16} />}
@@ -230,12 +230,12 @@ export const VendorReports: React.FC = () => {
           {[
             {
               label: t('str_1007'),
-              val: `${kpi.totalSales} ج.م`,
+              val: `${kpi.totalSales} ${t('currencyEGP')}`,
               highlight: false,
             },
             {
               label: t('str_1008'),
-              val: `${kpi.totalProfit} ج.م`,
+              val: `${kpi.totalProfit} ${t('currencyEGP')}`,
               highlight: true,
               color: 'text-green-500',
             },
@@ -247,7 +247,7 @@ export const VendorReports: React.FC = () => {
             },
             {
               label: t('str_1010'),
-              val: `${kpi.avgOrderValue} ج.م`,
+              val: `${kpi.avgOrderValue} ${t('currencyEGP')}`,
               highlight: false,
             },
             {
@@ -295,7 +295,7 @@ export const VendorReports: React.FC = () => {
                   <PremiumBadge variant="neutral" pill>
                     {village.orders} {t('str_550')}
                   </PremiumBadge>
-                  <span className="text-theme-text font-black">{village.sales} ج.م</span>
+                  <span className="text-theme-text font-black">{village.sales} {t('currencyEGP')}</span>
                 </div>
               </div>
             ))}
@@ -327,7 +327,7 @@ export const VendorReports: React.FC = () => {
                   <PremiumBadge variant="success" pill>
                     {prod.qty} {t('str_783')}
                   </PremiumBadge>
-                  <span className="text-theme-text font-black">{prod.sales} ج.م</span>
+                  <span className="text-theme-text font-black">{prod.sales} {t('currencyEGP')}</span>
                 </div>
               </div>
             ))}

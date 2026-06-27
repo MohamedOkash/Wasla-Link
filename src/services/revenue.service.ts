@@ -1,6 +1,7 @@
 import { db } from './firebase';
 import { doc, getDoc, runTransaction, serverTimestamp, collection, setDoc, query, where, getDocs } from 'firebase/firestore';
 import { PlatformSettings, LedgerTransaction } from '../types/financial';
+import { DEFAULT_PLATFORM_SETTINGS } from './deliveryFee.service';
 
 export interface RevenueBreakdown {
   orderTotal: number;
@@ -18,13 +19,7 @@ export const getPlatformSettings = async (): Promise<PlatformSettings> => {
   if (snap.exists()) {
     return snap.data() as PlatformSettings;
   }
-  return {
-    commissionPercent: 10,
-    driverBonusPercent: 0,
-    freeDeliveryEnabled: false,
-    promotionSubsidyEnabled: false,
-    maintenanceRevenueLock: false
-  };
+  return { ...DEFAULT_PLATFORM_SETTINGS };
 };
 
 export const calculateRevenueBreakdown = (
@@ -83,11 +78,7 @@ export const processOrderSettlement = async (orderId: string): Promise<void> => 
       const settingsRef = doc(db, 'platformSettings', 'default');
       const settingsSnap = await transaction.get(settingsRef);
       const settings = settingsSnap.exists() ? (settingsSnap.data() as PlatformSettings) : {
-        commissionPercent: 10,
-        driverBonusPercent: 0,
-        freeDeliveryEnabled: false,
-        promotionSubsidyEnabled: false,
-        maintenanceRevenueLock: false
+        ...DEFAULT_PLATFORM_SETTINGS
       };
 
       if (settings.maintenanceRevenueLock) {

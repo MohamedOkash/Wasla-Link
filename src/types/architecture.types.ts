@@ -1,11 +1,11 @@
 /**
- * SOUQ EL BALAD (WaslaLink) - Phase 6 Prepared Data Models
+ * Wasla Link - Phase 6 Prepared Data Models
  * Prepared structures for Phase 7 backend migration.
  */
 
 export interface Coupon {
   id: string;
-  code: string; // e.g., "SOUQ20"
+  code: string; // e.g., "WASLA20"
   type: 'percentage' | 'fixed';
   value: number; // e.g., 20 for 20% or 50 for 50 EGP
   minOrderValue?: number; // Minimum order value required to apply coupon

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { Heart, Store as StoreIcon, ShoppingBag, Clock, Star } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { CustomerHeader } from '../../components/common/CustomerHeader';
@@ -11,6 +12,7 @@ interface FavoritesScreenProps {
 
 export const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigate }) => {
   const { favoriteStores, favoriteProducts, toggleFavoriteStore, toggleFavoriteProduct,  isRTL } = useApp();
+  const { t } = useTranslation();
   const { stores } = useStores();
   const { products } = useProducts();;
 
@@ -146,7 +148,7 @@ export const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigate }) =>
                     <h4 className="font-black text-xs text-theme-text truncate leading-tight">{prod.name}</h4>
                     <p className="text-[10px] text-theme-muted font-bold truncate mt-1 leading-normal">{prod.desc}</p>
                     <div className="flex items-center justify-between mt-2">
-                      <span className="text-xs font-black text-primary">{prod.price} ج.م</span>
+                      <span className="text-xs font-black text-primary">{prod.price} {t('currencyEGP')}</span>
                       <span className="text-[9px] text-theme-muted bg-theme-bg px-2 py-0.5 rounded border border-theme-border font-bold">
                         {isRTL ? `في ${prod.shop?.name}` : `In ${prod.shop?.name}`}
                       </span>

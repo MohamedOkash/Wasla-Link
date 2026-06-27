@@ -11,7 +11,8 @@ import { WalletTransaction, Settlement as WalletSettlement } from '../types/fina
 import { ReturnRequest } from '../types/return.types';
 import { DriverMetrics } from '../types/analytics.types';
 import { PointsHistoryEntry, Referral } from '../types/loyalty.types';
-import { DeliveryFeeConfig, DEFAULT_DELIVERY_FEE_CONFIG } from '../services/deliveryFee.service';
+import { PlatformSettings } from '../types/financial';
+import { DEFAULT_PLATFORM_SETTINGS } from '../services/deliveryFee.service';
 import { fcmService } from '../services/fcm.service';
 import { ToastItem, ToastType } from '../components/premium/toast/PremiumToast';
 
@@ -210,8 +211,8 @@ interface AppContextType {
   setCampaigns: React.Dispatch<React.SetStateAction<any[]>>;
   pointsHistory: PointsHistoryEntry[];
   referrals: Referral[];
-  deliveryFeeConfig: DeliveryFeeConfig | null;
-  updateDeliveryFeeConfig: (config: DeliveryFeeConfig) => Promise<void>;
+  platformSettings: PlatformSettings | null;
+  updatePlatformSettings: (settings: PlatformSettings) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -236,7 +237,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [stockMovements, setStockMovements] = useState<StockMovement[]>([]);
   const [pointsHistory, setPointsHistory] = useState<PointsHistoryEntry[]>([]);
   const [referrals, setReferrals] = useState<Referral[]>([]);
-  const [deliveryFeeConfig, setDeliveryFeeConfig] = useState<DeliveryFeeConfig | null>(null);
+  const [platformSettings, setPlatformSettings] = useState<PlatformSettings | null>(null);
 
   // User sub-collections states mapped from currentUser profile
   const [favoriteStores, setFavoriteStores] = useState<string[]>([]);
@@ -547,10 +548,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }, 12 * 60 * 60 * 1000).then(data => mounted && setBannersState(data));
 
         // 12 Hours TTL
-        cacheService.fetchWithCache('deliveryFees', async () => {
-          const snap = await getDoc(doc(db, 'config', 'deliveryFees'));
-          return snap.exists() ? snap.data() as DeliveryFeeConfig : DEFAULT_DELIVERY_FEE_CONFIG;
-        }, 12 * 60 * 60 * 1000).then(data => mounted && setDeliveryFeeConfig(data));
+        cacheService.fetchWithCache('platformSettings', async () => {
+          const snap = await getDoc(doc(db, 'platformSettings', 'default'));
+          return snap.exists() ? { ...DEFAULT_PLATFORM_SETTINGS, ...snap.data() } as PlatformSettings : DEFAULT_PLATFORM_SETTINGS;
+        }, 12 * 60 * 60 * 1000).then(data => mounted && setPlatformSettings(data));
 
         // 12 Hours TTL
         cacheService.fetchWithCache('campaigns', async () => {
@@ -918,7 +919,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const target = savedAddresses.find(a => a.id === id);
       if (target) {
         const details = `${target.governorate}، ${target.center}، ${target.village}، ${target.street}، عمارة ${target.building}`;
-        updateLocationPersistent({ name: details, coords: target.gpsCoords || null, isVerified: true });
+        const mappedCoords = target.gpsCoords
+          ? { lat: target.gpsCoords.latitude, lng: target.gpsCoords.longitude, accuracy: target.gpsCoords.accuracy }
+          : null;
+        updateLocationPersistent({ name: details, coords: mappedCoords, isVerified: true });
       }
       showToast('تم تعيين كعنوان افتراضي للتوصيل');
     } catch (err) {
@@ -1419,14 +1423,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const updateDeliveryFeeConfig = async (newConfig: DeliveryFeeConfig) => {
+  const updatePlatformSettings = async (newSettings: PlatformSettings) => {
     try {
-      await setDoc(doc(db, 'config', 'deliveryFees'), newConfig);
-      setDeliveryFeeConfig(newConfig);
-      showToast(isRTL ? 'تم تحديث إعدادات التوصيل بنجاح' : 'Delivery configuration updated successfully');
+      await setDoc(doc(db, 'platformSettings', 'default'), newSettings);
+      setPlatformSettings(newSettings);
+      showToast(isRTL ? 'تم تحديث إعدادات المنصة بنجاح' : 'Platform configurations updated successfully');
     } catch (err) {
-      console.error('Error updating delivery fee config:', err);
-      showToast(isRTL ? 'فشل تحديث إعدادات التوصيل' : 'Failed to update delivery configuration');
+      console.error('Error updating platform settings:', err);
+      showToast(isRTL ? 'فشل تحديث إعدادات المنصة' : 'Failed to update platform configurations');
     }
   };
 
@@ -1533,8 +1537,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCampaigns,
         pointsHistory,
         referrals,
-        deliveryFeeConfig,
-        updateDeliveryFeeConfig
+        platformSettings,
+        updatePlatformSettings
       }}
     >
       {children}

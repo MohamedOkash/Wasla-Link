@@ -108,7 +108,7 @@ export const StoreApprovals: React.FC = () => {
                 <img src={shop.logoUrl} className="w-10 h-10 rounded-lg object-cover" alt={shop.name} />
                 <div>
                   <h4 className="font-black text-xs text-theme-text">{shop.name}</h4>
-                  <p className="text-[9px] text-theme-muted font-bold">التقييم: {shop.rating} • رسوم التوصيل: {shop.fee} ج.م</p>
+                  <p className="text-[9px] text-theme-muted font-bold">{t('str_14')}: {shop.rating} • {t('str_18')}: {shop.fee} {t('currencyEGP')}</p>
                 </div>
               </div>
               

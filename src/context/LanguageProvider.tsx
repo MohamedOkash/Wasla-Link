@@ -1,6 +1,10 @@
 import React, { createContext, useState, useEffect } from 'react';
-import ar from '../locales/ar.json';
-import en from '../locales/en.json';
+import arIndexed from '../locales/ar.json';
+import enIndexed from '../locales/en.json';
+import { translations } from '../data/translations';
+
+const ar = { ...translations.ar, ...arIndexed };
+const en = { ...translations.en, ...enIndexed };
 
 export type Language = 'en' | 'ar';
 

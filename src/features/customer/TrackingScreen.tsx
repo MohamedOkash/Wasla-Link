@@ -89,9 +89,10 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
       iconAnchor: [18, 18]
     });
 
+    const heading = driverLocation?.heading || 0;
     const driverIcon = L.divIcon({
-      html: `<div class="bg-orange-500 text-white p-2 rounded-[18px] border-2 border-white shadow-xl flex items-center justify-center w-10 h-10 animate-bounce">
-        <svg class="animate-pulse" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+      html: `<div style="transform: rotate(${heading}deg); transform-origin: center; transition: transform 0.3s ease-out;" class="bg-orange-500 text-white p-2.5 rounded-full border-2 border-white shadow-xl flex items-center justify-center w-10 h-10">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 22 12 17 2 22 12 2"/></svg>
       </div>`,
       className: '',
       iconSize: [40, 40],
@@ -127,12 +128,18 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
         [customerLocation.lat, customerLocation.lng]
       ]);
       mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+    } else {
+      // Dynamic route update (for async OSRM/OpenStreetMap results loading)
+      if (polylineRef.current) {
+        polylineRef.current.setLatLngs(route);
+      }
     }
 
     // 2. Update Dynamic Driver Location
     if (driverLocation) {
       if (driverMarkerRef.current) {
         driverMarkerRef.current.setLatLng([driverLocation.lat, driverLocation.lng]);
+        driverMarkerRef.current.setIcon(driverIcon);
       } else {
         driverMarkerRef.current = L.marker([driverLocation.lat, driverLocation.lng], { icon: driverIcon }).addTo(mapRef.current);
       }
@@ -219,8 +226,13 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
               <span className="text-[9px] text-theme-muted font-black block leading-none mb-1 uppercase tracking-wide">
                 {t('str_189')}
               </span>
-              <span className="text-sm font-black text-theme-text">
-                {trackingState.status === 'delivered' ? (t('str_190')) : `${trackingState.eta} ${t('str_191')}`}
+              <span className="text-sm font-black text-theme-text flex items-center gap-1.5 flex-wrap">
+                <span>{trackingState.status === 'delivered' ? (t('str_190')) : `${trackingState.eta} ${t('str_191')}`}</span>
+                {trackingState.remainingDistanceKm !== undefined && trackingState.remainingDistanceKm > 0 && (
+                  <span className="text-xs text-theme-muted font-bold">
+                    ({trackingState.remainingDistanceKm} {isRTL ? 'كم' : 'km'})
+                  </span>
+                )}
               </span>
             </div>
           </div>

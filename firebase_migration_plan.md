@@ -1,6 +1,6 @@
 # Firebase Migration & Deployment Plan
 
-This document details the step-by-step roadmap to transition SOUQ EL BALAD from a client-side local storage engine to a live Firebase backend in Phase 8.
+This document details the step-by-step roadmap to transition Wasla Link from a client-side local storage engine to a live Firebase backend in Phase 8.
 
 ---
 

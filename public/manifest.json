@@ -1,6 +1,6 @@
 {
-  "name": "WaslaLink - Connecting You To Everything Nearby",
-  "short_name": "WaslaLink",
+  "name": "Wasla Link - Connecting You To Everything Nearby",
+  "short_name": "Wasla Link",
   "description": "وصلة لينك - التطبيق الأسرع للطلب والتوصيل من البقالات والمطاعم والصيدليات القريبة منك في مدينتك.",
   "start_url": "/",
   "display": "standalone",

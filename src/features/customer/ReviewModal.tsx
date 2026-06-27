@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { Star, X, MessageSquare, AlertCircle, Camera, Upload, Trash2 } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { db } from '../../services/firebase';
@@ -12,6 +13,7 @@ interface ReviewModalProps {
 
 export const ReviewModal: React.FC<ReviewModalProps> = ({ order, onClose }) => {
   const { lang, isRTL, currentUser, showToast } = useApp();
+  const { t } = useTranslation();
   
   // General experience ratings
   const [ratingStore, setRatingStore] = useState(5);
@@ -278,7 +280,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({ order, onClose }) => {
                     <div className="min-w-0 flex-1">
                       <h5 className="font-black text-xs text-theme-text truncate leading-tight">{item.name}</h5>
                       <span className="text-[9px] text-theme-muted font-bold block mt-0.5">
-                        {item.price} ج.م × {item.quantity}
+                        {item.price} {t('currencyEGP')} × {item.quantity}
                       </span>
                     </div>
                   </div>

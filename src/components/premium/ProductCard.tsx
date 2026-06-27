@@ -116,11 +116,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <div className="flex items-center justify-between mt-3 flex-shrink-0">
           <div className="flex flex-col">
             <span className="text-[11px] font-black text-primary font-sans">
-              {discountedPrice} ج.م
+              {discountedPrice} {t('currencyEGP')}
             </span>
             {hasDiscount && (
               <span className="text-[8px] text-theme-muted line-through font-bold font-sans">
-                {product.price} ج.m
+                {product.price} {t('currencyEGP')}
               </span>
             )}
           </div>

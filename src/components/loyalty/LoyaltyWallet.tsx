@@ -28,7 +28,7 @@ export const LoyaltyWallet: React.FC = () => {
           </div>
         </div>
         <div className="text-right">
-          <span className="text-lg font-black text-primary">{cashValue} ج.م</span>
+          <span className="text-lg font-black text-primary">{cashValue} {t('currencyEGP')}</span>
         </div>
       </div>
 

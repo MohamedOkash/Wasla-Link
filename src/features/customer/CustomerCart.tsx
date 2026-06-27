@@ -27,7 +27,7 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
   const { products } = useProducts();;
 
   const handleIncrement = (id: string) => {
-  const {} = useTranslation();
+
 
     setCart(prev => {
       const items = prev.items.map(item => {
@@ -106,7 +106,7 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
     );
 
     if (!validation.isValid) {
-      setCouponError(validation.error || 'كوبون غير صالح');
+      setCouponError(validation.error || t('str_49'));
       setActiveCoupon(null);
     } else {
       setActiveCoupon(coupon);
@@ -180,11 +180,11 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
                   
                   <div className="flex items-center gap-2 flex-wrap mt-1">
                     <span className="text-xs font-black text-primary font-sans">
-                      {discountedUnit} ج.م
+                      {discountedUnit} {t('currencyEGP')}
                     </span>
                     {hasDiscount && (
                       <span className="text-[9px] text-theme-muted line-through font-bold font-sans">
-                        {prod.price} ج.م
+                        {prod.price} {t('currencyEGP')}
                       </span>
                     )}
                     {promoLabel && (
@@ -259,7 +259,7 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
         {activeCoupon && (
           <p className="text-[10px] font-black text-green-500 flex items-center gap-1 animate-pop-in">
             <Sparkles size={11} className="text-green-500 animate-pulse" />
-            {t('str_58')} {discountAmount} ج.م
+            {t('str_58')} {discountAmount} {t('currencyEGP')}
           </p>
         )}
       </div>
@@ -274,21 +274,21 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
           </div>
           <div className="flex justify-between text-theme-muted font-semibold">
             <span>{t('subtotal')}</span>
-            <span className="font-sans font-bold text-theme-text">{subtotal} ج.م</span>
+            <span className="font-sans font-bold text-theme-text">{subtotal} {t('currencyEGP')}</span>
           </div>
           {discountAmount > 0 && (
             <div className="flex justify-between text-green-500 font-bold animate-fade-in bg-green-500/10 p-2 rounded-lg mt-1">
               <span>{t('str_61')}</span>
-              <span className="font-sans">-{discountAmount} ج.م</span>
+              <span className="font-sans">-{discountAmount} {t('currencyEGP')}</span>
             </div>
           )}
           <div className="flex justify-between text-theme-muted font-semibold">
             <span>{t('deliveryFee')}</span>
-            <span className="font-sans font-bold text-theme-text">{deliveryFee} ج.م</span>
+            <span className="font-sans font-bold text-theme-text">{deliveryFee} {t('currencyEGP')}</span>
           </div>
           <div className="border-t border-theme-border/80 my-2 pt-3 flex justify-between items-center text-theme-text font-black">
             <span className="text-sm">{t('total')}</span>
-            <span className="text-primary font-sans font-black text-lg">{total} ج.م</span>
+            <span className="text-primary font-sans font-black text-lg">{total} {t('currencyEGP')}</span>
           </div>
         </div>
 

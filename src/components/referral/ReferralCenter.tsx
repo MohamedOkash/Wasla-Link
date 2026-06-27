@@ -45,9 +45,7 @@ export const ReferralCenter: React.FC = () => {
         </div>
         <h3 className="text-base font-black text-theme-text">{t('str_1202')}</h3>
         <p className="text-xs text-theme-muted font-bold mt-2 max-w-xs mx-auto leading-relaxed">
-          {isRTL 
-            ? 'احصل على 500 نقطة (25 ج.م) لكل صديق يسجل باستخدام كودك، ويحصل صديقك على 100 نقطة (5 ج.م) ترحيبية فوراً!' 
-            : 'Get 500 points (25 EGP) for every friend registering with your code, and your friend gets 100 points (5 EGP) instantly!'}
+          {t('referralDescription')}
         </p>
       </div>
 

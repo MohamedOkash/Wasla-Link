@@ -13,9 +13,10 @@ import { CustomerOrders } from '../features/customer/CustomerOrders';
 import { CustomerProfile } from '../features/customer/CustomerProfile';
 import { FavoritesScreen } from '../features/customer/FavoritesScreen';
 import { GlobalSearch } from '../features/customer/GlobalSearch';
-import { LocationPicker } from '../features/customer/LocationPicker';
 import { NotificationsDrawer } from '../components/common/NotificationsDrawer';
-import { TrackingScreen } from '../features/customer/TrackingScreen';
+
+const LocationPicker = React.lazy(() => import('../features/customer/LocationPicker').then(m => ({ default: m.LocationPicker })));
+const TrackingScreen = React.lazy(() => import('../features/customer/TrackingScreen').then(m => ({ default: m.TrackingScreen })));
 
 export const CustomerRoutes: React.FC = () => {
   const { 
@@ -40,7 +41,11 @@ export const CustomerRoutes: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col relative h-full bg-theme-bg theme-transition overflow-hidden">
       {showSearch && <GlobalSearch closeSearch={() => setShowSearch(false)} navigate={navigate} />}
-      {showMap && <LocationPicker closeMap={() => setShowMap(false)} />}
+      {showMap && (
+        <React.Suspense fallback={<div className="p-8 text-center text-theme-muted font-bold">جاري تحميل الخريطة... / Loading Map...</div>}>
+          <LocationPicker closeMap={() => setShowMap(false)} />
+        </React.Suspense>
+      )}
       {showNotifications && <NotificationsDrawer onClose={() => setShowNotifications(false)} navigate={navigate} />}
 
       {/* Main Content Area */}
@@ -88,7 +93,11 @@ export const CustomerRoutes: React.FC = () => {
           />
         )}
         {route.name === 'orders' && <CustomerOrders goBack={() => navigate('home')} navigate={navigate} />}
-        {route.name === 'tracking' && <TrackingScreen orderId={route.params.orderId} goBack={() => navigate('orders')} />}
+        {route.name === 'tracking' && (
+          <React.Suspense fallback={<div className="p-8 text-center text-theme-muted font-bold">جاري تحميل شاشة التتبع... / Loading Tracking...</div>}>
+            <TrackingScreen orderId={route.params.orderId} goBack={() => navigate('orders')} />
+          </React.Suspense>
+        )}
         {route.name === 'profile' && <CustomerProfile navigate={navigate} />}
         {route.name === 'favorites' && <FavoritesScreen navigate={navigate} />}
       </div>
