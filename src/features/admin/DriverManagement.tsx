@@ -1,15 +1,17 @@
 import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState, useEffect } from 'react';
-import { Bike, Check, X, Ban, RefreshCw, Phone, Star, ShieldAlert, Trash2, Eye, Users, Clock, Activity } from 'lucide-react';
+import { Bike, Check, X, Ban, RefreshCw, Phone, Star, ShieldAlert, Trash2, Eye, Users, Clock, Activity, Search, MapPin, AlertCircle } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
-import { collection, query, onSnapshot, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { driverRepository } from "../../services/driver/repository";
+import { PremiumInput } from '../../components/premium/PremiumInput';
 
 export const DriverManagement: React.FC = () => {
   const { t } = useTranslation();
   const { isRTL, showToast, currentUser } = useApp();
-  const [activeFilter, setActiveFilter] = useState<'approved' | 'pending' | 'suspended' | 'rejected'>('approved');
+  const [activeFilter, setActiveFilter] = useState<'approved' | 'pending_review' | 'needs_documents' | 'rejected'>('pending_review');
+  const [searchQuery, setSearchQuery] = useState('');
   const [drivers, setDrivers] = useState<any[]>([]);
 
   useEffect(() => {
@@ -24,20 +26,45 @@ export const DriverManagement: React.FC = () => {
   const handleApprove = async (driver: any) => {
     try {
       await import('../../services/admin/service').then(m => m.adminService.approveDriver(driver.id, driver.vehicleType));
-      showToast(t('str_534'));
+      showToast(t('str_534') || 'Driver approved successfully');
     } catch (error) {
       console.error(error);
-      showToast(t('str_535'), 'error');
+      showToast(t('str_535') || 'Failed to approve driver', 'error');
     }
   };
 
   const handleReject = async (driverId: string) => {
     try {
       await driverRepository.update(driverId, { status: 'rejected' });
-      showToast(t('str_536'));
+      showToast(t('str_536') || 'Driver rejected');
     } catch (error) {
       console.error(error);
-      showToast(t('str_537'), 'error');
+      showToast(t('str_537') || 'Error', 'error');
+    }
+  };
+
+  const handleRequestDocs = async (driverId: string) => {
+    const requested = prompt('Enter requested documents (comma separated):', 'National ID Image,Driving License');
+    const reviewNote = prompt('Enter a note for the driver:');
+    
+    if (requested && reviewNote) {
+      try {
+        await driverRepository.update(driverId, { 
+          status: 'needs_documents',
+          verificationRequest: {
+            status: 'needs_documents',
+            requestedDocuments: requested.split(',').map(s => s.trim()),
+            reviewNote,
+            requestedBy: currentUser?.uid,
+            requestedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }
+        });
+        showToast('Requested more documents successfully');
+      } catch (error) {
+        console.error(error);
+        showToast('Error', 'error');
+      }
     }
   };
 
@@ -48,10 +75,10 @@ export const DriverManagement: React.FC = () => {
         isActive: false,
         availability: 'offline'
       });
-      showToast(t('str_538'));
+      showToast(t('str_538') || 'Driver suspended');
     } catch (error) {
       console.error(error);
-      showToast(t('str_537'), 'error');
+      showToast(t('str_537') || 'Error', 'error');
     }
   };
 
@@ -59,22 +86,39 @@ export const DriverManagement: React.FC = () => {
     try {
       await driverRepository.update(driverId, { 
         status: 'approved',
-        isActive: true
+        isActive: true,
+        availability: 'online'
       });
-      showToast(t('str_539'));
+      showToast('Driver reactivated');
     } catch (error) {
       console.error(error);
-      showToast(t('str_537'), 'error');
+      showToast(t('str_537') || 'Error', 'error');
     }
   };
 
-  const filteredDrivers = drivers.filter(d => d.status === activeFilter);
+  const filteredDrivers = drivers.filter(d => {
+    // Treat 'pending' (old state) as 'pending_review'
+    const status = d.status === 'pending' ? 'pending_review' : d.status;
+    const matchStatus = status === activeFilter;
+    
+    if (!matchStatus) return false;
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const matchName = d.name?.toLowerCase().includes(q);
+      const matchPhone = d.phone?.includes(q);
+      const matchGov = d.governorate?.toLowerCase().includes(q);
+      const matchMethod = d.deliveryMethod?.toLowerCase().includes(q);
+      return matchName || matchPhone || matchGov || matchMethod;
+    }
+    return true;
+  });
 
   const stats = {
     total: drivers.filter(d => d.status === 'approved').length,
     online: drivers.filter(d => d.status === 'approved' && d.availability === 'online').length,
-    busy: drivers.filter(d => d.status === 'approved' && d.availability === 'busy').length,
-    pending: drivers.filter(d => d.status === 'pending').length,
+    pending: drivers.filter(d => d.status === 'pending' || d.status === 'pending_review').length,
+    needsDocs: drivers.filter(d => d.status === 'needs_documents').length,
   };
 
   return (
@@ -87,7 +131,7 @@ export const DriverManagement: React.FC = () => {
             <Users size={20} />
           </div>
           <div>
-            <p className="text-[10px] text-theme-muted font-bold">{t('str_540')}</p>
+            <p className="text-[10px] text-theme-muted font-bold">Total Approved</p>
             <p className="font-black text-lg">{stats.total}</p>
           </div>
         </div>
@@ -96,57 +140,66 @@ export const DriverManagement: React.FC = () => {
             <Activity size={20} />
           </div>
           <div>
-            <p className="text-[10px] text-theme-muted font-bold">{t('str_541')}</p>
+            <p className="text-[10px] text-theme-muted font-bold">Online</p>
             <p className="font-black text-lg">{stats.online}</p>
           </div>
         </div>
         <div className="bg-theme-card p-4 rounded-2xl border border-theme-border shadow-sm flex items-center gap-3">
           <div className="w-10 h-10 bg-amber-500/10 text-amber-500 flex items-center justify-center rounded-xl">
-            <Bike size={20} />
+            <Clock size={20} />
           </div>
           <div>
-            <p className="text-[10px] text-theme-muted font-bold">{t('str_542')}</p>
-            <p className="font-black text-lg">{stats.busy}</p>
+            <p className="text-[10px] text-theme-muted font-bold">Pending Review</p>
+            <p className="font-black text-lg">{stats.pending}</p>
           </div>
         </div>
         <div className="bg-theme-card p-4 rounded-2xl border border-theme-border shadow-sm flex items-center gap-3">
           <div className="w-10 h-10 bg-blue-500/10 text-blue-500 flex items-center justify-center rounded-xl">
-            <Clock size={20} />
+            <AlertCircle size={20} />
           </div>
           <div>
-            <p className="text-[10px] text-theme-muted font-bold">{t('str_543')}</p>
-            <p className="font-black text-lg">{stats.pending}</p>
+            <p className="text-[10px] text-theme-muted font-bold">Needs Docs</p>
+            <p className="font-black text-lg">{stats.needsDocs}</p>
           </div>
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="bg-theme-card p-1 rounded-2xl border border-theme-border shadow-sm flex gap-1 theme-transition overflow-x-auto no-scrollbar">
-        {[
-          { id: 'approved', label: t('str_544') },
-          { id: 'pending', label: t('str_545') },
-          { id: 'rejected', label: t('str_546') },
-          { id: 'suspended', label: t('str_547') }
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveFilter(tab.id as any)}
-            className={`flex-1 min-w-[80px] py-2.5 text-xs font-black rounded-xl transition ${
-              activeFilter === tab.id 
-                ? 'bg-primary text-white shadow-sm font-black' 
-                : 'text-theme-muted hover:text-theme-text hover:bg-theme-border/50'
-            }`}
-          >
-            {tab.label} ({drivers.filter(d => d.status === tab.id).length})
-          </button>
-        ))}
+      {/* Search & Filter Tabs */}
+      <div className="space-y-4">
+        <PremiumInput
+          leftIcon={<Search size={18} />}
+          placeholder="Search by name, phone, governorate, method..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+        />
+
+        <div className="bg-theme-card p-1 rounded-2xl border border-theme-border shadow-sm flex gap-1 theme-transition overflow-x-auto no-scrollbar">
+          {[
+            { id: 'pending_review', label: 'Pending Review', count: stats.pending },
+            { id: 'needs_documents', label: 'Needs Docs', count: stats.needsDocs },
+            { id: 'approved', label: 'Approved', count: stats.total },
+            { id: 'rejected', label: 'Rejected', count: drivers.filter(d => d.status === 'rejected').length }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveFilter(tab.id as any)}
+              className={`flex-1 min-w-[100px] py-2.5 text-xs font-black rounded-xl transition ${
+                activeFilter === tab.id 
+                  ? 'bg-primary text-white shadow-sm font-black' 
+                  : 'text-theme-muted hover:text-theme-text hover:bg-theme-border/50'
+              }`}
+            >
+              {tab.label} ({tab.count})
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Driver List Card */}
       <div className="bg-theme-card rounded-[30px] border border-theme-border p-5 shadow-sm space-y-4 animate-fade-in theme-transition">
         <h3 className="font-black text-theme-text text-sm flex items-center gap-2 border-b border-theme-border/60 pb-2.5">
           <Bike size={18} className="text-primary" />
-          {t('str_548')}
+          Driver Applications
         </h3>
 
         {filteredDrivers.length === 0 ? (
@@ -185,50 +238,70 @@ export const DriverManagement: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2 pt-3 border-t border-theme-border/60">
-                  {driver.status === 'pending' && (
-                    <>
-                      <button
-                        onClick={() => window.open(driver.nationalIdImage, '_blank')}
-                        className="flex-1 bg-blue-500/10 text-blue-500 py-2 rounded-xl border border-blue-500/20 hover:bg-blue-500/20 transition flex items-center justify-center gap-1 text-xs font-black"
-                      >
-                        <Eye size={14} />{t('str_557')}</button>
-                      <button
-                        onClick={() => window.open(driver.licenseImage, '_blank')}
-                        className="flex-1 bg-blue-500/10 text-blue-500 py-2 rounded-xl border border-blue-500/20 hover:bg-blue-500/20 transition flex items-center justify-center gap-1 text-xs font-black"
-                      >
-                        <Eye size={14} />{t('str_558')}</button>
-                    </>
-                  )}
                   {driver.status === 'approved' && (
                     <div className="flex-1 text-xs font-black text-green-500 bg-green-500/10 py-2 rounded-xl text-center border border-green-500/20">
-                      {t('str_551')}
+                      Approved
                     </div>
                   )}
                   {driver.status === 'rejected' && (
                     <div className="flex-1 text-xs font-black text-red-500 bg-red-500/10 py-2 rounded-xl text-center border border-red-500/20">
-                      {t('str_552')}
+                      Rejected
                     </div>
                   )}
                   {driver.status === 'suspended' && (
                     <div className="flex-1 text-xs font-black text-amber-500 bg-amber-500/10 py-2 rounded-xl text-center border border-amber-500/20">
-                      {t('str_553')}
+                      Suspended
+                    </div>
+                  )}
+                  {driver.status === 'needs_documents' && (
+                    <div className="flex-1 text-xs font-black text-blue-500 bg-blue-500/10 py-2 rounded-xl text-center border border-blue-500/20">
+                      Waiting for Documents
                     </div>
                   )}
                 </div>
 
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => {
+                      if (driver.nationalIdImageUrl) window.open(driver.nationalIdImageUrl, '_blank');
+                      else if (driver.nationalIdImage) window.open(driver.nationalIdImage, '_blank');
+                      else showToast('No ID uploaded', 'warning');
+                    }}
+                    className="flex-1 bg-blue-500/10 text-blue-500 py-2 rounded-xl border border-blue-500/20 hover:bg-blue-500/20 transition flex items-center justify-center gap-1 text-xs font-black"
+                  >
+                    <Eye size={14} /> ID
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (driver.drivingLicenseUrl) window.open(driver.drivingLicenseUrl, '_blank');
+                      else if (driver.licenseImage) window.open(driver.licenseImage, '_blank');
+                      else showToast('No License uploaded', 'warning');
+                    }}
+                    className="flex-1 bg-blue-500/10 text-blue-500 py-2 rounded-xl border border-blue-500/20 hover:bg-blue-500/20 transition flex items-center justify-center gap-1 text-xs font-black"
+                  >
+                    <Eye size={14} /> License
+                  </button>
+                </div>
+
                 {/* Actions */}
-                <div className="flex gap-2">
-                  {driver.status === 'pending' && (
+                <div className="flex flex-wrap gap-2">
+                  {(driver.status === 'pending' || driver.status === 'pending_review' || driver.status === 'needs_documents') && (
                     <>
                       <button
                         onClick={() => handleApprove(driver)}
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-xl shadow-md transition flex items-center justify-center gap-1 text-xs font-black"
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-xl shadow-md transition flex items-center justify-center gap-1 text-xs font-black min-w-[80px]"
                       >
-                        <Check size={14} /> {t('str_159')}
+                        <Check size={14} /> Approve
+                      </button>
+                      <button
+                        onClick={() => handleRequestDocs(driver.id)}
+                        className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-xl shadow-md transition flex items-center justify-center gap-1 text-xs font-black min-w-[120px]"
+                      >
+                        <AlertCircle size={14} /> Request Docs
                       </button>
                       <button
                         onClick={() => handleReject(driver.id)}
-                        className="flex-[0.5] bg-red-500/10 text-red-500 border border-red-500/20 py-2 rounded-xl hover:bg-red-500/20 transition flex items-center justify-center"
+                        className="w-10 bg-red-500/10 text-red-500 border border-red-500/20 py-2 rounded-xl hover:bg-red-500/20 transition flex items-center justify-center shrink-0"
                       >
                         <X size={16} />
                       </button>

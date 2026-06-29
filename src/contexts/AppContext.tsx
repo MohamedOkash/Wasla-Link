@@ -14,6 +14,7 @@ import { PointsHistoryEntry, Referral } from '../types/loyalty.types';
 import { PlatformSettings } from '../types/financial';
 import { DEFAULT_PLATFORM_SETTINGS } from '../services/deliveryFee.service';
 import { fcmService } from '../services/fcm.service';
+import { Preferences } from '@capacitor/preferences';
 import { ToastItem, ToastType } from '../components/premium/toast/PremiumToast';
 
 // Firebase Imports
@@ -240,14 +241,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [followedStores, setFollowedStores] = useState<string[]>([]);
   const [savedAddresses, setSavedAddresses] = useState<EgyptianAddress[]>([]);
 
-  const [cart, setCart] = useState<Cart>(() => {
-    try {
-      const saved = localStorage.getItem('waslalink_cart');
-      return saved ? JSON.parse(saved) : { shopId: null, shopName: '', items: [] };
-    } catch {
-      return { shopId: null, shopName: '', items: [] };
-    }
-  });
+  const [cart, setCart] = useState<Cart>({ shopId: null, shopName: '', items: [] });
+  const [isCartHydrated, setIsCartHydrated] = useState(false);
   const [cartConflictAlert, setCartConflictAlert] = useState<CartConflictAlert | null>(null);
 
   const [location, setLocation] = useState<LocationState>(() => {
@@ -290,14 +285,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('waslalink_recent_searches', JSON.stringify(recentSearches));
   }, [recentSearches]);
 
-  // Sync Cart to LocalStorage
+  // Hydrate Cart from Preferences
   useEffect(() => {
-    localStorage.setItem('waslalink_cart', JSON.stringify(cart));
-  }, [cart]);
+    const hydrateCart = async () => {
+      try {
+        const { value } = await Preferences.get({ key: 'waslalink_cart' });
+        if (value) {
+          setCart(JSON.parse(value));
+        }
+      } catch (err) {
+        console.error('Failed to hydrate cart', err);
+      } finally {
+        setIsCartHydrated(true);
+      }
+    };
+    hydrateCart();
+  }, []);
+
+  // Sync Cart to Preferences
+  useEffect(() => {
+    if (isCartHydrated) {
+      Preferences.set({ key: 'waslalink_cart', value: JSON.stringify(cart) });
+    }
+  }, [cart, isCartHydrated]);
 
   // Sync Cart to Firestore on Login/Logout
   useEffect(() => {
-    if (!currentUser?.uid) return;
+    if (!currentUser?.uid || !isCartHydrated) return;
     
     const syncCartWithFirestore = async () => {
       try {
@@ -320,11 +334,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     };
     syncCartWithFirestore();
-  }, [currentUser?.uid]);
+  }, [currentUser?.uid, isCartHydrated]);
 
   // Push Cart Updates to Firestore when logged in
   useEffect(() => {
-    if (!currentUser?.uid) return;
+    if (!currentUser?.uid || !isCartHydrated) return;
     const timeout = setTimeout(async () => {
       try {
         await import('../services/shared/cart.repository').then(async m => {
@@ -338,12 +352,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             });
           }
         });
-      } catch (err) {
-        console.error("Error updating cart", err);
-      }
-    }, 1000);
+      } catch (err) {}
+    }, 500);
     return () => clearTimeout(timeout);
-  }, [cart, currentUser?.uid]);
+  }, [cart, currentUser?.uid, isCartHydrated]);
 
   const addRecentSearch = (queryStr: string) => {
     if (!queryStr.trim()) return;

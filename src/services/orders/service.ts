@@ -41,6 +41,17 @@ export class OrderService {
       });
     }
 
+    // Atomic Inventory Updates
+    if (orderData.items && Array.isArray(orderData.items)) {
+      orderData.items.forEach((item: any) => {
+        if (item.id) {
+          batch.update(doc(db, 'products', item.id), {
+            currentStock: increment(-item.quantity)
+          });
+        }
+      });
+    }
+
     await batch.commit();
   }
 }

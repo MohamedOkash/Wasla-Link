@@ -9,6 +9,7 @@ import { DriverProfile } from './DriverProfile';
 import { DriverEarnings } from './DriverEarnings';
 import { geoService, GpsStatus, LocationData } from '../../services/geolocation.service';
 import { driverRepository } from "../../services/driver/repository";
+import { DriverVerificationRequired } from './DriverVerificationRequired';
 
 export const DriverDashboard: React.FC = () => {
   const { t } = useTranslation();
@@ -176,6 +177,37 @@ export const DriverDashboard: React.FC = () => {
 
   if (!driver) {
     return <div className="h-screen bg-theme-bg flex items-center justify-center animate-pulse"><Bike size={40} className="text-primary" /></div>;
+  }
+
+  if (driver.status === 'pending_review') {
+    return (
+      <div className="h-screen bg-theme-bg flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-20 h-20 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mb-6">
+          <ClipboardList size={40} />
+        </div>
+        <h2 className="text-xl font-black mb-2 text-theme-text">Your Application is Under Review</h2>
+        <p className="text-theme-muted text-sm font-bold">Please wait while our team reviews your documents.</p>
+        <button onClick={() => { goHome(); window.location.reload(); }} className="mt-8 px-6 py-3 bg-theme-card border border-theme-border rounded-xl text-theme-text text-sm font-black">Refresh</button>
+      </div>
+    );
+  }
+
+  if (driver.status === 'rejected') {
+    return (
+      <div className="h-screen bg-theme-bg flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mb-6">
+          <AlertTriangle size={40} />
+        </div>
+        <h2 className="text-xl font-black mb-2 text-theme-text">Application Rejected</h2>
+        <p className="text-theme-muted text-sm font-bold">Unfortunately, your application was not approved.</p>
+      </div>
+    );
+  }
+
+  if (driver.status === 'needs_documents') {
+    // We need a sub-component or state for uploading requested documents.
+    // For now, I'll redirect them to a special state or component.
+    return <DriverVerificationRequired driver={driver} />;
   }
 
   // Calculate metrics based on driver object (from Phase 14A driver schema)

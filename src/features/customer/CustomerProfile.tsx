@@ -565,196 +565,134 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
           <p className="text-[10px] opacity-80 mt-0.5 font-bold font-sans">{currentUser?.email || 'customer@demo.com'}</p>
         </div>
 
-        {/* Dashboard Grid Layout (Better information density) */}
-        <div className="p-5 space-y-4">
-          <span className="text-[10px] text-theme-muted font-black px-1 uppercase tracking-wider block leading-none">
-            {t('str_263')}
-          </span>
+        {/* Dashboard List Layout (Compact Information Density) */}
+        <div className="p-5 space-y-5">
 
-          <div className="grid grid-cols-2 gap-3.5">
-            
-            {/* Grid item: profile_info_card */}
-            <PremiumCard 
-              onClick={() => setActiveSection('info')}
-              className="p-4 flex flex-col justify-between h-32 bg-theme-card/65"
-            >
-              <div className="bg-primary/10 p-2.5 rounded-xl text-primary w-max transition-transform duration-300 hover:scale-105">
-                <UserIcon size={18} />
-              </div>
-              <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_264')}</h3>
-                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{t('str_265')}</p>
-              </div>
-            </PremiumCard>
-            
-            {/* Grid item: My Addresses */}
-            <PremiumCard 
-              onClick={() => setActiveSection('addresses')}
-              className="p-4 flex flex-col justify-between h-32 bg-theme-card/65"
-            >
-              <div className="bg-blue-500/10 p-2.5 rounded-xl text-blue-500 w-max transition-transform duration-300 hover:scale-105">
-                <MapPin size={18} />
-              </div>
-              <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_266')}</h3>
-                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{t('str_267')}</p>
-              </div>
-            </PremiumCard>
+          {/* Account Settings */}
+          <div className="space-y-2">
+            <span className="text-[10px] text-theme-muted font-black px-1 uppercase tracking-wider block leading-none">
+              {t('str_263') || 'Account'}
+            </span>
+            <PremiumCard hoverable={false} className="p-0 overflow-hidden bg-theme-card/65 divide-y divide-theme-border/30">
+              <button onClick={() => setActiveSection('info')} className="w-full flex items-center justify-between p-4 hover:bg-theme-border/20 transition-colors text-left">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 p-2 rounded-lg text-primary"><UserIcon size={16} /></div>
+                  <span className="font-black text-xs text-theme-text">{t('str_264')}</span>
+                </div>
+                <ChevronLeft size={16} className={`text-theme-muted ${isRTL ? '' : 'rotate-180'}`} />
+              </button>
+              
+              <button onClick={() => setActiveSection('addresses')} className="w-full flex items-center justify-between p-4 hover:bg-theme-border/20 transition-colors text-left">
+                <div className="flex items-center gap-3">
+                  <div className="bg-blue-500/10 p-2 rounded-lg text-blue-500"><MapPin size={16} /></div>
+                  <span className="font-black text-xs text-theme-text">{t('str_266')}</span>
+                </div>
+                <ChevronLeft size={16} className={`text-theme-muted ${isRTL ? '' : 'rotate-180'}`} />
+              </button>
 
-            {/* Grid item: Loyalty points */}
-            <PremiumCard 
-              onClick={() => setActiveSection('loyalty')}
-              className="p-4 flex flex-col justify-between h-32 bg-theme-card/65"
-            >
-              <div className="bg-amber-500/10 p-2.5 rounded-xl text-amber-500 w-max transition-transform duration-300 hover:scale-105">
-                <Coins size={18} />
-              </div>
-              <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_268')}</h3>
-                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">
-                  {t('str_269', { points: currentUser?.points || 0 })}
-                </p>
-              </div>
+              <button onClick={() => setActiveSection('security')} className="w-full flex items-center justify-between p-4 hover:bg-theme-border/20 transition-colors text-left">
+                <div className="flex items-center gap-3">
+                  <div className="bg-teal-500/10 p-2 rounded-lg text-teal-500"><ShieldCheck size={16} /></div>
+                  <span className="font-black text-xs text-theme-text">{t('str_282')}</span>
+                </div>
+                <ChevronLeft size={16} className={`text-theme-muted ${isRTL ? '' : 'rotate-180'}`} />
+              </button>
             </PremiumCard>
-            
-            {/* Grid item: Referrals invite */}
-            <PremiumCard 
-              onClick={() => setActiveSection('referral')}
-              className="p-4 flex flex-col justify-between h-32 bg-theme-card/65"
-            >
-              <div className="bg-purple-500/10 p-2.5 rounded-xl text-purple-500 w-max transition-transform duration-300 hover:scale-105">
-                <UserPlus size={18} />
-              </div>
-              <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_270')}</h3>
-                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">
-                  {t('str_271')}
-                </p>
-              </div>
-            </PremiumCard>
+          </div>
 
-            {/* Grid item: Orders */}
-            <PremiumCard 
-              onClick={() => navigate?.('orders')}
-              className="p-4 flex flex-col justify-between h-32 bg-theme-card/65"
-            >
-              <div className="bg-green-500/10 p-2.5 rounded-xl text-green-500 w-max transition-transform duration-300 hover:scale-105">
-                <ShoppingBag size={18} />
-              </div>
-              <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_272')}</h3>
-                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{t('str_273')}</p>
-              </div>
-            </PremiumCard>
+          {/* Activity & Rewards */}
+          <div className="space-y-2">
+            <span className="text-[10px] text-theme-muted font-black px-1 uppercase tracking-wider block leading-none">
+              Activity & Rewards
+            </span>
+            <PremiumCard hoverable={false} className="p-0 overflow-hidden bg-theme-card/65 divide-y divide-theme-border/30">
+              <button onClick={() => navigate?.('orders')} className="w-full flex items-center justify-between p-4 hover:bg-theme-border/20 transition-colors text-left">
+                <div className="flex items-center gap-3">
+                  <div className="bg-green-500/10 p-2 rounded-lg text-green-500"><ShoppingBag size={16} /></div>
+                  <span className="font-black text-xs text-theme-text">{t('str_272')}</span>
+                </div>
+                <ChevronLeft size={16} className={`text-theme-muted ${isRTL ? '' : 'rotate-180'}`} />
+              </button>
 
-            {/* Grid item: Favorites */}
-            <PremiumCard 
-              onClick={() => navigate?.('favorites')}
-              className="p-4 flex flex-col justify-between h-32 bg-theme-card/65"
-            >
-              <div className="bg-red-500/10 p-2.5 rounded-xl text-red-500 w-max transition-transform duration-300 hover:scale-105">
-                <Heart size={18} />
-              </div>
-              <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_274')}</h3>
-                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{t('str_275')}</p>
-              </div>
-            </PremiumCard>
+              <button onClick={() => navigate?.('favorites')} className="w-full flex items-center justify-between p-4 hover:bg-theme-border/20 transition-colors text-left">
+                <div className="flex items-center gap-3">
+                  <div className="bg-red-500/10 p-2 rounded-lg text-red-500"><Heart size={16} /></div>
+                  <span className="font-black text-xs text-theme-text">{t('str_274')}</span>
+                </div>
+                <ChevronLeft size={16} className={`text-theme-muted ${isRTL ? '' : 'rotate-180'}`} />
+              </button>
 
-            {/* Grid item: Notifications */}
-            <PremiumCard 
-              onClick={() => setShowNotifications(true)}
-              className="p-4 flex flex-col justify-between h-32 bg-theme-card/65"
-            >
-              <div className="bg-orange-500/10 p-2.5 rounded-xl text-orange-500 w-max transition-transform duration-300 hover:scale-105">
-                <Bell size={18} />
-              </div>
-              <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_276')}</h3>
-                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{t('str_277')}</p>
-              </div>
-            </PremiumCard>
+              <button onClick={() => setActiveSection('loyalty')} className="w-full flex items-center justify-between p-4 hover:bg-theme-border/20 transition-colors text-left">
+                <div className="flex items-center gap-3">
+                  <div className="bg-amber-500/10 p-2 rounded-lg text-amber-500"><Coins size={16} /></div>
+                  <span className="font-black text-xs text-theme-text">{t('str_268')}</span>
+                </div>
+                <span className="text-[10px] text-theme-muted font-bold mr-auto ml-2">{currentUser?.points || 0} pts</span>
+                <ChevronLeft size={16} className={`text-theme-muted ${isRTL ? '' : 'rotate-180'}`} />
+              </button>
 
-            {/* Grid item: Theme settings */}
-            <PremiumCard 
-              onClick={() => setShowThemeModal(true)}
-              className="p-4 flex flex-col justify-between h-32 bg-theme-card/65"
-            >
-              <div className={`p-2.5 rounded-xl w-max transition-transform duration-300 hover:scale-105 ${
-                theme === 'orange' 
-                  ? 'bg-amber-500/10 text-amber-500' 
-                  : theme === 'midnight'
-                  ? 'bg-indigo-500/10 text-indigo-400'
-                  : 'bg-purple-500/10 text-purple-400'
-              }`}>
-                <Settings size={18} />
-              </div>
-              <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_278')}</h3>
-                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">
-                  {theme === 'orange' ? t('str_279') : theme === 'midnight' ? t('str_280') : t('str_purple_glass')}
-                </p>
-              </div>
+              <button onClick={() => setActiveSection('referral')} className="w-full flex items-center justify-between p-4 hover:bg-theme-border/20 transition-colors text-left">
+                <div className="flex items-center gap-3">
+                  <div className="bg-purple-500/10 p-2 rounded-lg text-purple-500"><UserPlus size={16} /></div>
+                  <span className="font-black text-xs text-theme-text">{t('str_270')}</span>
+                </div>
+                <ChevronLeft size={16} className={`text-theme-muted ${isRTL ? '' : 'rotate-180'}`} />
+              </button>
             </PremiumCard>
+          </div>
 
-            {/* Grid item: Language switcher */}
-            <PremiumCard 
-              onClick={handleLanguageToggle}
-              className="p-4 flex flex-col justify-between h-32 bg-theme-card/65"
-            >
-              <div className="bg-purple-500/10 p-2.5 rounded-xl text-purple-500 w-max transition-transform duration-300 hover:scale-105">
-                <Globe size={18} />
-              </div>
-              <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_281')}</h3>
-                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug font-sans">
-                  {t('str_347')}
-                </p>
-              </div>
+          {/* Preferences */}
+          <div className="space-y-2">
+            <span className="text-[10px] text-theme-muted font-black px-1 uppercase tracking-wider block leading-none">
+              Preferences
+            </span>
+            <PremiumCard hoverable={false} className="p-0 overflow-hidden bg-theme-card/65 divide-y divide-theme-border/30">
+              <button onClick={() => setShowNotifications(true)} className="w-full flex items-center justify-between p-4 hover:bg-theme-border/20 transition-colors text-left">
+                <div className="flex items-center gap-3">
+                  <div className="bg-orange-500/10 p-2 rounded-lg text-orange-500"><Bell size={16} /></div>
+                  <span className="font-black text-xs text-theme-text">{t('str_276')}</span>
+                </div>
+                <ChevronLeft size={16} className={`text-theme-muted ${isRTL ? '' : 'rotate-180'}`} />
+              </button>
+              
+              <button onClick={() => setShowThemeModal(true)} className="w-full flex items-center justify-between p-4 hover:bg-theme-border/20 transition-colors text-left">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${theme === 'orange' ? 'bg-amber-500/10 text-amber-500' : theme === 'midnight' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-purple-500/10 text-purple-400'}`}><Settings size={16} /></div>
+                  <span className="font-black text-xs text-theme-text">{t('str_278')}</span>
+                </div>
+                <ChevronLeft size={16} className={`text-theme-muted ${isRTL ? '' : 'rotate-180'}`} />
+              </button>
+
+              <button onClick={handleLanguageToggle} className="w-full flex items-center justify-between p-4 hover:bg-theme-border/20 transition-colors text-left">
+                <div className="flex items-center gap-3">
+                  <div className="bg-purple-500/10 p-2 rounded-lg text-purple-500"><Globe size={16} /></div>
+                  <span className="font-black text-xs text-theme-text">{t('str_281')}</span>
+                </div>
+                <span className="text-[10px] text-theme-muted font-bold mr-auto ml-2">{lang.toUpperCase()}</span>
+                <ChevronLeft size={16} className={`text-theme-muted ${isRTL ? '' : 'rotate-180'}`} />
+              </button>
             </PremiumCard>
+          </div>
 
-            {/* Grid item: Security */}
-            <PremiumCard 
-              onClick={() => setActiveSection('security')}
-              className="p-4 flex flex-col justify-between h-32 bg-theme-card/65"
-            >
-              <div className="bg-teal-500/10 p-2.5 rounded-xl text-teal-500 w-max transition-transform duration-300 hover:scale-105">
-                <ShieldCheck size={18} />
-              </div>
-              <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_282')}</h3>
-                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{t('str_283')}</p>
-              </div>
+          {/* Support */}
+          <div className="space-y-2">
+            <PremiumCard hoverable={false} className="p-0 overflow-hidden bg-theme-card/65 divide-y divide-theme-border/30">
+              <button onClick={() => setActiveSection('support')} className="w-full flex items-center justify-between p-4 hover:bg-theme-border/20 transition-colors text-left">
+                <div className="flex items-center gap-3">
+                  <div className="bg-cyan-500/10 p-2 rounded-lg text-cyan-500"><HelpCircle size={16} /></div>
+                  <span className="font-black text-xs text-theme-text">{t('str_284')}</span>
+                </div>
+                <ChevronLeft size={16} className={`text-theme-muted ${isRTL ? '' : 'rotate-180'}`} />
+              </button>
+
+              <button onClick={() => setShowLegal('terms')} className="w-full flex items-center justify-between p-4 hover:bg-theme-border/20 transition-colors text-left">
+                <div className="flex items-center gap-3">
+                  <div className="bg-indigo-500/10 p-2 rounded-lg text-indigo-500"><BookOpen size={16} /></div>
+                  <span className="font-black text-xs text-theme-text">{t('str_286')}</span>
+                </div>
+                <ChevronLeft size={16} className={`text-theme-muted ${isRTL ? '' : 'rotate-180'}`} />
+              </button>
             </PremiumCard>
-
-            {/* Grid item: Support */}
-            <PremiumCard 
-              onClick={() => setActiveSection('support')}
-              className="p-4 flex flex-col justify-between h-32 bg-theme-card/65"
-            >
-              <div className="bg-cyan-500/10 p-2.5 rounded-xl text-cyan-500 w-max transition-transform duration-300 hover:scale-105">
-                <HelpCircle size={18} />
-              </div>
-              <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_284')}</h3>
-                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{t('str_285')}</p>
-              </div>
-            </PremiumCard>
-
-            {/* Grid item: Legal info */}
-            <PremiumCard 
-              onClick={() => setShowLegal('terms')}
-              className="p-4 flex flex-col justify-between h-32 bg-theme-card/65"
-            >
-              <div className="bg-indigo-500/10 p-2.5 rounded-xl text-indigo-500 w-max transition-transform duration-300 hover:scale-105">
-                <BookOpen size={18} />
-              </div>
-              <div>
-                <h3 className="font-black text-xs text-theme-text leading-none">{t('str_286')}</h3>
-                <p className="text-[9px] text-theme-muted font-bold mt-1 leading-snug">{t('str_287')}</p>
-              </div>
-            </PremiumCard>
-
           </div>
 
           {/* Logout Button */}
@@ -762,7 +700,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
             onClick={handleLogout}
             variant="ghost"
             size="lg"
-            className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 hover:text-red-600 rounded-2xl h-12 text-xs font-black transition-all flex items-center justify-center gap-2 mt-4"
+            className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 hover:text-red-600 rounded-2xl h-12 text-xs font-black transition-all flex items-center justify-center gap-2 mt-2"
           >
             <LogOut size={16} />
             <span>{t('logout')}</span>

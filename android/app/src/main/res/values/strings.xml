@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Wasla Link</string>
+    <string name="title_activity_main">Wasla Link</string>
+    <string name="package_name">com.waslalink.app</string>
+    <string name="custom_url_scheme">com.waslalink.app</string>
+</resources>

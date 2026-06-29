@@ -6,11 +6,29 @@ import { AppRoutes } from './routes/AppRoutes';
 import { ToastManager } from './components/premium/toast/ToastManager';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { CartConflictModal } from './components/premium/CartConflictModal';
+import { OfflineIndicator } from './components/common/OfflineIndicator';
+
+import { App as CapacitorApp } from '@capacitor/app';
+import { useEffect } from 'react';
 
 function AppContent() {
   const { role, theme } = useApp();
   const { isRTL } = useTranslation();
   const isDesktop = role === 'vendor' || role === 'admin';
+  
+  useEffect(() => {
+    CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+      if(!canGoBack){
+        CapacitorApp.exitApp();
+      } else {
+        window.history.back();
+      }
+    });
+    return () => {
+      CapacitorApp.removeAllListeners();
+    };
+  }, []);
+
   
   return (
     <div 
@@ -33,6 +51,7 @@ function AppContent() {
           </>
         )}
         <ErrorBoundary>
+          <OfflineIndicator />
           <AppRoutes />
           <CartConflictModal />
           <ToastManager />

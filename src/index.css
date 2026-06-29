@@ -5,6 +5,9 @@
 @tailwind utilities;
 
 :root {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-bottom-bottom, 0px);
+
   /* Central Design System 2.0 - Light Theme */
   --font-family: 'Outfit', 'Cairo', system-ui, -apple-system, sans-serif;
   
@@ -105,6 +108,8 @@ body {
   background-color: #000000;
   margin: 0;
   padding: 0;
+  padding-top: var(--safe-area-top);
+  padding-bottom: var(--safe-area-bottom);
 }
 
 @layer utilities {
