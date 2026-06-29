@@ -1,6 +1,6 @@
 import React from 'react';
 import { AppProvider, useApp } from './contexts/AppContext';
-import { LanguageProvider } from './context/LanguageProvider';
+import { LanguageProvider } from './contexts/LanguageProvider';
 import { useTranslation } from './hooks/useTranslation';
 import { AppRoutes } from './routes/AppRoutes';
 import { ToastManager } from './components/premium/toast/ToastManager';

@@ -129,6 +129,7 @@ export const AuthScreen: React.FC = () => {
 
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const uid = userCredential.user.uid;
+      // [MOCKED FOR STAGING]: Fake OTP / referral code generation until SMS API is implemented
       const generatedCode = name.replace(/\s+/g, '').substring(0, 6).toUpperCase() + Math.floor(1000 + Math.random() * 9000);
 
       const batch = writeBatch(db);

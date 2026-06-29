@@ -37,10 +37,10 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
     const customerCoords = location.coords || { lat: 30.0444, lng: 31.2357 };
     const order = orders.find(o => o.id === orderId);
     
-    // Default mock store location if order doesn't have it
+    // [MOCKED FOR STAGING]: Default mock store location if order doesn't have it
     const storeCoords = order?.storeLocation || { 
       lat: customerCoords.lat - 0.006, 
-      lng: customerCoords.lng - 0.007 
+      lng: customerCoords.lng - 0.006 
     };
 
     if (!order) return;
