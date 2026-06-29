@@ -32,74 +32,12 @@ export function SettlementRequests() {
 
   const handleAction = async (req: SettlementRequest, action: 'approved' | 'rejected' | 'paid') => {
     try {
-      const batch = writeBatch(db);
-      
-      const isVendor = req.userType === 'vendor';
-      const walletCollection = isVendor ? 'vendorWallets' : 'driverWallets';
-      const txCollection = isVendor ? 'vendorTransactions' : 'driverTransactions';
-
-      const walletRef = doc(db, walletCollection, req.userId);
-      const walletSnap = await getDoc(walletRef);
-      const wData = walletSnap.exists() ? walletSnap.data() : { balance: 0, pendingBalance: 0, paidBalance: 0 };
-      
-      let newBalance = wData.balance || 0;
-      let newPending = wData.pendingBalance || 0;
-      let newPaid = wData.paidBalance || 0;
-
-      if (action === 'approved') {
-        newPending += req.amount;
-        newBalance -= req.amount;
-      } else if (action === 'rejected') {
-        // If it was previously approved, we need to return from pending to balance.
-        // Assuming rejection from 'pending' state
-        if (req.status === 'approved') {
-          newPending -= req.amount;
-          newBalance += req.amount;
-        }
-      } else if (action === 'paid') {
-        // If it was approved, deduct from pending. Otherwise deduct from balance directly if skipped approval.
-        if (req.status === 'approved') {
-          newPending -= req.amount;
-        } else {
-          newBalance -= req.amount;
-        }
-        newPaid += req.amount;
-
-        // Create transaction
-        const txRef = doc(collection(db, txCollection));
-        batch.set(txRef, {
-          id: txRef.id,
-          type: isVendor ? 'vendor_settlement' : 'driver_withdrawal',
-          referenceId: req.id,
-          [isVendor ? 'vendorId' : 'driverId']: req.userId,
-          amount: -req.amount,
-          currency: 'EGP',
-          status: 'completed',
-          createdAt: serverTimestamp(),
-          metadata: { note: 'Settlement Paid' }
-        } as LedgerTransaction);
-      }
-
-      batch.set(walletRef, {
-        balance: newBalance,
-        pendingBalance: newPending,
-        paidBalance: newPaid,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-
-      const reqRef = doc(db, 'settlementRequests', req.id);
-      batch.update(reqRef, {
-        status: action,
-        processedAt: serverTimestamp(),
-        processedBy: 'admin'
-      });
-
-      await batch.commit();
-      
+      await import('../../services/admin/service').then(m => m.adminService.processSettlement(req, action));
       setRequests(prev => prev.map(r => r.id === req.id ? { ...r, status: action } : r));
-    } catch (err) {
-      console.error(err);
-      showToast(t('actionFailed'));
+      showToast(t('statusUpdated'));
+    } catch (error) {
+      console.error(error);
+      showToast(t('errorOccurred'), 'error');
     }
   };
 

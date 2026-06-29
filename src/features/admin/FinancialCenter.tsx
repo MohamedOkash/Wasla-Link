@@ -6,6 +6,7 @@ import { PlatformSettings, LedgerTransaction, SettlementRequest } from '../../ty
 import { useTranslation } from '../../hooks/useTranslation';
 import { useApp } from '../../contexts/AppContext';
 import { DEFAULT_PLATFORM_SETTINGS } from '../../services/deliveryFee.service';
+import { platformSettingsRepository } from "../../services/admin/repository";
 
 export function FinancialCenter() {
   const { t } = useTranslation();
@@ -56,7 +57,7 @@ export function FinancialCenter() {
 
   const saveSettings = async () => {
     try {
-      await updateDoc(doc(db, 'platformSettings', 'default'), { ...settings });
+      await platformSettingsRepository.update('default', { ...settings });
       showToast(t('settingsUpdated'));
     } catch (err) {
       console.error(err);

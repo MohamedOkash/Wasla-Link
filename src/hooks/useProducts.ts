@@ -4,7 +4,7 @@ import { db } from '../services/firebase';
 import { Product } from '../types/product.types';
 import { cacheService } from '../services/cache.service';
 
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL_MS = 1 * 60 * 1000; // 1 minute
 
 export const useProducts = (storeId?: string, limitCount: number = 20) => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -12,6 +12,7 @@ export const useProducts = (storeId?: string, limitCount: number = 20) => {
   const [error, setError] = useState<string | null>(null);
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot | null>(null);
   const [hasMore, setHasMore] = useState(true);
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -19,9 +20,8 @@ export const useProducts = (storeId?: string, limitCount: number = 20) => {
     const fetchInitial = async () => {
       setLoading(true);
       try {
-        const cacheKey = storeId ? `products_store_${storeId}` : `products_all_initial`;
+        const cacheKey = storeId ? `products_store_${storeId}_${refetchTrigger}` : `products_all_initial_${refetchTrigger}`;
         
-        // Use cache for the first page only to enable fast offline-first paint
         const data = await cacheService.fetchWithCache<{ items: Product[], lastDocId: string | null }>(
           cacheKey,
           async () => {
@@ -35,10 +35,11 @@ export const useProducts = (storeId?: string, limitCount: number = 20) => {
             
             if (mounted) setLastDoc(last);
             if (mounted && snapshot.docs.length < limitCount) setHasMore(false);
+            else if (mounted) setHasMore(true);
             
             return { items, lastDocId: last?.id || null };
           },
-          CACHE_TTL_MS
+          refetchTrigger > 0 ? 0 : CACHE_TTL_MS // bypass cache on manual refetch
         );
         
         if (mounted) {
@@ -54,7 +55,7 @@ export const useProducts = (storeId?: string, limitCount: number = 20) => {
 
     fetchInitial();
     return () => { mounted = false; };
-  }, [storeId, limitCount]);
+  }, [storeId, limitCount, refetchTrigger]);
 
   const loadMore = useCallback(async () => {
     if (!hasMore || loading || !lastDoc) return;
@@ -70,7 +71,6 @@ export const useProducts = (storeId?: string, limitCount: number = 20) => {
       
       if (newItems.length > 0) {
         setProducts(prev => {
-          // Deduplicate
           const existingIds = new Set(prev.map(p => p.id));
           const uniqueNew = newItems.filter(p => !existingIds.has(p.id));
           return [...prev, ...uniqueNew];
@@ -88,5 +88,9 @@ export const useProducts = (storeId?: string, limitCount: number = 20) => {
     }
   }, [hasMore, loading, lastDoc, storeId, limitCount]);
 
-  return { products, loading, error, loadMore, hasMore, refetch: () => {}, setProducts };
+  const refetch = useCallback(() => {
+    setRefetchTrigger(prev => prev + 1);
+  }, []);
+
+  return { products, loading, error, loadMore, hasMore, refetch };
 };

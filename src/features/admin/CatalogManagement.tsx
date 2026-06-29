@@ -19,10 +19,11 @@ import { PremiumCard } from '../../components/premium/PremiumCard';
 import { PremiumButton } from '../../components/premium/PremiumButton';
 import { PremiumInput } from '../../components/premium/PremiumInput';
 import { PremiumBadge } from '../../components/premium/PremiumBadge';
+import { categoryRepository } from "../../services/admin/repository";
 
 export const CatalogManagement: React.FC = () => {
   const { t } = useTranslation();
-  const { categories, setCategories, lang, isRTL, showToast } = useApp();
+  const { categories, lang, isRTL, showToast } = useApp();
   const [activeTab, setActiveTab] = useState<'categories' | 'brands' | 'templates' | 'excel'>('categories');
 
   // Common States
@@ -104,7 +105,7 @@ export const CatalogManagement: React.FC = () => {
       return;
     }
     try {
-      await setDoc(doc(db, 'brands', brandName), { createdAt: new Date().toISOString() });
+      await import('../../services/admin/service').then(m => m.adminService.createCatalogItem('brands', brandName, { createdAt: new Date().toISOString() }));
       setBrands(prev => [...prev, brandName]);
       setNewBrand('');
       showToast(t('str_434'));
@@ -116,7 +117,7 @@ export const CatalogManagement: React.FC = () => {
   const handleDeleteBrand = async (brandName: string) => {
     if (!window.confirm(t('str_435'))) return;
     try {
-      await deleteDoc(doc(db, 'brands', brandName));
+      await import('../../services/admin/service').then(m => m.adminService.deleteCatalogItem('brands', brandName));
       setBrands(prev => prev.filter(b => b !== brandName));
       showToast(t('str_436'));
     } catch (err) {
@@ -163,12 +164,10 @@ export const CatalogManagement: React.FC = () => {
     };
 
     try {
-      await setDoc(doc(db, 'categories', catPayload.id), catPayload);
+      await categoryRepository.create(catPayload.id, catPayload);
       if (editingCat) {
-        setCategories(prev => prev.map(c => c.id === catPayload.id ? catPayload : c));
         showToast(t('str_438'));
       } else {
-        setCategories(prev => [...prev, catPayload]);
         showToast(t('str_439'));
       }
       setShowAddCat(false);
@@ -180,8 +179,7 @@ export const CatalogManagement: React.FC = () => {
   const handleDeleteCategory = async (id: string) => {
     if (!window.confirm(t('str_440'))) return;
     try {
-      await deleteDoc(doc(db, 'categories', id));
-      setCategories(prev => prev.filter(c => c.id !== id));
+      await categoryRepository.delete(id);
       showToast(t('str_441'));
     } catch (err) {
       console.error(err);
@@ -271,7 +269,7 @@ export const CatalogManagement: React.FC = () => {
     };
 
     try {
-      await setDoc(doc(db, 'productTemplates', tempId), payload);
+      await import('../../services/admin/service').then(m => m.adminService.createCatalogItem('productTemplates', tempId, payload));
       if (editingTemplate) {
         setTemplates(prev => prev.map(item => item.id === tempId ? payload : item));
         showToast(t('str_443'));
@@ -288,7 +286,7 @@ export const CatalogManagement: React.FC = () => {
   const handleDeleteTemplate = async (id: string) => {
     if (!window.confirm(t('str_445'))) return;
     try {
-      await deleteDoc(doc(db, 'productTemplates', id));
+      await import('../../services/admin/service').then(m => m.adminService.deleteCatalogItem('productTemplates', id));
       setTemplates(prev => prev.filter(item => item.id !== id));
       showToast(t('str_446'));
     } catch (err) {
@@ -323,10 +321,9 @@ export const CatalogManagement: React.FC = () => {
     if (excelPreview.length === 0) return;
     setLoading(true);
     try {
-      const batch = writeBatch(db);
-      excelPreview.forEach((row, index) => {
+      const mappedTemplates = excelPreview.map((row, index) => {
         const tempId = row.id || `pt_ex_${Date.now()}_${index}`;
-        const payload: Product = {
+        return {
           id: tempId,
           storeId: 'template',
           cat: row.categoryName || row.cat || 'General',
@@ -354,9 +351,8 @@ export const CatalogManagement: React.FC = () => {
           storeType: row.categoryId || 'grocery',
           isActive: true
         };
-        batch.set(doc(db, 'productTemplates', tempId), payload);
       });
-      await batch.commit();
+      await import('../../services/admin/service').then(m => m.adminService.importTemplates(mappedTemplates));
       showToast(t('str_449'));
       setExcelPreview([]);
       fetchTemplates();
@@ -416,34 +412,7 @@ export const CatalogManagement: React.FC = () => {
       }
 
       const templatesMap = new Map(templates.map(template => [template.id, template]));
-      const batchLimit = 400;
-      let count = 0;
-
-      for (let i = 0; i < toSync.length; i += batchLimit) {
-        const batch = writeBatch(db);
-        const chunk = toSync.slice(i, i + batchLimit);
-        
-        chunk.forEach(p => {
-          const matchingTemplate = templatesMap.get(p.templateId!);
-          if (matchingTemplate) {
-            batch.update(doc(db, 'products', p.id), {
-              name: matchingTemplate.nameAr || matchingTemplate.name,
-              nameAr: matchingTemplate.nameAr,
-              nameEn: matchingTemplate.nameEn,
-              brand: matchingTemplate.brand,
-              desc: matchingTemplate.description || matchingTemplate.desc,
-              description: matchingTemplate.description || matchingTemplate.desc,
-              imgUrl: matchingTemplate.imgUrl || matchingTemplate.imageUrl,
-              imageUrl: matchingTemplate.imageUrl || matchingTemplate.imgUrl,
-              categoryName: matchingTemplate.categoryName,
-              cat: matchingTemplate.cat,
-              updatedAt: new Date().toISOString()
-            });
-            count++;
-          }
-        });
-        await batch.commit();
-      }
+      await import('../../services/admin/service').then(m => m.adminService.bulkSyncCatalog(toSync, templatesMap));
       showToast(t('str_454'));
     } catch (err) {
       console.error(err);

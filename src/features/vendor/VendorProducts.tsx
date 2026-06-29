@@ -7,11 +7,16 @@ import { Product } from '../../types/product.types';
 import { ProductImport } from './ProductImport';
 import { mediaService } from '../../services/media.service';
 import { VendorTemplatePicker } from './VendorTemplatePicker';
+import { doc, setDoc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+
+import { mockService } from '../../services/mock.service';
+import { productRepository } from "../../services/inventory/repository";
 
 export const VendorProducts: React.FC = () => {
   const { t } = useTranslation();
-  const { showToast, stockMovements, addStockMovement, isRTL } = useApp();
-  const { products, setProducts } = useProducts();
+  const { showToast, stockMovements, addStockMovement, isRTL, currentUser } = useApp();
+  const { products } = useProducts();
   const [activeSubTab, setActiveSubTab] = useState<'inventory' | 'movements'>('inventory');
   
   // Modals state
@@ -71,9 +76,9 @@ export const VendorProducts: React.FC = () => {
   const [showBulkCategoryMenu, setShowBulkCategoryMenu] = useState(false);
   const [showBulkStockMenu, setShowBulkStockMenu] = useState(false);
 
-  // Filter products for Store g_1
-  const storeProducts = products.filter(p => p.storeId === 'g_1');
-  const storeMovements = stockMovements.filter(m => m.storeId === 'g_1');
+  // Filter products for Store
+  const storeProducts = products.filter(p => p.storeId === currentUser?.storeId);
+  const storeMovements = stockMovements.filter(m => m.storeId === currentUser?.storeId);
 
   const filteredMovements = storeMovements.filter(m => {
     if (filterDate && new Date(m.createdAt).toDateString() !== new Date(filterDate).toDateString()) return false;
@@ -88,8 +93,8 @@ export const VendorProducts: React.FC = () => {
     setPurchasePrice('');
     setCat('ألبان وأجبان');
     setDesc('');
-    setSku(`SKU-${Math.floor(100000 + Math.random() * 900000)}`);
-    setBarcode(`622${Math.floor(100000000 + Math.random() * 900000000)}`);
+    setSku(mockService.generateSku());
+    setBarcode(mockService.generateBarcode());
     setStock('50');
     setThreshold('10');
     setProductBrand('');
@@ -108,8 +113,8 @@ export const VendorProducts: React.FC = () => {
     setPurchasePrice('');
     setCat(isRTL ? template.category : (template.categoryEn || template.category));
     setDesc(isRTL ? (template.descriptionAr || '') : (template.descriptionEn || ''));
-    setSku(template.sku || `SKU-${Math.floor(100000 + Math.random() * 900000)}`);
-    setBarcode(template.barcode || `622${Math.floor(100000000 + Math.random() * 900000000)}`);
+    setSku(template.sku || mockService.generateSku());
+    setBarcode(template.barcode || mockService.generateBarcode());
     setStock('50');
     setThreshold('10');
     setProductBrand(isRTL ? template.brand : (template.brandEn || template.brand));
@@ -176,7 +181,7 @@ export const VendorProducts: React.FC = () => {
     showToast(t('str_895'));
   };
 
-  const handleAddProduct = (e: React.FormEvent) => {
+  const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !price) {
       alert(t('str_896'));
@@ -190,7 +195,7 @@ export const VendorProducts: React.FC = () => {
 
     const newProd: Product = {
       id: `p_g_v_${Date.now()}`,
-      storeId: 'g_1',
+      storeId: currentUser?.storeId || '',
       cat,
       name,
       desc: desc || 'منتج جديد من البائع المعتمد',
@@ -201,8 +206,8 @@ export const VendorProducts: React.FC = () => {
       currentStock: stockNum,
       reservedStock: 0,
       lowStockThreshold: threshNum,
-      sku: sku || `SKU-${Math.floor(100000 + Math.random() * 900000)}`,
-      barcode: barcode || `622${Math.floor(100000000 + Math.random() * 900000000)}`,
+      sku: sku || mockService.generateSku(),
+      barcode: barcode || mockService.generateBarcode(),
       productBrand,
       productWeight,
       unit,
@@ -217,17 +222,20 @@ export const VendorProducts: React.FC = () => {
       assetVersion: 1
     };
 
-    setProducts(prev => [newProd, ...prev]);
-    
-    if (stockNum > 0) {
-      addStockMovement(newProd.id, stockNum, 'Purchase', 'الرصيد الافتتاحي للمنتج');
+    try {
+      await productRepository.create(newProd.id, newProd);
+      if (stockNum > 0) {
+        addStockMovement(newProd.id, stockNum, 'Purchase', 'الرصيد الافتتاحي للمنتج');
+      }
+      showToast(t('str_897'));
+      setShowAddForm(false);
+    } catch (err) {
+      console.error(err);
+      showToast('حدث خطأ', 'error');
     }
-
-    showToast(t('str_897'));
-    setShowAddForm(false);
   };
 
-  const handleEditProduct = (e: React.FormEvent) => {
+  const handleEditProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProduct) return;
 
@@ -235,40 +243,39 @@ export const VendorProducts: React.FC = () => {
     const pPriceNum = parseFloat(purchasePrice) || Math.round(priceNum * 0.7);
     const threshNum = parseInt(threshold) || 10;
 
-    setProducts(prev => prev.map(p => {
-      if (p.id === editingProduct.id) {
-        const currentStock = p.currentStock || 0;
-        const availabilityStatus = currentStock === 0 ? 'out_of_stock' : currentStock <= threshNum ? 'low_stock' : 'in_stock';
-        return {
-          ...p,
-          name,
-          price: priceNum,
-          purchasePrice: pPriceNum,
-          costPrice: pPriceNum,
-          profitMargin: priceNum > pPriceNum ? Math.round(((priceNum - pPriceNum) / priceNum) * 100) : 0,
-          cat,
-          desc,
-          sku,
-          barcode,
-          productBrand,
-          productWeight,
-          unit,
-          images: productImages,
-          galleryImages: productImages,
-          primaryImage: productImages[0] || '',
-          imgUrl: productImages[0] || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80',
-          imageUrl: productImages[0] || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80',
-          lowStockThreshold: threshNum,
-          availabilityStatus,
-          assetStatus: productImages[0] ? 'ready' : 'missing',
-          syncStatus: p.syncStatus || 'synced'
-        };
-      }
-      return p;
-    }));
-
-    showToast(t('str_219'));
-    setEditingProduct(null);
+    try {
+      const currentStock = editingProduct.currentStock || 0;
+      const availabilityStatus = currentStock === 0 ? 'out_of_stock' : currentStock <= threshNum ? 'low_stock' : 'in_stock';
+      
+      await productRepository.update(editingProduct.id, {
+        name,
+        price: priceNum,
+        purchasePrice: pPriceNum,
+        costPrice: pPriceNum,
+        profitMargin: priceNum > pPriceNum ? Math.round(((priceNum - pPriceNum) / priceNum) * 100) : 0,
+        cat,
+        desc,
+        sku,
+        barcode,
+        productBrand,
+        productWeight,
+        unit,
+        images: productImages,
+        galleryImages: productImages,
+        primaryImage: productImages[0] || '',
+        imgUrl: productImages[0] || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80',
+        imageUrl: productImages[0] || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80',
+        lowStockThreshold: threshNum,
+        availabilityStatus,
+        assetStatus: productImages[0] ? 'ready' : 'missing',
+        syncStatus: editingProduct.syncStatus || 'synced'
+      });
+      showToast(t('str_219'));
+      setEditingProduct(null);
+    } catch (err) {
+      console.error(err);
+      showToast('حدث خطأ', 'error');
+    }
   };
 
   const handleAdjustStock = (e: React.FormEvent) => {
@@ -300,21 +307,27 @@ export const VendorProducts: React.FC = () => {
     setAdjustingStockProduct(null);
   };
 
-  const handleArchiveProduct = (id: string) => {
-    setProducts(prev => prev.map(p => {
-      if (p.id === id) {
-        const nextStatus = p.availabilityStatus === 'archived' ? 'in_stock' : 'archived';
-        return { ...p, availabilityStatus: nextStatus as any };
+  const handleArchiveProduct = async (id: string) => {
+    const product = products.find(p => p.id === id);
+    if (product) {
+      try {
+        const nextStatus = product.availabilityStatus === 'archived' ? 'in_stock' : 'archived';
+        await productRepository.update(id, { availabilityStatus: nextStatus });
+        showToast(t('str_900'));
+      } catch (err) {
+        console.error(err);
       }
-      return p;
-    }));
-    showToast(t('str_900'));
+    }
   };
 
-  const handleDeleteProduct = (id: string) => {
+  const handleDeleteProduct = async (id: string) => {
     if (confirm(t('str_901'))) {
-      setProducts(prev => prev.filter(p => p.id !== id));
-      showToast(t('str_902'));
+      try {
+        await productRepository.delete(id);
+        showToast(t('str_902'));
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
@@ -333,66 +346,64 @@ export const VendorProducts: React.FC = () => {
     );
   };
 
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
     if (confirm(t('str_903'))) {
-      setProducts(prev => prev.filter(p => !selectedIds.includes(p.id)));
-      setSelectedIds([]);
-      showToast(t('str_904'));
+      try {
+        await import('../../services/vendor/service').then(m => m.vendorService.bulkDeleteProducts(selectedIds));
+        setSelectedIds([]);
+        showToast(t('str_904'));
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
-  const handleBulkArchive = () => {
-    setProducts(prev => prev.map(p => {
-      if (selectedIds.includes(p.id)) {
-        return {
-          ...p,
-          availabilityStatus: 'archived' as const
-        };
-      }
-      return p;
-    }));
-    setSelectedIds([]);
-    showToast(t('str_905'));
+  const handleBulkArchive = async () => {
+    try {
+      await import('../../services/vendor/service').then(m => m.vendorService.bulkArchiveProducts(selectedIds));
+      setSelectedIds([]);
+      showToast(t('str_905'));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleBulkCategoryChange = () => {
-    setProducts(prev => prev.map(p => {
-      if (selectedIds.includes(p.id)) {
-        return {
-          ...p,
-          cat: bulkCategory
-        };
-      }
-      return p;
-    }));
-    setSelectedIds([]);
-    setShowBulkCategoryMenu(false);
-    showToast(t('str_906'));
+  const handleBulkCategoryChange = async () => {
+    try {
+      await import('../../services/vendor/service').then(m => m.vendorService.bulkUpdateCategory(selectedIds, bulkCategory));
+      setSelectedIds([]);
+      setShowBulkCategoryMenu(false);
+      showToast(t('str_906'));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleBulkStockUpdate = () => {
+  const handleBulkStockUpdate = async () => {
     const qtyVal = parseInt(bulkStockVal);
     if (isNaN(qtyVal) || qtyVal < 0) {
       alert(t('str_898'));
       return;
     }
 
-    setProducts(prev => prev.map(p => {
-      if (selectedIds.includes(p.id)) {
-        // Log movement
-        addStockMovement(p.id, qtyVal - (p.currentStock || 0), 'Adjustment', t('str_907'));
-        return {
-          ...p,
-          currentStock: qtyVal,
-          availabilityStatus: qtyVal === 0 ? 'out_of_stock' as const : qtyVal <= (p.lowStockThreshold || 10) ? 'low_stock' as const : 'in_stock' as const
-        };
-      }
-      return p;
-    }));
-    setSelectedIds([]);
-    setBulkStockVal('');
-    setShowBulkStockMenu(false);
-    showToast(t('str_908'));
+    try {
+      const updates = selectedIds.map(id => {
+        const product = products.find(p => p.id === id);
+        if (product) {
+          addStockMovement(id, qtyVal - (product.currentStock || 0), 'Adjustment', t('str_907'));
+        }
+        const availabilityStatus = qtyVal === 0 ? 'out_of_stock' : qtyVal <= ((product?.lowStockThreshold) || 10) ? 'low_stock' : 'in_stock';
+        return { id, currentStock: qtyVal, availabilityStatus };
+      });
+      await import('../../services/vendor/service').then(m => m.vendorService.bulkUpdateStock(updates));
+      
+      setSelectedIds([]);
+      setBulkStockVal('');
+      setShowBulkStockMenu(false);
+      showToast(t('str_908'));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const getStatusBadgeColor = (status?: string) => {

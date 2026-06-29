@@ -14,6 +14,8 @@ import { PremiumButton } from '../../components/premium/PremiumButton';
 import { PremiumCard } from '../../components/premium/PremiumCard';
 import { PremiumInput } from '../../components/premium/PremiumInput';
 import { PremiumBadge } from '../../components/premium/PremiumBadge';
+import { storeRepository } from "../../services/vendor/repository";
+import { userRepository } from "../../services/shared/user.repository";
 
 // Dynamic Egypt Regions Data
 const EGYPT_REGIONS: Record<string, { cities: Record<string, string[]> }> = {
@@ -132,58 +134,7 @@ export const AuthScreen: React.FC = () => {
       // [MOCKED FOR STAGING]: Fake OTP / referral code generation until SMS API is implemented
       const generatedCode = name.replace(/\s+/g, '').substring(0, 6).toUpperCase() + Math.floor(1000 + Math.random() * 9000);
 
-      const batch = writeBatch(db);
-
-      const userProfile = {
-        uid,
-        name,
-        email,
-        phone: phone || '',
-        role: 'customer',
-        points: isReferralValid ? 100 : 0,
-        referralCode: generatedCode,
-        referredBy: referredByUid,
-        createdAt: new Date().toISOString()
-      };
-
-      batch.set(doc(db, 'users', uid), userProfile);
-
-      if (isReferralValid && referredByUid) {
-        const refId = `ref_${uid}`;
-        batch.set(doc(db, 'referrals', refId), {
-          id: refId,
-          inviterId: referredByUid,
-          invitedId: uid,
-          invitedName: name,
-          pointsAwarded: 500,
-          status: 'registered',
-          createdAt: new Date().toISOString()
-        });
-
-        batch.update(doc(db, 'users', referredByUid), {
-          points: increment(500)
-        });
-
-        const histInvId = `ref_inv_${uid}`;
-        batch.set(doc(db, 'pointsHistory', histInvId), {
-          id: histInvId,
-          userId: referredByUid,
-          points: 500,
-          type: 'referral_inviter',
-          createdAt: new Date().toISOString()
-        });
-
-        const histInvdId = `ref_invd_${uid}`;
-        batch.set(doc(db, 'pointsHistory', histInvdId), {
-          id: histInvdId,
-          userId: uid,
-          points: 100,
-          type: 'referral_invited',
-          createdAt: new Date().toISOString()
-        });
-      }
-
-      await batch.commit();
+      await import('../../services/shared/app.service').then(m => m.appService.registerCustomerWithReferral(uid, name, email, phone, isReferralValid, referredByUid, generatedCode));
       showToast(t('str_305'));
     } catch (err: any) {
       console.error(err);
@@ -221,22 +172,22 @@ export const AuthScreen: React.FC = () => {
       const storeId = `store_${Date.now()}`;
 
       // 1. Write User document
-      await setDoc(doc(db, 'users', uid), {
-        uid,
-        name: storeName,
-        email,
-        phone,
-        role: 'vendor',
-        storeId,
-        createdAt: new Date().toISOString()
-      });
+      await userRepository.create(uid, {
+              uid,
+              name: storeName,
+              email,
+              phone,
+              role: 'vendor',
+              storeId,
+              createdAt: new Date().toISOString()
+            });
 
       // 2. Create Store document with detailed regions
       const catObj = categories.find(c => c.id === storeCategory);
       const categoryNameEn = catObj?.nameEn || catObj?.name?.en || storeCategory;
       const categoryNameAr = catObj?.nameAr || catObj?.name?.ar || storeCategory;
 
-      await setDoc(doc(db, 'stores', storeId), {
+      await storeRepository.create(storeId, {
         id: storeId,
         vendorId: uid,
         catId: storeCategory,
@@ -271,34 +222,8 @@ export const AuthScreen: React.FC = () => {
         createdAt: new Date().toISOString()
       });
 
-      // 3. Auto-seed vendor inventory from master templates
       const templates = catalogTemplates[storeCategory] || [];
-      if (templates.length > 0) {
-        const batchLimit = 400; // Limit under Firestore 500 batch cap
-        for (let i = 0; i < templates.length; i += batchLimit) {
-          const batch = writeBatch(db);
-          const chunk = templates.slice(i, i + batchLimit);
-          
-          chunk.forEach(p => {
-            const prodId = `prod_${storeId}_${p.id}_${Math.floor(1000 + Math.random() * 9000)}`;
-            const vendorProd = {
-              ...p,
-              id: prodId,
-              storeId: storeId,
-              isTemplate: false,
-              templateId: p.id,
-              stock: p.stock || 100,
-              price: p.sellingPrice || p.price || 10,
-              costPrice: p.costPrice || Math.round((p.sellingPrice || 10) * 0.8),
-              sellingPrice: p.sellingPrice || p.price || 10,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            };
-            batch.set(doc(db, 'products', prodId), vendorProd);
-          });
-          await batch.commit();
-        }
-      }
+      await import('../../services/shared/app.service').then(m => m.appService.autoSeedInventory(storeId, templates));
 
       showToast(t('str_311'));
       setRegStep(1);

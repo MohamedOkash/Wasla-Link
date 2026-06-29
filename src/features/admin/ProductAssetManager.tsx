@@ -115,8 +115,7 @@ export const ProductAssetManager: React.FC = () => {
     if (!confirm(t('str_599'))) return;
     setLoading(true);
     try {
-      const tempRef = doc(db, 'productTemplates', templateId);
-      await updateDoc(tempRef, {
+      await import('../../services/admin/service').then(m => m.adminService.updateTemplateAsset(templateId, {
         primaryImage: '',
         imageUrl: '',
         imgUrl: '',
@@ -127,7 +126,7 @@ export const ProductAssetManager: React.FC = () => {
         assetVersion: 0,
         assetStatus: 'missing',
         lastAssetUpdate: new Date().toISOString()
-      });
+      }));
       showToast(t('str_600'));
       await fetchData();
     } catch (err) {
@@ -163,8 +162,7 @@ export const ProductAssetManager: React.FC = () => {
     setLoading(true);
     try {
       for (const id of selectedIds) {
-        const tempRef = doc(db, 'productTemplates', id);
-        await updateDoc(tempRef, {
+        await import('../../services/admin/service').then(m => m.adminService.updateTemplateAsset(id, {
           primaryImage: '',
           imageUrl: '',
           imgUrl: '',
@@ -173,8 +171,9 @@ export const ProductAssetManager: React.FC = () => {
           gallery: [],
           templateImageVersion: 0,
           assetVersion: 0,
-          assetStatus: 'missing'
-        });
+          assetStatus: 'missing',
+          lastAssetUpdate: new Date().toISOString()
+        }));
       }
       showToast(t('str_603'));
       setSelectedIds([]);

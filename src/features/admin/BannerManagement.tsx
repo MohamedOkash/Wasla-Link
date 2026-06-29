@@ -2,10 +2,11 @@ import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState } from 'react';
 import { Tag, Edit, Plus, Trash2, X, Check } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
+import { bannerRepository } from '../../services/admin/repository';
 
 export const BannerManagement: React.FC = () => {
   const { t } = useTranslation();
-  const { banners, setBanners, showToast } = useApp();
+  const { banners, showToast } = useApp();
 
   // Modals
   const [showAddForm, setShowAddForm] = useState(false);
@@ -38,49 +39,57 @@ export const BannerManagement: React.FC = () => {
     setImgUrl(banner.imgUrl);
   };
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!titleAr || !titleEn || !imgUrl) {
       alert('الرجاء إدخال العنوان باللغتين ورابط الصورة');
       return;
     }
 
+    const newId = Date.now().toString();
     const newBanner = {
-      id: Date.now(),
       title: { ar: titleAr, en: titleEn },
       subtitle: { ar: subAr, en: subEn },
       imgUrl
     };
 
-    setBanners(prev => [...prev, newBanner]);
-    showToast('تمت إضافة البانر الإعلاني الجديد بنجاح');
-    setShowAddForm(false);
+    try {
+      await bannerRepository.create(newId, newBanner);
+      showToast('تمت إضافة البانر الإعلاني الجديد بنجاح');
+      setShowAddForm(false);
+    } catch (err) {
+      console.error(err);
+      showToast('حدث خطأ', 'error');
+    }
   };
 
-  const handleEdit = (e: React.FormEvent) => {
+  const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingBanner) return;
 
-    setBanners(prev => prev.map(b => {
-      if (b.id === editingBanner.id) {
-        return {
-          ...b,
-          title: { ar: titleAr, en: titleEn },
-          subtitle: { ar: subAr, en: subEn },
-          imgUrl
-        };
-      }
-      return b;
-    }));
-
-    showToast('تم تحديث البانر الإعلاني بنجاح');
-    setEditingBanner(null);
+    try {
+      await bannerRepository.update(editingBanner.id.toString(), {
+        title: { ar: titleAr, en: titleEn },
+        subtitle: { ar: subAr, en: subEn },
+        imgUrl
+      });
+      showToast('تم تحديث البانر الإعلاني بنجاح');
+      setEditingBanner(null);
+    } catch (err) {
+      console.error(err);
+      showToast('حدث خطأ', 'error');
+    }
   };
 
-  const handleDeleteBanner = (id: number) => {
+  const handleDeleteBanner = async (id: number | string) => {
     if (confirm('هل ترغب في حذف هذا البانر الإعلاني نهائياً من الصفحة الرئيسية؟')) {
-      setBanners(prev => prev.filter(b => b.id !== id));
-      showToast('تم حذف البانر بنجاح');
+      try {
+        await bannerRepository.delete(id.toString());
+        showToast('تم حذف البانر بنجاح');
+      } catch (err) {
+        console.error(err);
+        showToast('حدث خطأ', 'error');
+      }
     }
   };
 

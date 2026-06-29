@@ -7,6 +7,8 @@ import { dispatchService } from '../../services/dispatch.service';
 import { db } from '../../services/firebase';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { userRepository } from "../../services/shared/user.repository";
+import { orderRepository } from "../../services/orders/repository";
 
 export const LogisticsCenter: React.FC = () => {
   const { t } = useTranslation();
@@ -21,13 +23,13 @@ export const LogisticsCenter: React.FC = () => {
     if (!selectedDriverId || !assignOrderId) return;
     try {
        // bypass logic and force assign
-       await updateDoc(doc(db, 'orders', assignOrderId), {
-          status: 'driver_assigned',
-          assignedDriverId: selectedDriverId,
-          assignedAt: new Date().toISOString(),
-          assignmentAttempts: 1
-       });
-       await updateDoc(doc(db, 'users', selectedDriverId), {
+       await orderRepository.update(assignOrderId, {
+                 status: 'driver_assigned',
+                 assignedDriverId: selectedDriverId,
+                 assignedAt: new Date().toISOString(),
+                 assignmentAttempts: 1
+              });
+       await userRepository.update(selectedDriverId, {
           currentOrderId: assignOrderId
        });
        showToast('Force assignment successful');
@@ -42,11 +44,11 @@ export const LogisticsCenter: React.FC = () => {
     try {
        const order = orders.find(o => o.id === assignOrderId);
        if (order && order.assignedDriverId) {
-         await updateDoc(doc(db, 'users', order.assignedDriverId), {
+         await userRepository.update(order.assignedDriverId, {
             currentOrderId: null
          });
        }
-       await updateDoc(doc(db, 'orders', assignOrderId), {
+       await orderRepository.update(assignOrderId, {
           status: 'ready_for_delivery',
           assignedDriverId: null,
           assignedAt: null

@@ -8,6 +8,7 @@ import { PremiumCard } from '../../components/premium/PremiumCard';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { mediaService } from '../../services/media.service';
+import { driverRepository } from "../../services/driver/repository";
 
 interface DriverRegistrationProps {
   onBack: () => void;
@@ -60,28 +61,28 @@ export const DriverRegistration: React.FC<DriverRegistrationProps> = ({ onBack }
       const idCardUrl = await mediaService.uploadImage(idCardFile!, `drivers/${currentUser.uid}/id_card`);
       const licenseUrl = await mediaService.uploadImage(licenseFile!, `drivers/${currentUser.uid}/license`);
 
-      await setDoc(doc(db, 'drivers', currentUser.uid), {
-        uid: currentUser.uid,
-        name,
-        phone,
-        nationalId,
-        nationalIdImage: idCardUrl,
-        licenseImage: licenseUrl,
-        vehicleType,
-        vehicleNumber,
-        role: 'driver',
-        status: 'pending',
-        isApproved: false,
-        isActive: false,
-        rating: 5.0,
-        completedOrders: 0,
-        totalDeliveries: 0,
-        totalEarnings: 0,
-        currentOrderId: null,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        availability: 'offline'
-      });
+      await driverRepository.create(currentUser.uid, {
+              uid: currentUser.uid,
+              name,
+              phone,
+              nationalId,
+              nationalIdImage: idCardUrl,
+              licenseImage: licenseUrl,
+              vehicleType,
+              vehicleNumber,
+              role: 'driver',
+              status: 'pending',
+              isApproved: false,
+              isActive: false,
+              rating: 5.0,
+              completedOrders: 0,
+              totalDeliveries: 0,
+              totalEarnings: 0,
+              currentOrderId: null,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+              availability: 'offline'
+            });
 
       setSubmitted(true);
     } catch (error) {

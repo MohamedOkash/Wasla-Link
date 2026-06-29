@@ -8,6 +8,7 @@ import { DriverOrders } from './DriverOrders';
 import { DriverProfile } from './DriverProfile';
 import { DriverEarnings } from './DriverEarnings';
 import { geoService, GpsStatus, LocationData } from '../../services/geolocation.service';
+import { driverRepository } from "../../services/driver/repository";
 
 export const DriverDashboard: React.FC = () => {
   const { t } = useTranslation();
@@ -96,27 +97,8 @@ export const DriverDashboard: React.FC = () => {
       // Note: we just call updateOrderStatus with 'failed_assignment' locally to trigger next step in AppContext or let a firebase function handle it.
       // But since we have dispatchService, let's just trigger updateOrderStatus as 'ready_for_delivery' with rejected status.
       // For now, let's just use updateOrderStatus to clear our assignment.
-      const orderRef = doc(db, 'orders', orderId);
-      const { runTransaction } = require('firebase/firestore');
-      
-      await runTransaction(db, async (transaction: any) => {
-        const docSnap = await transaction.get(orderRef);
-        if (!docSnap.exists()) return;
-        const o = docSnap.data();
-        const rejectedBy = o.rejectedBy || [];
-        rejectedBy.push(driver.id);
-        
-        transaction.update(orderRef, {
-           status: 'ready_for_delivery',
-           assignedDriverId: null,
-           rejectedBy: rejectedBy
-        });
-        
-        transaction.update(doc(db, 'users', driver.id), {
-           currentOrderId: null
-        });
-      });
-      
+      await import('../../services/driver/service').then(m => m.driverService.rejectOrder(driver.id, orderId));
+
       setIncomingOrder(null);
       showToast(t('str_536'));
     } catch(e) {
@@ -135,11 +117,11 @@ export const DriverDashboard: React.FC = () => {
           const battery: any = await (navigator as any).getBattery();
           batteryLevel = Math.round(battery.level * 100);
         }
-        await updateDoc(doc(db, 'drivers', driver.id), {
-          lastSeen: serverTimestamp(),
-          batteryLevel,
-          appVersion: '1.0.0'
-        });
+        await driverRepository.update(driver.id, {
+                  lastSeen: serverTimestamp(),
+                  batteryLevel,
+                  appVersion: '1.0.0'
+                });
       } catch (e) {
         // ignore
       }
@@ -161,7 +143,7 @@ export const DriverDashboard: React.FC = () => {
       const isCurrentlyOnline = driver.availability === 'online' || driver.availability === 'busy';
       const newStatus = isCurrentlyOnline ? 'offline' : 'online';
       
-      await updateDoc(doc(db, 'drivers', driver.id), {
+      await driverRepository.update(driver.id, {
         availability: newStatus,
         online: newStatus !== 'offline',
         lastSeen: serverTimestamp()

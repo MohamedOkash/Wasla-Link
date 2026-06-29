@@ -59,13 +59,7 @@ export function DriverWallet() {
     if (amt > balance) { showToast(t('insufficientBalance')); return; }
     
     try {
-      await addDoc(collection(db, 'settlementRequests'), {
-        userId: user?.uid,
-        userType: 'driver',
-        amount: amt,
-        status: 'pending',
-        requestedAt: serverTimestamp()
-      });
+      await import('../../services/driver/service').then(m => m.driverService.requestSettlement(user?.uid || '', amt, { userType: 'driver' }));
       showToast(t('withdrawalSubmitted'));
       setAmountInput('');
       setHistory(prev => [{

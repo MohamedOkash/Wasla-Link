@@ -36,6 +36,9 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth, db } from '../services/firebase';
 import { cacheService } from '../services/cache.service';
 import { themes, ThemeName } from '../theme/themes';
+import { userRepository } from "../services/shared/user.repository";
+import { storeRepository } from "../services/vendor/repository";
+import { platformSettingsRepository } from "../services/admin/repository";
 
 export interface CartItem {
   id: string;
@@ -121,11 +124,8 @@ interface AppContextType {
   currentUser: User | null;
   setCurrentUser: (u: User | null) => void;
   categories: any[];
-  setCategories: React.Dispatch<React.SetStateAction<any[]>>;
   banners: Banner[];
-  setBanners: React.Dispatch<React.SetStateAction<Banner[]>>;
   orders: Order[];
-  setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   cart: Cart;
   setCart: React.Dispatch<React.SetStateAction<Cart>>;
   cartConflictAlert: CartConflictAlert | null;
@@ -151,14 +151,12 @@ interface AppContextType {
   toggleTheme: () => void;
 
   notifications: Notification[];
-  setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
   deleteNotification: (id: string) => void;
   clearAllNotifications: () => void;
 
   coupons: Coupon[];
-  setCoupons: React.Dispatch<React.SetStateAction<Coupon[]>>;
   activeCoupon: Coupon | null;
   setActiveCoupon: (c: Coupon | null) => void;
 
@@ -169,12 +167,10 @@ interface AppContextType {
   setDefaultAddress: (id: string) => void;
 
   returnRequests: ReturnRequest[];
-  setReturnRequests: React.Dispatch<React.SetStateAction<ReturnRequest[]>>;
   createReturnRequest: (req: Omit<ReturnRequest, 'id' | 'status' | 'timeline' | 'createdAt' | 'updatedAt'>) => void;
   updateReturnStatus: (id: string, status: ReturnRequest['status'], note?: string) => void;
 
   driverMetrics: Record<string, DriverMetrics>;
-  setDriverMetrics: React.Dispatch<React.SetStateAction<Record<string, DriverMetrics>>>;
 
   followedStores: string[];
   toggleFollowStore: (storeId: string) => void;
@@ -196,7 +192,6 @@ interface AppContextType {
   detectLocationGPS: (onSuccess?: (address: string) => void) => void;
 
   drivers: DriverDetail[];
-  setDrivers: React.Dispatch<React.SetStateAction<DriverDetail[]>>;
   updateDriverStatus: (id: string, status: DriverDetail['status']) => void;
   toggleDriverOnline: (id: string) => void;
 
@@ -209,7 +204,6 @@ interface AppContextType {
   addReview: (orderId: string, storeId: string, driverId: string, ratingStore: number, ratingDriver: number, ratingProducts: number, comment?: string) => void;
 
   campaigns: any[];
-  setCampaigns: React.Dispatch<React.SetStateAction<any[]>>;
   pointsHistory: PointsHistoryEntry[];
   referrals: Referral[];
   platformSettings: PlatformSettings | null;
@@ -307,19 +301,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     
     const syncCartWithFirestore = async () => {
       try {
-        const cartRef = doc(db, 'carts', currentUser.uid);
-        const cartSnap = await getDoc(cartRef);
-        
-        if (cartSnap.exists()) {
-          const remoteCart = cartSnap.data() as Cart;
-          if (cart.items.length === 0 && remoteCart.items && remoteCart.items.length > 0) {
-            setCart(remoteCart);
+        await import('../services/shared/cart.repository').then(async m => {
+          const cartSnap = await m.cartRepository.findById(currentUser.uid);
+          
+          if (cartSnap) {
+            const remoteCart = cartSnap as Cart;
+            if (cart.items.length === 0 && remoteCart.items && remoteCart.items.length > 0) {
+              setCart(remoteCart);
+            } else if (cart.items.length > 0) {
+              await m.cartRepository.update(currentUser.uid, { ...cart, userId: currentUser.uid, updatedAt: new Date().toISOString() });
+            }
           } else if (cart.items.length > 0) {
-            await setDoc(cartRef, { ...cart, userId: currentUser.uid, updatedAt: new Date().toISOString() }, { merge: true });
+            await m.cartRepository.create(currentUser.uid, { ...cart, userId: currentUser.uid, updatedAt: new Date().toISOString() });
           }
-        } else if (cart.items.length > 0) {
-          await setDoc(cartRef, { ...cart, userId: currentUser.uid, updatedAt: new Date().toISOString() });
-        }
+        });
       } catch (err) {
         console.error("Cart sync error", err);
       }
@@ -332,15 +327,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!currentUser?.uid) return;
     const timeout = setTimeout(async () => {
       try {
-        if (cart.items.length === 0) {
-          await deleteDoc(doc(db, 'carts', currentUser.uid));
-        } else {
-          await setDoc(doc(db, 'carts', currentUser.uid), {
-            ...cart,
-            userId: currentUser.uid,
-            updatedAt: new Date().toISOString()
-          });
-        }
+        await import('../services/shared/cart.repository').then(async m => {
+          if (cart.items.length === 0) {
+            await m.cartRepository.delete(currentUser.uid);
+          } else {
+            await m.cartRepository.update(currentUser.uid, {
+              ...cart,
+              userId: currentUser.uid,
+              updatedAt: new Date().toISOString()
+            });
+          }
+        });
       } catch (err) {
         console.error("Error updating cart", err);
       }
@@ -428,120 +425,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [currentUser]);
 
-  // Generic Firestore Sync Wrapper Generator (Client Writes -> Cloud Batch -> UI Updates via Snapshots)
-  const createFirestoreSyncWrapper = <T extends { id: string | number }>(
-    collectionName: string,
-    currentState: T[]
-  ) => {
-    return async (value: React.SetStateAction<T[]>) => {
-      let nextState: T[] = [];
-      if (typeof value === 'function') {
-        nextState = (value as Function)(currentState);
-      } else {
-        nextState = value;
-      }
-
-      const currentMap = new Map(currentState.map(item => [String(item.id), item]));
-      const nextMap = new Map(nextState.map(item => [String(item.id), item]));
-
-      const batch = writeBatch(db);
-      let hasChanges = false;
-
-      // Additions & Updates
-      for (const item of nextState) {
-        const idStr = String(item.id);
-        const current = currentMap.get(idStr);
-        if (!current || JSON.stringify(current) !== JSON.stringify(item)) {
-          batch.set(doc(db, collectionName, idStr), item);
-          hasChanges = true;
-        }
-      }
-
-      // Deletions
-      for (const item of currentState) {
-        const idStr = String(item.id);
-        if (!nextMap.has(idStr)) {
-          batch.delete(doc(db, collectionName, idStr));
-          hasChanges = true;
-        }
-      }
-
-      if (hasChanges) {
-        try {
-          await batch.commit();
-        } catch (err) {
-          console.error(`Error committing batch sync for ${collectionName}:`, err);
-        }
-      }
-    };
-  };
-
-  // Expose wrappers
-
-  const setCategories = createFirestoreSyncWrapper<any>('categories', categories);
-  const setBanners = createFirestoreSyncWrapper<Banner>('banners', banners);
-  const setOrders = createFirestoreSyncWrapper<Order>('orders', orders);
-  const setCoupons = createFirestoreSyncWrapper<Coupon>('coupons', coupons);
-  const setReturnRequests = createFirestoreSyncWrapper<ReturnRequest>('returnRequests', returnRequests);
-  const setNotifications = createFirestoreSyncWrapper<Notification>('notifications', notifications);
-  const setCampaigns = createFirestoreSyncWrapper<any>('campaigns', campaigns);
-
-  const setDrivers = async (value: React.SetStateAction<DriverDetail[]>) => {
-    let nextState: DriverDetail[] = [];
-    if (typeof value === 'function') {
-      nextState = (value as Function)(drivers);
-    } else {
-      nextState = value;
-    }
-
-    const currentMap = new Map(drivers.map(item => [item.id, item]));
-    const batch = writeBatch(db);
-    let hasChanges = false;
-
-    for (const item of nextState) {
-      const current = currentMap.get(item.id);
-      if (!current || JSON.stringify(current) !== JSON.stringify(item)) {
-        batch.set(doc(db, 'users', item.id), {
-          role: 'driver',
-          name: item.name,
-          phone: item.phone,
-          vehicleType: item.vehicleType,
-          rating: item.rating,
-          isOnline: item.isOnline,
-          status: item.status
-        }, { merge: true });
-        hasChanges = true;
-      }
-    }
-
-    if (hasChanges) {
-      await batch.commit();
-    }
-  };
-
-  const setDriverMetrics = async (value: React.SetStateAction<Record<string, DriverMetrics>>) => {
-    let nextState: Record<string, DriverMetrics> = {};
-    if (typeof value === 'function') {
-      nextState = value(driverMetrics);
-    } else {
-      nextState = value;
-    }
-
-    const batch = writeBatch(db);
-    let hasChanges = false;
-
-    for (const [key, metrics] of Object.entries(nextState)) {
-      const current = driverMetrics[key];
-      if (!current || JSON.stringify(current) !== JSON.stringify(metrics)) {
-        batch.set(doc(db, 'driverMetrics', key), metrics);
-        hasChanges = true;
-      }
-    }
-
-    if (hasChanges) {
-      await batch.commit();
-    }
-  };
 
   // --- Cached Public Collections (No Real-Time Listeners to Save Reads) ---
   useEffect(() => {
@@ -793,7 +676,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       : [...favoriteStores, storeId];
     
     try {
-      await updateDoc(doc(db, 'users', currentUser.uid), { favoriteStores: updated });
+      await userRepository.update(currentUser.uid, { favoriteStores: updated });
       showToast(isFav ? 'تم الإزالة من المفضلة' : 'تم الإضافة للمفضلة');
     } catch (err) {
       console.error(err);
@@ -808,7 +691,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       : [...favoriteProducts, productId];
     
     try {
-      await updateDoc(doc(db, 'users', currentUser.uid), { favoriteProducts: updated });
+      await userRepository.update(currentUser.uid, { favoriteProducts: updated });
       showToast(isFav ? 'تم الإزالة من المفضلة' : 'تم الإضافة للمفضلة');
     } catch (err) {
       console.error(err);
@@ -877,8 +760,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       : [...followedStores, storeId];
     
     try {
-      await updateDoc(doc(db, 'users', currentUser.uid), { followedStores: updated });
-      await updateDoc(doc(db, 'stores', storeId), { followersCount: increment(isFollowing ? -1 : 1) });
+      await userRepository.update(currentUser.uid, { followedStores: updated });
+      await storeRepository.update(storeId, { followersCount: increment(isFollowing ? -1 : 1) });
       showToast(isFollowing ? (lang === 'ar' ? 'تم إلغاء المتابعة' : 'Unfollowed store') : (lang === 'ar' ? 'تم متابعة المتجر' : 'Following store'));
     } catch (err) {
       console.error(err);
@@ -893,7 +776,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       : [...savedAddresses, newAddr];
 
     try {
-      await updateDoc(doc(db, 'users', currentUser.uid), { savedAddresses: updated });
+      await userRepository.update(currentUser.uid, { savedAddresses: updated });
       showToast('تم إضافة العنوان بنجاح');
     } catch (err) {
       console.error(err);
@@ -909,7 +792,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     try {
-      await updateDoc(doc(db, 'users', currentUser.uid), { savedAddresses: updated });
+      await userRepository.update(currentUser.uid, { savedAddresses: updated });
       showToast('تم تعديل العنوان بنجاح');
     } catch (err) {
       console.error(err);
@@ -920,7 +803,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!currentUser) return;
     const updated = savedAddresses.filter(addr => addr.id !== id);
     try {
-      await updateDoc(doc(db, 'users', currentUser.uid), { savedAddresses: updated });
+      await userRepository.update(currentUser.uid, { savedAddresses: updated });
       showToast('تم حذف العنوان');
     } catch (err) {
       console.error(err);
@@ -931,7 +814,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!currentUser) return;
     const updated = savedAddresses.map(addr => ({ ...addr, isDefault: addr.id === id }));
     try {
-      await updateDoc(doc(db, 'users', currentUser.uid), { savedAddresses: updated });
+      await userRepository.update(currentUser.uid, { savedAddresses: updated });
       const target = savedAddresses.find(a => a.id === id);
       if (target) {
         const details = `${target.governorate}، ${target.center}، ${target.village}، ${target.street}، عمارة ${target.building}`;
@@ -974,10 +857,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     else if (newStock <= (prod.lowStockThreshold || 10)) availStatus = 'low_stock';
 
     try {
-      const batch = writeBatch(db);
-      batch.set(doc(db, 'stockMovements', newMovement.id), newMovement);
-      batch.update(prodRef, { currentStock: newStock, availabilityStatus: availStatus });
-      await batch.commit();
+      await import('../services/shared/app.service').then(m => m.appService.addStockMovement(newMovement, prodRef.id, newStock, availStatus));
     } catch (err) {
       console.error(err);
     }
@@ -995,7 +875,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     try {
-      await setDoc(doc(db, 'returnRequests', id), newRequest);
+      await import('../services/shared/app.service').then(m => m.appService.submitReturnRequest(id, newRequest));
       showToast('تم تقديم طلب المرتجع بنجاح');
     } catch (err) {
       console.error(err);
@@ -1011,23 +891,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const now = new Date().toISOString();
       const updatedTimeline = [...reqData.timeline, { status, note, createdAt: now }];
 
-      const batch = writeBatch(db);
-      batch.update(reqRef, { status, timeline: updatedTimeline, updatedAt: now });
+      const refundAmount = status === 'refunded' ? reqData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) : 0;
+      await import('../services/shared/app.service').then(m => m.appService.confirmReturnRequest(id, reqData.orderId, { timeline: updatedTimeline, updatedAt: now, storeId: reqData.storeId }, status, refundAmount));
 
-      if (status === 'refunded') {
-        const refundAmount = reqData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const txId = `tx_${Date.now()}`;
-        batch.set(doc(db, 'walletTransactions', txId), {
-          id: txId,
-          storeId: reqData.storeId,
-          amount: -refundAmount,
-          type: 'refund',
-          description: `مرتجع مبيعات طلب رقم ${reqData.orderId}`,
-          createdAt: now,
-          status: 'completed'
-        });
-      }
-      await batch.commit();
       showToast('تم تحديث حالة طلب المرتجع');
     } catch (err) {
       console.error(err);
@@ -1048,7 +914,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     try {
-      await setDoc(doc(db, 'walletSettlements', settleId), newSet);
+      await import('../services/shared/app.service').then(m => m.appService.requestWalletSettlement(settleId, newSet));
       showToast(lang === 'ar' ? 'تم تقديم طلب السحب بنجاح' : 'Withdrawal request submitted');
     } catch (err) {
       console.error(err);
@@ -1070,15 +936,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     try {
-      const batch = writeBatch(db);
-      batch.set(doc(db, 'reviews', reviewId), newReview);
-      batch.update(doc(db, 'orders', orderId), {
-        ratingStore,
-        ratingDriver,
-        ratingProducts,
-        ratingComment: comment
-      });
-      await batch.commit();
+      await import('../services/shared/app.service').then(m => m.appService.submitReview(reviewId, newReview, orderId, ratingStore, ratingDriver, ratingProducts, comment));
       showToast(lang === 'ar' ? 'شكرًا لتقييمك!' : 'Thank you for your rating!');
     } catch (err) {
       console.error(err);
@@ -1087,7 +945,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const markNotificationRead = async (id: string) => {
     try {
-      await updateDoc(doc(db, 'notifications', id), { isRead: true });
+      await import('../services/shared/app.service').then(m => m.appService.markNotificationRead(id));
     } catch (err) {
       console.error(err);
     }
@@ -1095,11 +953,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const markAllNotificationsRead = async () => {
     try {
-      const batch = writeBatch(db);
-      notifications.forEach(n => {
-        batch.update(doc(db, 'notifications', n.id), { isRead: true });
-      });
-      await batch.commit();
+      await import('../services/shared/app.service').then(m => m.appService.markAllNotificationsRead(notifications.map(n => n.id)));
       showToast('تم تحديد الكل كمقروء');
     } catch (err) {
       console.error(err);
@@ -1108,7 +962,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteNotification = async (id: string) => {
     try {
-      await deleteDoc(doc(db, 'notifications', id));
+      await import('../services/shared/app.service').then(m => m.appService.deleteNotification(id));
     } catch (err) {
       console.error(err);
     }
@@ -1116,11 +970,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const clearAllNotifications = async () => {
     try {
-      const batch = writeBatch(db);
-      notifications.forEach(n => {
-        batch.delete(doc(db, 'notifications', n.id));
-      });
-      await batch.commit();
+      await import('../services/shared/app.service').then(m => m.appService.clearAllNotifications(notifications.map(n => n.id)));
       showToast('تم مسح جميع الإشعارات');
     } catch (err) {
       console.error(err);
@@ -1129,7 +979,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateDriverStatus = async (id: string, status: DriverDetail['status']) => {
     try {
-      await updateDoc(doc(db, 'users', id), { status });
+      await userRepository.update(id, { status });
       showToast(lang === 'ar' ? 'تم تحديث حالة السائق' : 'Driver status updated');
     } catch (err) {
       console.error(err);
@@ -1140,7 +990,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const driver = drivers.find(d => d.id === id);
     if (!driver) return;
     try {
-      await updateDoc(doc(db, 'users', id), { isOnline: !driver.isOnline });
+      await userRepository.update(id, { isOnline: !driver.isOnline });
     } catch (err) {
       console.error(err);
     }
@@ -1154,7 +1004,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const store = storeDoc.data();
 
       const campaignId = `camp_${Date.now()}`;
-      await setDoc(doc(db, 'campaigns', campaignId), {
+      await import('../services/shared/app.service').then(m => m.appService.addCampaign(campaignId, {
         id: campaignId,
         storeId,
         storeName: store.name || storeId,
@@ -1162,7 +1012,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         productId: productId || null,
         status: 'active',
         createdAt: new Date().toISOString()
-      });
+      }));
       showToast(lang === 'ar' ? 'تم إرسال العرض للمتابعين' : 'Offer broadcasted to followers');
     } catch (err) {
       console.error(err);
@@ -1235,10 +1085,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
 
       try {
-        await setDoc(doc(db, 'notifications', notifId), {
+        await import('../services/shared/app.service').then(m => m.appService.dispatchNotification(notifId, {
           ...newNotif,
           userId: order.customerId
-        });
+        }));
       } catch (err) {
         console.error(err);
       }
@@ -1282,157 +1132,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const orderSnap = await getDoc(orderRef);
       if (!orderSnap.exists()) return;
       const order = orderSnap.data() as Order;
-
-      const batch = writeBatch(db);
-      const updateData: any = { status };
-      if (driverId) {
-        updateData.driverId = driverId;
-        updateData.driverName = driverName || '';
-      }
-      batch.update(orderRef, updateData);
-
-      // Order History Logging
-      const eventId = `event_${Date.now()}`;
-      batch.set(doc(db, `orderHistory/${orderId}/events`, eventId), {
-        status: status,
-        timestamp: new Date().toISOString(),
-        userId: auth.currentUser?.uid || 'system',
-        driverId: driverId || order.driverId || null,
-        notes: `Status changed to ${status}`
-      });
-
-      if (status === 'preparing') {
-        for (const item of order.items) {
-          const prodRef = doc(db, 'products', item.id);
-          const prodSnap = await getDoc(prodRef);
-          if (prodSnap.exists()) {
-            const p = prodSnap.data();
-            const currentStock = Math.max(0, (p.currentStock || 0) - item.quantity);
-            const reservedStock = (p.reservedStock || 0) + item.quantity;
-            let availStatus = 'in_stock';
-            if (currentStock === 0) availStatus = 'out_of_stock';
-            else if (currentStock <= (p.lowStockThreshold || 10)) availStatus = 'low_stock';
-            batch.update(prodRef, { currentStock, reservedStock, availabilityStatus: availStatus });
-          }
-        }
-      } else if (status === 'picked_up') {
-        for (const item of order.items) {
-          const prodRef = doc(db, 'products', item.id);
-          const prodSnap = await getDoc(prodRef);
-          if (prodSnap.exists()) {
-            const p = prodSnap.data();
-            const reservedStock = Math.max(0, (p.reservedStock || 0) - item.quantity);
-            batch.update(prodRef, { reservedStock });
-            
-            const movementId = `m_sale_${Date.now()}_${item.id}`;
-            batch.set(doc(db, 'stockMovements', movementId), {
-              id: movementId,
-              productId: item.id,
-              productName: item.name,
-              storeId: order.shopId,
-              quantity: -item.quantity,
-              type: 'Sale',
-              reason: `فاتورة بيع للطلب ${orderId}`,
-              createdAt: new Date().toISOString()
-            });
-          }
-        }
-      } else if (status === 'cancelled') {
-        for (const item of order.items) {
-          const prodRef = doc(db, 'products', item.id);
-          const prodSnap = await getDoc(prodRef);
-          if (prodSnap.exists()) {
-            const p = prodSnap.data();
-            const isReserved = (p.reservedStock || 0) >= item.quantity;
-            const reservedStock = isReserved ? (p.reservedStock || 0) - item.quantity : (p.reservedStock || 0);
-            const currentStock = isReserved ? (p.currentStock || 0) : (p.currentStock || 0) + item.quantity;
-            let availStatus = 'in_stock';
-            if (currentStock === 0) availStatus = 'out_of_stock';
-            else if (currentStock <= (p.lowStockThreshold || 10)) availStatus = 'low_stock';
-            batch.update(prodRef, { currentStock, reservedStock, availabilityStatus: availStatus });
-          }
-        }
-      } else if (status === 'delivered') {
-        const txId1 = `tx_${Date.now()}`;
-        const saleTx: WalletTransaction = {
-          id: txId1,
-          storeId: order.shopId,
-          amount: order.subtotal,
-          type: 'sale',
-          description: `فاتورة مبيعات للطلب ${orderId}`,
-          createdAt: new Date().toISOString(),
-          status: 'completed'
-        };
-        const txId2 = `tx_fee_${Date.now()}`;
-        const deliveryTx: WalletTransaction = {
-          id: txId2,
-          storeId: order.shopId,
-          amount: order.deliveryFee,
-          type: 'delivery_fee',
-          description: `رسوم توصيل للطلب ${orderId}`,
-          createdAt: new Date().toISOString(),
-          status: 'completed'
-        };
-        batch.set(doc(db, 'walletTransactions', txId1), saleTx);
-        batch.set(doc(db, 'walletTransactions', txId2), deliveryTx);
-
-        // Driver Earnings Calculation
-        if (order.driverId || driverId) {
-          const actualDriverId = (order.driverId || driverId) as string;
-          const distance = order.assignmentDistance || 5; // Default to 5km if missing
-          let fee = 15;
-          if (distance > 12) fee = 50;
-          else if (distance > 8) fee = 35;
-          else if (distance > 5) fee = 25;
-          else if (distance > 3) fee = 20;
-
-          let bonus = 5; // Assuming on-time for now
-
-          // Rating check
-          if (order.ratingDriver && order.ratingDriver >= 4.5) {
-             bonus += 10;
-          }
-
-          const earningsId = `earn_${Date.now()}`;
-          batch.set(doc(db, 'driverEarnings', earningsId), {
-            orderId: orderId,
-            driverId: actualDriverId,
-            fee: fee,
-            bonus: bonus,
-            total: fee + bonus,
-            createdAt: new Date().toISOString()
-          });
-
-          // Unassign driver so they are free for next order
-          batch.update(doc(db, 'users', actualDriverId), {
-            currentOrderId: null
-          });
-        }
-
-        // Loyalty Engine points award (1 EGP spent = 1 Point)
-        if (order.customerId) {
-          const pointsEarned = Math.floor(order.subtotal || 0);
-          if (pointsEarned > 0) {
-            const pointsHistoryId = `${orderId}_${order.customerId}_earn`;
-            const pointsSnap = await getDoc(doc(db, 'pointsHistory', pointsHistoryId));
-            if (!pointsSnap.exists()) {
-              batch.set(doc(db, 'pointsHistory', pointsHistoryId), {
-                id: pointsHistoryId,
-                userId: order.customerId,
-                orderId: orderId,
-                points: pointsEarned,
-                type: 'earn',
-                createdAt: new Date().toISOString()
-              });
-              batch.update(doc(db, 'users', order.customerId), {
-                points: increment(pointsEarned)
-              });
-            }
-          }
-        }
-      }
-
-      await batch.commit();
+      await import('../services/shared/app.service').then(m => m.appService.updateOrderStatus(orderId, status, driverId, driverName, order, auth.currentUser?.uid));
       await triggerOrderUpdateBroadcast(orderId, status, order);
     } catch (err) {
       console.error(err);
@@ -1441,7 +1141,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updatePlatformSettings = async (newSettings: PlatformSettings) => {
     try {
-      await setDoc(doc(db, 'platformSettings', 'default'), newSettings);
+      await platformSettingsRepository.create('default', newSettings);
       setPlatformSettings(newSettings);
       showToast(isRTL ? 'تم تحديث إعدادات المنصة بنجاح' : 'Platform configurations updated successfully');
     } catch (err) {
@@ -1462,11 +1162,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         currentUser,
         setCurrentUser,
         categories,
-        setCategories,
         banners,
-        setBanners,
         orders,
-        setOrders,
         cart,
         setCart,
         cartConflictAlert,
@@ -1492,14 +1189,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toggleTheme,
 
         notifications,
-        setNotifications,
         markNotificationRead,
         markAllNotificationsRead,
         deleteNotification,
         clearAllNotifications,
 
         coupons,
-        setCoupons,
         activeCoupon,
         setActiveCoupon,
 
@@ -1510,12 +1205,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setDefaultAddress,
 
         returnRequests,
-        setReturnRequests,
         createReturnRequest,
         updateReturnStatus,
 
         driverMetrics,
-        setDriverMetrics,
 
         followedStores,
         toggleFollowStore,
@@ -1537,7 +1230,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         detectLocationGPS,
 
         drivers,
-        setDrivers,
         updateDriverStatus,
         toggleDriverOnline,
 
@@ -1550,7 +1242,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addReview,
 
         campaigns,
-        setCampaigns,
         pointsHistory,
         referrals,
         platformSettings,

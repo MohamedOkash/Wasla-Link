@@ -4,6 +4,7 @@ import { Bike, Check, X, Ban, RefreshCw, Phone, Star, ShieldAlert, Trash2, Eye, 
 import { useApp } from '../../contexts/AppContext';
 import { collection, query, onSnapshot, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../../services/firebase';
+import { driverRepository } from "../../services/driver/repository";
 
 export const DriverManagement: React.FC = () => {
   const { t } = useTranslation();
@@ -22,20 +23,7 @@ export const DriverManagement: React.FC = () => {
 
   const handleApprove = async (driver: any) => {
     try {
-      const batch = writeBatch(db);
-      // 1. Update user role
-      batch.update(doc(db, 'users', driver.id), {
-        role: 'driver',
-        vehicleType: driver.vehicleType,
-      });
-      // 2. Mark driver as approved and active
-      batch.update(doc(db, 'drivers', driver.id), {
-        status: 'approved',
-        isApproved: true,
-        isActive: true,
-        availability: 'offline' // they start offline after approval
-      });
-      await batch.commit();
+      await import('../../services/admin/service').then(m => m.adminService.approveDriver(driver.id, driver.vehicleType));
       showToast(t('str_534'));
     } catch (error) {
       console.error(error);
@@ -45,7 +33,7 @@ export const DriverManagement: React.FC = () => {
 
   const handleReject = async (driverId: string) => {
     try {
-      await updateDoc(doc(db, 'drivers', driverId), { status: 'rejected' });
+      await driverRepository.update(driverId, { status: 'rejected' });
       showToast(t('str_536'));
     } catch (error) {
       console.error(error);
@@ -55,7 +43,7 @@ export const DriverManagement: React.FC = () => {
 
   const handleSuspend = async (driverId: string) => {
     try {
-      await updateDoc(doc(db, 'drivers', driverId), { 
+      await driverRepository.update(driverId, { 
         status: 'suspended',
         isActive: false,
         availability: 'offline'
@@ -69,7 +57,7 @@ export const DriverManagement: React.FC = () => {
 
   const handleReactivate = async (driverId: string) => {
     try {
-      await updateDoc(doc(db, 'drivers', driverId), { 
+      await driverRepository.update(driverId, { 
         status: 'approved',
         isActive: true
       });

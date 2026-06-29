@@ -3,57 +3,57 @@ import React from 'react';
 import { Check, X, Store as StoreIcon, AlertCircle, Trash2, Ban, RefreshCw } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { useStores } from '../../hooks/useStores';
+import { storeRepository } from '../../services/vendor/repository';
 
 export const StoreApprovals: React.FC = () => {
   const { t } = useTranslation();
   const { showToast } = useApp();
-  const { setStores } = useStores();;
-  const { stores } = useStores();;
+  const { stores } = useStores();
 
   // Filter pending, approved, and suspended stores
   const pendingStores = stores.filter(s => s.status === 'pending');
   const activeStores = stores.filter(s => s.status === 'approved');
   const suspendedStores = stores.filter(s => s.status === 'suspended');
 
-  const handleApproveStore = (id: string) => {
-  const {} = useTranslation();
-
-    setStores(prev => prev.map(s => {
-      if (s.id === id) {
-        return { ...s, status: 'approved' };
-      }
-      return s;
-    }));
-    showToast('تم اعتماد وقبول المتجر بنجاح');
-  };
-
-  const handleRejectStore = (id: string) => {
-    if (confirm('هل أنت متأكد من رفض طلب هذا المتجر؟')) {
-      setStores(prev => prev.map(s => {
-        if (s.id === id) {
-          return { ...s, status: 'rejected' };
-        }
-        return s;
-      }));
-      showToast('تم رفض طلب تسجيل المتجر');
+  const handleApproveStore = async (id: string) => {
+    try {
+      await storeRepository.update(id, { status: 'approved' });
+      showToast('تم اعتماد وقبول المتجر بنجاح');
+    } catch (err) {
+      console.error(err);
+      showToast('حدث خطأ', 'error');
     }
   };
 
-  const handleToggleSuspendStore = (id: string, currentStatus: string) => {
-    const nextStatus = currentStatus === 'suspended' ? 'approved' : 'suspended';
-    setStores(prev => prev.map(s => {
-      if (s.id === id) {
-        return { ...s, status: nextStatus as any };
+  const handleRejectStore = async (id: string) => {
+    if (confirm('هل أنت متأكد من رفض طلب هذا المتجر؟')) {
+      try {
+        await storeRepository.update(id, { status: 'rejected' });
+        showToast('تم رفض طلب تسجيل المتجر');
+      } catch (err) {
+        console.error(err);
       }
-      return s;
-    }));
-    showToast(nextStatus === 'suspended' ? 'تم تعليق وإيقاف المتجر مؤقتاً' : 'تم تنشيط وإعادة المتجر للخدمة');
+    }
   };
 
-  const handleDeleteStore = (id: string) => {
+  const handleToggleSuspendStore = async (id: string, currentStatus: string) => {
+    const nextStatus = currentStatus === 'suspended' ? 'approved' : 'suspended';
+    try {
+      await storeRepository.update(id, { status: nextStatus });
+      showToast(nextStatus === 'suspended' ? 'تم تعليق وإيقاف المتجر مؤقتاً' : 'تم تنشيط وإعادة المتجر للخدمة');
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteStore = async (id: string) => {
     if (confirm('هل أنت متأكد من حذف هذا المتجر نهائياً من النظام؟ لا يمكن التراجع عن هذا الإجراء.')) {
-      setStores(prev => prev.filter(s => s.id !== id));
-      showToast('تم حذف المتجر بنجاح من النظام');
+      try {
+        await storeRepository.delete(id);
+        showToast('تم حذف المتجر بنجاح من النظام');
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 

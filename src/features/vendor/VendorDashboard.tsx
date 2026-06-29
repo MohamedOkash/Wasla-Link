@@ -22,7 +22,7 @@ import { useProducts } from '../../hooks/useProducts';
 
 export const VendorDashboard: React.FC = () => {
   const { t } = useTranslation();
-  const { goHome,  orders, theme, isRTL, walletTransactions, walletSettlements, addSettlement, returnRequests, updateReturnStatus, showToast } = useApp();
+  const { goHome,  orders, theme, isRTL, walletTransactions, walletSettlements, addSettlement, returnRequests, updateReturnStatus, showToast, currentUser } = useApp();
   const { products } = useProducts();;
   const [activeTab, setActiveTab] = useState<'dashboard' | 'catalog_builder' | 'orders' | 'products' | 'offers' | 'campaigns' | 'reports' | 'wallet' | 'settings' | 'returns' | 'reviews'>('dashboard');
 
@@ -37,24 +37,21 @@ export const VendorDashboard: React.FC = () => {
     const q = query(collection(db, 'reviews'));
     const unsub = onSnapshot(q, snap => {
       const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      const vendorProductIds = new Set(products.filter(p => p.storeId === 'g_1').map(p => p.id));
+      const vendorProductIds = new Set(products.filter(p => p.storeId === currentUser?.storeId).map(p => p.id));
       const filtered = list.filter((r: any) => vendorProductIds.has(r.productId));
       filtered.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setVendorReviews(filtered);
     });
 
     return () => unsub();
-  }, [products]);
+  }, [products, currentUser]);
 
   const handleSubmitReply = async (reviewId: string) => {
     const replyText = replyTexts[reviewId] || '';
     if (!replyText.trim()) return;
 
     try {
-      await updateDoc(doc(db, 'reviews', reviewId), {
-        vendorReply: replyText,
-        vendorReplyCreatedAt: new Date().toISOString()
-      });
+      await import('../../services/vendor/service').then(m => m.vendorService.updateReviewReply(reviewId, replyText));
       showToast(t('str_760'));
       setReplyTexts(prev => ({ ...prev, [reviewId]: '' }));
     } catch (err) {
@@ -63,9 +60,9 @@ export const VendorDashboard: React.FC = () => {
     }
   };
 
-  // Filter vendor metrics (using store g_1 for Al-Khair Markets)
-  const vendorOrders = orders.filter(o => o.shopId === 'g_1');
-  const vendorProducts = products.filter(p => p.storeId === 'g_1');
+  // Filter vendor metrics
+  const vendorOrders = orders.filter(o => o.shopId === currentUser?.storeId);
+  const vendorProducts = products.filter(p => p.storeId === currentUser?.storeId);
   const deliveredOrders = vendorOrders.filter(o => o.status === 'delivered');
 
   // Dashboard Stats calculations

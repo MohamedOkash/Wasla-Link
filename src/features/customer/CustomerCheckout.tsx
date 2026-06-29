@@ -7,7 +7,7 @@ import { Product } from '../../types/product.types';
 import { couponService } from '../../services/coupon.service';
 import { mediaService } from '../../services/media.service';
 import { deliveryFeeService, DEFAULT_PLATFORM_SETTINGS } from '../../services/deliveryFee.service';
-import { doc, writeBatch, increment, setDoc } from 'firebase/firestore';
+import { doc, writeBatch, increment, setDoc, collection } from 'firebase/firestore';
 import { db, auth, sanitizeFirestoreData } from '../../services/firebase';
 import { initiatePayment, PaymentMethod } from '../../services/payment.service';
 
@@ -135,7 +135,8 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
 
     setLoading(true);
     try {
-      const orderId = `ord_${Math.floor(100000 + Math.random() * 900000)}`;
+      const orderRef = doc(collection(db, 'orders'));
+      const orderId = orderRef.id;
       let paymentReceiptUrl = '';
 
       if (paymentMethod !== 'cash_on_delivery' && receiptFile) {
@@ -227,33 +228,17 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
       console.log("CUSTOMER_ID", cleanedOrder.customerId);
 
       try {
-        // TEMPORARY: Try setDoc directly to catch exact error instead of batch
-        await setDoc(doc(db, 'orders', orderId), cleanedOrder);
-
-        const batch = writeBatch(db);
-        if (pointsToRedeem > 0 && currentUser) {
-          batch.update(doc(db, 'users', currentUser.uid), {
-            points: increment(-pointsToRedeem)
+        await import('../../services/orders/service').then(module => {
+          return module.orderService.placeOrder({
+            orderData: cleanedOrder,
+            pointsToRedeem: pointsToRedeem,
+            currentUserUid: currentUser?.uid,
+            activeCouponId: activeCoupon?.id
           });
+        });
 
-          const pointsHistoryId = `${orderId}_${currentUser.uid}_redeem`;
-          batch.set(doc(db, 'pointsHistory', pointsHistoryId), {
-            id: pointsHistoryId,
-            userId: currentUser.uid,
-            orderId: orderId,
-            points: pointsToRedeem,
-            type: 'redeem',
-            createdAt: new Date().toISOString()
-          });
-        }
-
-        if (activeCoupon) {
-          batch.update(doc(db, 'coupons', activeCoupon.id), {
-            usedCount: increment(1)
-          });
-        }
-
-        await batch.commit();
+        // 6. Cleanup
+        setCart({ shopId: null, shopName: '', items: [] });
         
         // Phase 16E: Initiate Payment after order creation
         const paymentRes = await initiatePayment(orderId, paymentMethod, total, { receiptUrl: paymentReceiptUrl });

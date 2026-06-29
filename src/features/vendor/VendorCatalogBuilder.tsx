@@ -63,7 +63,7 @@ export const VendorCatalogBuilder: React.FC = () => {
         payload.parentCategoryId = selectedParentId;
       }
 
-      await setDoc(doc(db, colName, id), payload);
+      await import('../../services/vendor/service').then(m => m.vendorService.createCatalogItem(colName, id, payload));
       setNewItemName('');
       showToast(t('str_746'));
     } catch (err) {
@@ -77,7 +77,7 @@ export const VendorCatalogBuilder: React.FC = () => {
   const handleDelete = async (id: string, colName: string) => {
     if (!confirm(t('str_748'))) return;
     try {
-      await deleteDoc(doc(db, colName, id));
+      await import('../../services/vendor/service').then(m => m.vendorService.deleteCatalogItem(colName, id));
       showToast(t('str_749'));
     } catch (err) {
       console.error(err);

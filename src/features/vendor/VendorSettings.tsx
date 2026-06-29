@@ -6,14 +6,17 @@ import { mediaService } from '../../services/media.service';
 import { auth } from '../../services/firebase';
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { useStores } from '../../hooks/useStores';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import { storeRepository } from "../../services/vendor/repository";
 
 export const VendorSettings: React.FC = () => {
   const { t } = useTranslation();
-  const { showToast, isRTL } = useApp();
-  const { stores, setStores } = useStores();
+  const { showToast, isRTL, currentUser } = useApp();
+  const { stores } = useStores();
 
-  // Find store g_1 (أسواق الخير)
-  const store = stores.find(s => s.id === 'g_1');
+  // Find store
+  const store = stores.find(s => s.id === currentUser?.storeId);
 
   const [isOpen, setIsOpen] = useState(store && store.isOpen !== undefined ? store.isOpen : true);
   const [isTemporarilyClosed, setIsTemporarilyClosed] = useState(store ? !!store.isTemporarilyClosed : false);
@@ -147,50 +150,48 @@ export const VendorSettings: React.FC = () => {
     }));
   };
 
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    setStores(prev => prev.map(s => {
-      if (s.id === 'g_1') {
-        return {
-          ...s,
-          isOpen,
-          isTemporarilyClosed,
-          vacationMode,
-          minOrder: parseInt(minOrder) || 0,
-          fee: parseInt(deliveryFee) || 0,
-          time: parseInt(deliveryTime) || 15,
-          openingHours,
-          closingHours,
-          deliveryZones: zones,
-          coveredVillages: zones.map(z => z.name),
-          deliveryFees: zones.reduce((acc, z) => ({ ...acc, [z.name]: z.fee }), {}),
-          etas: zones.reduce((acc, z) => ({ ...acc, [z.name]: z.eta }), {}),
-          holidayMode,
-          fridaySchedule: {
-            isOpen: fridayOpen,
-            openTime: fridayOpenTime,
-            closeTime: fridayCloseTime
-          },
-          breakTimes: breaks,
-          logoUrl: logo,
-          coverUrl: cover,
-          promoBanner: banner,
-          facebook,
-          instagram,
-          whatsapp,
-          tiktok,
-          website,
-          paymentInfo: {
-            vodafone: vodafone || undefined,
-            instapay: instapay || undefined
-          }
-        };
-      }
-      return s;
-    }));
-
-    showToast('تم حفظ إعدادات المتجر بنجاح');
+    try {
+      await storeRepository.update(currentUser?.storeId || '', {
+              isOpen,
+              isTemporarilyClosed,
+              vacationMode,
+              minOrder: parseInt(minOrder) || 0,
+              fee: parseInt(deliveryFee) || 0,
+              time: parseInt(deliveryTime) || 15,
+              openingHours,
+              closingHours,
+              deliveryZones: zones,
+              coveredVillages: zones.map(z => z.name),
+              deliveryFees: zones.reduce((acc: any, z: any) => ({ ...acc, [z.name]: z.fee }), {}),
+              etas: zones.reduce((acc: any, z: any) => ({ ...acc, [z.name]: z.eta }), {}),
+              holidayMode,
+              fridaySchedule: {
+                isOpen: fridayOpen,
+                openTime: fridayOpenTime,
+                closeTime: fridayCloseTime
+              },
+              breakTimes: breaks,
+              logoUrl: logo,
+              coverUrl: cover,
+              promoBanner: banner,
+              facebook,
+              instagram,
+              whatsapp,
+              tiktok,
+              website,
+              paymentInfo: {
+                vodafone: vodafone || null,
+                instapay: instapay || null
+              }
+            });
+      showToast('تم حفظ إعدادات المتجر بنجاح');
+    } catch (err) {
+      console.error(err);
+      showToast('حدث خطأ', 'error');
+    }
   };
 
   return (

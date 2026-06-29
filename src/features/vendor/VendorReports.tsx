@@ -11,19 +11,19 @@ import { useProducts } from '../../hooks/useProducts';
 
 export const VendorReports: React.FC = () => {
   const { t } = useTranslation();
-  const { orders,  isRTL } = useApp();
+  const { orders,  isRTL, currentUser } = useApp();
   const { products } = useProducts();;
   const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
-  // Filter vendor reports using store g_1 (Al-Khair Markets)
-  const kpi = analyticsService.getVendorKPIs('g_1', orders, products);
+  // Filter vendor reports using store
+  const kpi = analyticsService.getVendorKPIs(currentUser?.storeId || '', orders, products);
 
   // Export handlers
   const handleExportCSV = () => {
   const {} = useTranslation();
 
     const headers = ['رقم الطلب', 'تاريخ الطلب', 'قيمة المجموع الفرعي', 'رسوم التوصيل', 'إجمالي الطلب', 'طريقة الدفع', 'الحالة'];
-    const rows = orders.filter(o => o.shopId === 'g_1').map(o => [
+    const rows = orders.filter(o => o.shopId === currentUser?.storeId).map(o => [
       o.id,
       o.createdAt,
       o.subtotal,

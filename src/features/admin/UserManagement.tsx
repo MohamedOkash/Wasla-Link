@@ -5,6 +5,7 @@ import { useApp } from '../../contexts/AppContext';
 import { collection, query, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { auth, db } from '../../services/firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
+import { userRepository } from "../../services/shared/user.repository";
 
 export const UserManagement: React.FC = () => {
   const { t } = useTranslation();
@@ -27,7 +28,7 @@ export const UserManagement: React.FC = () => {
   const handleToggleStatus = async (id: string, currentStatus: string) => {
     const nextStatus = currentStatus === 'active' ? 'suspended' : 'active';
     try {
-      await updateDoc(doc(db, 'users', id), { status: nextStatus });
+      await userRepository.update(id, { status: nextStatus });
       showToast(nextStatus === 'suspended' ? 'تم حظر وإيقاف حساب العضو' : 'تم إلغاء حظر العضو وتنشيط حسابه', 'success');
     } catch (err) {
       console.error(err);
@@ -37,7 +38,7 @@ export const UserManagement: React.FC = () => {
 
   const handleRoleChange = async (id: string, newRole: string) => {
     try {
-      await updateDoc(doc(db, 'users', id), { role: newRole });
+      await userRepository.update(id, { role: newRole });
       showToast(`تم تغيير دور العضو إلى ${newRole} بنجاح`, 'success');
     } catch (err) {
       console.error(err);
@@ -61,7 +62,7 @@ export const UserManagement: React.FC = () => {
   const handleDeleteUser = async (id: string) => {
     if (confirm('هل أنت متأكد من حذف بيانات هذا العضو نهائياً؟ لا يمكن التراجع عن هذا الإجراء.')) {
       try {
-        await deleteDoc(doc(db, 'users', id));
+        await userRepository.delete(id);
         showToast('تم حذف بيانات العضو بنجاح', 'success');
       } catch (err) {
         console.error(err);

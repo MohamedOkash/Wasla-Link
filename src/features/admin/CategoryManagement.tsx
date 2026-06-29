@@ -2,10 +2,11 @@ import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState } from 'react';
 import { Plus, Trash2, Edit, X, Check, FolderOpen } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
+import { categoryRepository } from '../../services/admin/repository';
 
 export const CategoryManagement: React.FC = () => {
   const { t } = useTranslation();
-  const { categories, setCategories, showToast } = useApp();
+  const { categories, showToast } = useApp();
   
   // Modals
   const [showAddForm, setShowAddForm] = useState(false);
@@ -35,7 +36,7 @@ export const CategoryManagement: React.FC = () => {
     setCatId(cat.id);
   };
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nameAr || !nameEn || !catId) {
       alert('الرجاء تعبئة كافة الحقول المطلوبة');
@@ -48,40 +49,49 @@ export const CategoryManagement: React.FC = () => {
       return;
     }
 
+    const cleanCatId = catId.trim().toLowerCase();
     const newCat = {
-      id: catId.trim().toLowerCase(),
+      id: cleanCatId,
       name: { ar: nameAr, en: nameEn },
       imgUrl
     };
 
-    setCategories(prev => [...prev, newCat]);
-    showToast('تمت إضافة القسم الجديد بنجاح');
-    setShowAddForm(false);
+    try {
+      await categoryRepository.create(cleanCatId, newCat);
+      showToast('تمت إضافة القسم الجديد بنجاح');
+      setShowAddForm(false);
+    } catch (err) {
+      console.error(err);
+      showToast('حدث خطأ', 'error');
+    }
   };
 
-  const handleEdit = (e: React.FormEvent) => {
+  const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingCategory) return;
 
-    setCategories(prev => prev.map(c => {
-      if (c.id === editingCategory.id) {
-        return {
-          ...c,
-          name: { ar: nameAr, en: nameEn },
-          imgUrl
-        };
-      }
-      return c;
-    }));
-
-    showToast('تم تحديث بيانات القسم بنجاح');
-    setEditingCategory(null);
+    try {
+      await categoryRepository.update(editingCategory.id, {
+        name: { ar: nameAr, en: nameEn },
+        imgUrl
+      });
+      showToast('تم تحديث بيانات القسم بنجاح');
+      setEditingCategory(null);
+    } catch (err) {
+      console.error(err);
+      showToast('حدث خطأ', 'error');
+    }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('هل أنت متأكد من حذف هذا القسم؟ قد يؤثر ذلك على المتاجر المرتبطة به.')) {
-      setCategories(prev => prev.filter(c => c.id !== id));
-      showToast('تم حذف القسم بنجاح');
+      try {
+        await categoryRepository.delete(id);
+        showToast('تم حذف القسم بنجاح');
+      } catch (err) {
+        console.error(err);
+        showToast('حدث خطأ', 'error');
+      }
     }
   };
 

@@ -59,13 +59,7 @@ export function VendorSettlements() {
     if (amt > balance) { showToast(t('insufficientBalance')); return; }
     
     try {
-      await addDoc(collection(db, 'settlementRequests'), {
-        userId: user?.uid,
-        userType: 'vendor',
-        amount: amt,
-        status: 'pending',
-        requestedAt: serverTimestamp()
-      });
+      await import('../../services/vendor/service').then(m => m.vendorService.requestSettlement(user?.uid || '', amt, { userType: 'vendor' }));
       showToast(t('withdrawalSubmitted'));
       setAmountInput('');
       // Optimistic update

@@ -109,58 +109,20 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({ order, onClose }) => {
     setLoading(true);
 
     try {
-      const batch = writeBatch(db);
-
-      // Loop through products to create reviews
+      const itemsReviews: any[] = [];
       for (const item of order.items) {
         const itemReview = productRatings[item.id] || { rating: 5, comment: '', files: [], previews: [] };
-        
-        // Upload images
         const uploadedUrls: string[] = [];
         for (const file of itemReview.files) {
           const url = await mediaService.uploadImage(file, `reviews/${item.id}`);
           uploadedUrls.push(url);
         }
-
-        const reviewId = `rev_${item.id}_${currentUser.uid}_${Date.now()}`;
-        const newReview = {
-          id: reviewId,
-          productId: item.id,
-          userId: currentUser.uid,
-          userName: currentUser.name,
-          rating: itemReview.rating,
-          comment: itemReview.comment,
-          images: uploadedUrls,
-          createdAt: new Date().toISOString()
-        };
-
-        // Write review doc
-        batch.set(doc(db, 'reviews', reviewId), newReview);
-
-        // Fetch other reviews for this product to recalculate rating stats
-        const reviewsQuery = query(collection(db, 'reviews'), where('productId', '==', item.id));
-        const reviewsSnap = await getDocs(reviewsQuery);
-        const ratingsList = reviewsSnap.docs.map(d => d.data().rating as number);
-        ratingsList.push(itemReview.rating);
-        const ratingsCount = ratingsList.length;
-        const averageRating = parseFloat((ratingsList.reduce((sum, r) => sum + r, 0) / ratingsCount).toFixed(1));
-
-        // Update product statistics
-        batch.update(doc(db, 'products', item.id), {
-          averageRating,
-          ratingsCount
-        });
+        itemsReviews.push({ item, itemReview, uploadedUrls });
       }
 
-      // Update the main order rating
-      batch.update(doc(db, 'orders', order.id), {
-        ratingStore,
-        ratingDriver,
-        ratingProducts,
-        ratingComment: comment
-      });
-
-      await batch.commit();
+      await import('../../services/shared/app.service').then(m => m.appService.submitMultiReview(
+        order.id, ratingStore, ratingDriver, ratingProducts, comment, itemsReviews, currentUser
+      ));
       showToast(isRTL ? 'تم تقديم تقييمك بنجاح!' : 'Your review was submitted successfully!');
       onClose();
     } catch (err) {

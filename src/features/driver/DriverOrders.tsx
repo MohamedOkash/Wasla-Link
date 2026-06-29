@@ -2,8 +2,6 @@ import { useTranslation } from '../../hooks/useTranslation';
 import React from 'react';
 import { Bike, MapPin, DollarSign, Clock, ClipboardList, CheckCircle2, ArrowRight } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
-import { doc, updateDoc, writeBatch } from 'firebase/firestore';
-import { db } from '../../services/firebase';
 
 interface DriverOrdersProps {
   driver: any;
@@ -20,21 +18,7 @@ export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
 
   const handleAcceptOrder = async (orderId: string) => {
     try {
-      const batch = writeBatch(db);
-      
-      // Update Order
-      batch.update(doc(db, 'orders', orderId), {
-        status: 'accepted',
-        driverId: driver.id,
-      });
-
-      // Update Driver
-      batch.update(doc(db, 'drivers', driver.id), {
-        availability: 'busy',
-        currentOrderId: orderId
-      });
-
-      await batch.commit();
+      await import('../../services/driver/service').then(m => m.driverService.acceptOrder(driver.id, orderId));
       showToast(t('str_1116'));
     } catch (error) {
       console.error(error);
@@ -51,25 +35,9 @@ export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
     if (!newStatus) return;
 
     try {
-      const batch = writeBatch(db);
-      
-      batch.update(doc(db, 'orders', orderId), {
-        status: newStatus
-      });
-
-      if (newStatus === 'delivered') {
-        const orderObj = orders.find(o => o.id === orderId);
-        const fee = orderObj?.estimatedDriverEarnings ?? orderObj?.deliveryFee ?? 20;
-        batch.update(doc(db, 'drivers', driver.id), {
-          availability: 'online',
-          currentOrderId: null,
-          completedOrders: (driver.completedOrders || 0) + 1,
-          totalDeliveries: (driver.totalDeliveries || 0) + 1,
-          totalEarnings: (driver.totalEarnings || 0) + fee
-        });
-      }
-
-      await batch.commit();
+      const orderObj = orders.find(o => o.id === orderId);
+      const fee = orderObj?.estimatedDriverEarnings ?? orderObj?.deliveryFee ?? 20;
+      await import('../../services/driver/service').then(m => m.driverService.updateOrderStatus(driver.id, orderId, newStatus, fee));
       showToast(t('str_1117'));
     } catch (error) {
       console.error(error);

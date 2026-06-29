@@ -4,16 +4,19 @@ import { Tag, Save, X, Edit, Plus, Trash2, Upload, Image as ImageIcon, Loader2, 
 import { useApp } from '../../contexts/AppContext';
 import { mediaService } from '../../services/media.service';
 import { useStores } from '../../hooks/useStores';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import { storeRepository } from "../../services/vendor/repository";
 
 export const VendorOffers: React.FC = () => {
   const { t } = useTranslation();
-  const { showToast, triggerOfferBroadcast, isRTL } = useApp();
-  const { stores, setStores } = useStores();
+  const { showToast, triggerOfferBroadcast, isRTL, currentUser } = useApp();
+  const { stores } = useStores();
   const [editing, setEditing] = useState(false);
   const [promoText, setPromoText] = useState('');
 
-  // Find store g_1 (أسواق الخير)
-  const store = stores.find(s => s.id === 'g_1');
+  // Find store
+  const store = stores.find(s => s.id === currentUser?.storeId);
 
   const [offerBanner, setOfferBanner] = useState(store?.offerBanner || '');
   const [mobileBanner, setMobileBanner] = useState(store?.offerMobileBanner || '');
@@ -42,53 +45,50 @@ export const VendorOffers: React.FC = () => {
     }
   };
 
-  const handleSavePromo = (e: React.FormEvent) => {
-  const {} = useTranslation();
-
+  const handleSavePromo = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStores(prev => prev.map(s => {
-      if (s.id === 'g_1') {
-        return { 
-          ...s, 
-          promoBanner: promoText || undefined,
-          offerBanner: offerBanner || undefined,
-          offerMobileBanner: mobileBanner || undefined,
-          offerThumbnail: offerThumbnail || undefined,
-          offerGallery: offerGallery.length > 0 ? offerGallery : undefined
-        };
+    try {
+      await storeRepository.update(currentUser?.storeId || '', {
+              promoBanner: promoText || null,
+              offerBanner: offerBanner || null,
+              offerMobileBanner: mobileBanner || null,
+              offerThumbnail: offerThumbnail || null,
+              offerGallery: offerGallery.length > 0 ? offerGallery : null
+            });
+      
+      if (promoText.trim()) {
+        triggerOfferBroadcast(currentUser?.storeId || '', promoText.trim());
       }
-      return s;
-    }));
-    
-    if (promoText.trim()) {
-      triggerOfferBroadcast('g_1', promoText.trim());
+      
+      showToast(t('str_825'));
+      setEditing(false);
+    } catch (err) {
+      console.error(err);
+      showToast('حدث خطأ', 'error');
     }
-    
-    showToast(t('str_825'));
-    setEditing(false);
   };
 
-  const handleRemovePromo = () => {
+  const handleRemovePromo = async () => {
     if (confirm(t('str_826'))) {
-      setStores(prev => prev.map(s => {
-        if (s.id === 'g_1') {
-          return { 
-            ...s, 
-            promoBanner: undefined,
-            offerBanner: undefined,
-            offerMobileBanner: undefined,
-            offerThumbnail: undefined,
-            offerGallery: undefined
-          };
-        }
-        return s;
-      }));
-      setPromoText('');
-      setOfferBanner('');
-      setMobileBanner('');
-      setOfferThumbnail('');
-      setOfferGallery([]);
-      showToast(t('str_827'));
+      try {
+        await storeRepository.update(currentUser?.storeId || '', {
+          promoBanner: null,
+          offerBanner: null,
+          offerMobileBanner: null,
+          offerThumbnail: null,
+          offerGallery: null
+        });
+
+        setPromoText('');
+        setOfferBanner('');
+        setMobileBanner('');
+        setOfferThumbnail('');
+        setOfferGallery([]);
+        showToast(t('str_827'));
+      } catch (err) {
+        console.error(err);
+        showToast('حدث خطأ', 'error');
+      }
     }
   };
 

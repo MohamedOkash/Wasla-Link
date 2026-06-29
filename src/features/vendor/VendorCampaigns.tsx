@@ -1,11 +1,14 @@
 import { useTranslation } from '../../hooks/useTranslation';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tag, Send, Calendar, BarChart3, AlertCircle, Play, Eye, Users, FileText, CheckCircle, Clock, X } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { mediaService } from '../../services/media.service';
+import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../../services/firebase';
 
 export interface Campaign {
   id: string;
+  storeId?: string;
   title: string;
   message: string;
   bannerUrl?: string;
@@ -21,39 +24,25 @@ export interface Campaign {
     opened: number;
     clicked: number;
   };
+  createdAt?: any;
 }
 
 export const VendorCampaigns: React.FC = () => {
   const { t } = useTranslation();
-  const { isRTL, showToast, notifications, setNotifications } = useApp();
+  const { isRTL, showToast, triggerOfferBroadcast, currentUser } = useApp();
 
-  const [campaignsList, setCampaignsList] = useState<Campaign[]>([
-    {
-      id: 'c1',
-      title: 'عرض مهرجان الحليب الطازج 🥛',
-      message: 'خصم 15% على جميع منتجات الألبان والأجبان اليوم فقط!',
-      bannerUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=800&q=80',
-      targetType: 'category',
-      targetCategory: 'ألبان وأجبان',
-      startDate: '2026-06-19',
-      endDate: '2026-06-20',
-      scheduleTime: '12:00',
-      status: 'Running',
-      analytics: { sent: 150, delivered: 148, opened: 95, clicked: 42 }
-    },
-    {
-      id: 'c2',
-      title: 'خصومات المخبوزات الساخنة 🥐',
-      message: 'اشتر 2 باتيه واحصل على كرواسون مجاناً مع العرض الكلاسيكي.',
-      bannerUrl: '',
-      targetType: 'all',
-      startDate: '2026-06-22',
-      endDate: '2026-06-23',
-      scheduleTime: '09:00',
-      status: 'Scheduled',
-      analytics: { sent: 0, delivered: 0, opened: 0, clicked: 0 }
-    }
-  ]);
+  const [campaignsList, setCampaignsList] = useState<Campaign[]>([]);
+
+  useEffect(() => {
+    if (!currentUser?.storeId) return;
+    const q = query(collection(db, 'campaigns'), where('storeId', '==', currentUser.storeId));
+    const unsub = onSnapshot(q, snap => {
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as Campaign));
+      list.sort((a, b) => new Date(b.startDate || 0).getTime() - new Date(a.startDate || 0).getTime());
+      setCampaignsList(list);
+    });
+    return () => unsub();
+  }, [currentUser]);
 
   // Form states
   const [showAddForm, setShowAddForm] = useState(false);
@@ -84,50 +73,45 @@ export const VendorCampaigns: React.FC = () => {
     }
   };
 
-  const handleCreateCampaign = (e: React.FormEvent) => {
-  const {} = useTranslation();
-
+  const handleCreateCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !message) {
       alert(t('str_710'));
       return;
     }
 
-    const newCamp: Campaign = {
-      id: `camp_${Date.now()}`,
-      title,
-      message,
-      bannerUrl: banner || undefined,
-      targetType,
-      targetCategory: targetType === 'category' ? targetCategory : undefined,
-      startDate: startDate || new Date().toISOString().split('T')[0],
-      endDate: endDate || new Date().toISOString().split('T')[0],
-      scheduleTime: scheduleTime || '12:00',
-      status,
-      analytics: status === 'Running' 
-        ? { sent: 120, delivered: 118, opened: 54, clicked: 18 }
-        : { sent: 0, delivered: 0, opened: 0, clicked: 0 }
-    };
-
-    setCampaignsList(prev => [newCamp, ...prev]);
-    showToast(t('str_711'));
-    
-    // Auto broadcast notification if running immediately
-    if (status === 'Running') {
-      const newNotif = {
-        id: `n_broadcast_camp_${Date.now()}`,
-        title: { ar: title, en: title },
-        description: { ar: message, en: message },
-        type: 'offer' as const,
-        storeId: 'g_1',
-        isRead: false,
-        createdAt: new Date().toISOString()
+    try {
+      const newCamp = {
+        storeId: currentUser?.storeId || '',
+        title,
+        message,
+        bannerUrl: banner || null,
+        targetType,
+        targetCategory: targetType === 'category' ? targetCategory : null,
+        startDate: startDate || new Date().toISOString().split('T')[0],
+        endDate: endDate || new Date().toISOString().split('T')[0],
+        scheduleTime: scheduleTime || '12:00',
+        status,
+        // [MOCKED_FOR_DEVELOPMENT]: Analytics should be fetched from a real tracking service
+        analytics: status === 'Running' 
+          ? { sent: 120, delivered: 118, opened: 54, clicked: 18 }
+          : { sent: 0, delivered: 0, opened: 0, clicked: 0 },
+        createdAt: serverTimestamp()
       };
-      setNotifications(prev => [newNotif, ...prev]);
-    }
 
-    setShowAddForm(false);
-    resetForm();
+      await import('../../services/vendor/service').then(m => m.vendorService.createCampaign(newCamp));
+      showToast(t('str_711'));
+      
+      if (status === 'Running') {
+        triggerOfferBroadcast(currentUser?.storeId || '', message);
+      }
+
+      setShowAddForm(false);
+      resetForm();
+    } catch (err: any) {
+      console.error(err);
+      showToast('Error creating campaign');
+    }
   };
 
   const resetForm = () => {
@@ -141,29 +125,21 @@ export const VendorCampaigns: React.FC = () => {
     setStatus('Draft');
   };
 
-  const triggerRunCampaign = (id: string) => {
-    setCampaignsList(prev => prev.map(c => {
-      if (c.id === id) {
-        // Broadcast notification
-        const newNotif = {
-          id: `n_broadcast_camp_${Date.now()}`,
-          title: { ar: c.title, en: c.title },
-          description: { ar: c.message, en: c.message },
-          type: 'offer' as const,
-          storeId: 'g_1',
-          isRead: false,
-          createdAt: new Date().toISOString()
-        };
-        setNotifications(prev => [newNotif, ...prev]);
-        showToast(t('str_712'));
-        return {
-          ...c,
-          status: 'Running' as const,
-          analytics: { sent: 160, delivered: 155, opened: 80, clicked: 35 }
-        };
-      }
-      return c;
-    }));
+  const triggerRunCampaign = async (id: string) => {
+    const c = campaignsList.find(camp => camp.id === id);
+    if (!c) return;
+    
+    try {
+      await import('../../services/vendor/service').then(m => m.vendorService.updateCampaign(id, {
+        status: 'Running',
+        analytics: { sent: 160, delivered: 155, opened: 80, clicked: 35 }
+      }));
+      triggerOfferBroadcast(currentUser?.storeId || '', c.message);
+      showToast(t('str_712'));
+    } catch (err) {
+      console.error(err);
+      showToast('Error running campaign');
+    }
   };
 
   const getStatusBadgeColor = (status: Campaign['status']) => {

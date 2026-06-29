@@ -6,6 +6,8 @@ import { useProducts } from '../../hooks/useProducts';
 import { excelImportService, ImportSummaryData, ImportResultRow } from '../../services/excelImport.service';
 import { Product } from '../../types/product.types';
 import { StockMovement } from '../../contexts/AppContext';
+import { doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { db } from '../../services/firebase';
 
 interface ProductImportProps {
   onClose: () => void;
@@ -13,8 +15,8 @@ interface ProductImportProps {
 
 export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
   const { t } = useTranslation();
-  const { addStockMovement, isRTL, showToast } = useApp();
-  const { products, setProducts } = useProducts();
+  const { addStockMovement, isRTL, showToast, currentUser } = useApp();
+  const { products } = useProducts();
   
   const [file, setFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -24,8 +26,8 @@ export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Filter store products (Assume Vendor Store 'g_1')
-  const storeProducts = products.filter(p => p.storeId === 'g_1');
+  // Filter store products
+  const storeProducts = products.filter(p => p.storeId === currentUser?.storeId);
 
   // Trigger spreadsheet file parsing
   const handleFileChange = async (selectedFile: File) => {
@@ -93,7 +95,7 @@ export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
 
   // Perform actual import and write changes to AppContext
 
-  const handleCommitImport = () => {
+  const handleCommitImport = async () => {
     if (!summary) return;
 
     const validRows = summary.rows.filter(r => r.status !== 'skip');
@@ -102,58 +104,14 @@ export const ProductImport: React.FC<ProductImportProps> = ({ onClose }) => {
       return;
     }
 
-    setProducts(prev => {
-      let updatedProducts = [...prev];
-
-      validRows.forEach(row => {
-        // Detect matched product index to overwrite
-        const idx = updatedProducts.findIndex(p => 
-          p.storeId === 'g_1' && (p.sku === row.sku || p.barcode === row.barcode || (p.name || '').toLowerCase() === (row.name || '').toLowerCase())
-        );
-
-        const priceNum = row.price;
-        const pPriceNum = row.costPrice;
-
-        const newProd: Product = {
-          id: idx !== -1 ? updatedProducts[idx].id : `p_g_v_import_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-          storeId: 'g_1',
-          cat: row.cat,
-          name: row.name,
-          desc: row.desc,
-          price: priceNum,
-          purchasePrice: pPriceNum,
-          costPrice: pPriceNum,
-          profitMargin: priceNum > pPriceNum ? Math.round(((priceNum - pPriceNum) / priceNum) * 100) : 0,
-          currentStock: row.currentStock,
-          reservedStock: idx !== -1 ? (updatedProducts[idx].reservedStock || 0) : 0,
-          lowStockThreshold: idx !== -1 ? (updatedProducts[idx].lowStockThreshold || 10) : 10,
-          sku: row.sku,
-          barcode: row.barcode,
-          productBrand: row.productBrand,
-          productWeight: row.productWeight,
-          unit: row.unit,
-          imgUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80', // Default template img
-          images: [],
-          availabilityStatus: row.currentStock === 0 ? 'out_of_stock' : 'in_stock'
-        };
-
-        if (idx !== -1) {
-          updatedProducts[idx] = newProd;
-        } else {
-          updatedProducts.unshift(newProd);
-        }
-
-        // Add Stock Ledger log
-        if (row.currentStock > 0) {
-          addStockMovement(newProd.id, row.currentStock, 'Purchase', t('str_684'));
-        }
-      });
-
-      return updatedProducts;
-    });
-
-    showToast(t('str_685'));
-    onClose();
+    try {
+      await import('../../services/vendor/service').then(m => m.vendorService.importProductsWithLedger(validRows, products, currentUser?.storeId || '', addStockMovement, t));
+      alert(t('str_685').replace('{count}', validRows.length.toString()));
+      onClose();
+    } catch (err) {
+      console.error(err);
+      alert(t('str_686'));
+    }
   };
 
   return (

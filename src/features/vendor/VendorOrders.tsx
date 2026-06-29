@@ -45,8 +45,8 @@ export const VendorOrders: React.FC = () => {
     }
   };
 
-  // Filter orders for Store g_1 (أسواق الخير)
-  const vendorOrders = orders.filter(o => o.shopId === 'g_1');
+  // Filter orders for Store
+  const vendorOrders = orders.filter(o => o.shopId === currentUser?.storeId);
 
   // Helper to count orders for each tab
   const getTabOrdersCount = (tabId: string) => {
