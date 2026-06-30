@@ -56,7 +56,7 @@ export const PremiumHeader: React.FC<PremiumHeaderProps> = ({
         >
           <div className="relative">
             <img 
-              src="/logo.jpg" 
+              src="/logo-v2.jpg" 
               alt={t('appName')} 
               className="w-14 h-14 object-cover rounded-[20px] shadow-lg border border-theme-border/30 shrink-0"
             />

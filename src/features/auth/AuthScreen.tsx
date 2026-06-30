@@ -313,7 +313,7 @@ export const AuthScreen: React.FC = () => {
       </button>
 
       <img 
-        src="/logo.jpg" 
+        src="/logo-v2.jpg" 
         alt="Logo"
         className="w-24 h-24 object-cover rounded-full mb-8 shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-theme-border/40 hover:scale-105 hover:rotate-3 transition duration-300 relative z-10"
       />

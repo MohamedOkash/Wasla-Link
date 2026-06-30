@@ -12,7 +12,7 @@ export const SplashScreen: React.FC = () => {
       <div className="absolute top-1/4 left-1/4 w-72 h-72 rounded-full bg-white/5 blur-[80px] pointer-events-none animate-pulse-slow"></div>
       
       <img 
-        src="/logo.jpg" 
+        src="/logo-v2.jpg" 
         alt={t('appName')} 
         className="w-32 h-32 object-cover rounded-[40px] shadow-[0_12px_40px_rgba(0,0,0,0.3)] mb-6 relative z-10 animate-bounce border border-white/20 scale-100 hover:scale-105 transition-transform duration-300"
       />
