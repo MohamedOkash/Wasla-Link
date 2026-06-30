@@ -242,7 +242,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
                     <div>
                       <h3 className="font-black text-sm text-theme-text">{order.shopName}</h3>
                       <p className="text-[9px] text-theme-muted font-bold mt-0.5">
-                        {t('str_157', { orderId: order.id })}
+                        {t('str_157', { orderId: order.invoiceId || order.id })}
                       </p>
                     </div>
                     <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg border leading-none ${statusInfo.color}`}>
@@ -348,7 +348,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
                   )}
 
                   {/* Cancel Order Button */}
-                  {order.status === 'pending' && (
+                  {(order.status === 'pending' || order.status === 'new' || order.status === 'pendingVerification') && (
                     <button
                       onClick={() => handleCancelOrder(order.id)}
                       className="w-full bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-500 text-[10px] font-black py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95 theme-transition mt-2"

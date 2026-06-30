@@ -8,6 +8,9 @@ class InvoiceService {
    * Generates a unique invoice number format.
    */
   generateInvoiceNumber(orderId: string): string {
+    if (orderId.includes('-') && !orderId.startsWith('INV-')) {
+      return `INV-${orderId}`;
+    }
     const cleanId = orderId.replace('ord_', '').replace('O-', '');
     const datePart = new Date().toISOString().split('T')[0].replace(/-/g, '');
     return `INV-${datePart}-${cleanId}`;

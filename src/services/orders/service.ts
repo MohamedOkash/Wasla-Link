@@ -1,5 +1,5 @@
 import { db } from '../firebase';
-import { doc, writeBatch, increment, collection } from 'firebase/firestore';
+import { doc, runTransaction, collection } from 'firebase/firestore';
 
 export interface PlaceOrderPayload {
   orderData: any;
@@ -16,67 +16,137 @@ export class OrderService {
     const orderId = orderData.id || doc(collection(db, 'orders')).id;
     orderData.id = orderId;
 
-    const batch = writeBatch(db);
+    await runTransaction(db, async (transaction) => {
+      // 1. Read store to get current storeOrderCount
+      let storeOrderNumber = 1;
+      let storeRef = null;
+      let storeSnap = null;
+      if (orderData.shopId) {
+        storeRef = doc(db, 'stores', orderData.shopId);
+        storeSnap = await transaction.get(storeRef);
+      }
 
-    // 1. Handle Payment Initialization atomically
-    if (orderData.paymentMethod) {
-      const paymentRef = doc(collection(db, 'payments'));
-      const initialStatus = orderData.paymentMethod === 'cash_on_delivery' ? 'pending' : 'pending_verification';
-      
-      batch.set(paymentRef, {
-        orderId,
-        method: orderData.paymentMethod,
-        amount: orderData.total || 0,
-        status: initialStatus,
-        metadata: { receiptUrl: orderData.paymentReceipt || null },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
+      // 2. Read customer to get current customerOrderCount
+      let customerOrderNumber = 1;
+      let userRef = null;
+      let userSnap = null;
+      if (currentUserUid) {
+        userRef = doc(db, 'users', currentUserUid);
+        userSnap = await transaction.get(userRef);
+      }
 
-      // Directly embed the payment info into the order before saving
-      orderData.paymentStatus = initialStatus;
-      orderData.paymentId = paymentRef.id;
-    }
+      // 3. Read global counter (optional, but good for general invoice)
+      let globalOrderNumber = 1;
+      const counterRef = doc(db, 'system', 'counters');
+      const counterSnap = await transaction.get(counterRef);
 
-    // 2. Set the Order Document
-    batch.set(doc(db, 'orders', orderId), orderData);
+      // 4. Handle Coupons Read
+      let couponRef = null;
+      let couponSnap = null;
+      if (activeCouponId) {
+        couponRef = doc(db, 'coupons', activeCouponId);
+        couponSnap = await transaction.get(couponRef);
+      }
 
-    // 3. Handle Points
-    if (pointsToRedeem > 0 && currentUserUid) {
-      batch.set(doc(db, 'users', currentUserUid), {
-        points: increment(-pointsToRedeem)
-      }, { merge: true });
-
-      const pointsHistoryId = `${orderId}_${currentUserUid}_redeem`;
-      batch.set(doc(db, 'pointsHistory', pointsHistoryId), {
-        id: pointsHistoryId,
-        userId: currentUserUid,
-        orderId: orderId,
-        points: pointsToRedeem,
-        type: 'redeem',
-        createdAt: new Date().toISOString()
-      });
-    }
-
-    // 4. Handle Coupons
-    if (activeCouponId) {
-      batch.set(doc(db, 'coupons', activeCouponId), {
-        usageCount: increment(1)
-      }, { merge: true });
-    }
-
-    // 5. Atomic Inventory Updates (Safely handles missing product documents with merge: true)
-    if (orderData.items && Array.isArray(orderData.items)) {
-      orderData.items.forEach((item: any) => {
-        if (item.id) {
-          batch.set(doc(db, 'products', item.id), {
-            currentStock: increment(-item.quantity)
-          }, { merge: true });
+      // 5. Handle Products Read
+      const productSnaps = [];
+      if (orderData.items && Array.isArray(orderData.items)) {
+        for (const item of orderData.items) {
+          if (item.id) {
+            const productRef = doc(db, 'products', item.id);
+            const productSnap = await transaction.get(productRef);
+            productSnaps.push({ ref: productRef, snap: productSnap, quantity: item.quantity });
+          }
         }
-      });
-    }
+      }
 
-    await batch.commit();
+      // --- ALL READS DONE, BEGIN WRITES ---
+
+      if (storeSnap && storeSnap.exists()) {
+        storeOrderNumber = (storeSnap.data().totalOrders || 0) + 1;
+        transaction.update(storeRef, { totalOrders: storeOrderNumber });
+      } else if (storeRef) {
+        // Just in case store doesn't exist but we have ref
+        transaction.set(storeRef, { totalOrders: storeOrderNumber }, { merge: true });
+      }
+
+      if (userSnap && userSnap.exists()) {
+        customerOrderNumber = (userSnap.data().totalOrders || 0) + 1;
+        const currentPoints = userSnap.data().points || 0;
+        transaction.update(userRef, { 
+           totalOrders: customerOrderNumber,
+           points: Math.max(0, currentPoints - pointsToRedeem)
+        });
+      } else if (userRef) {
+        transaction.set(userRef, { totalOrders: customerOrderNumber }, { merge: true });
+      }
+
+      if (counterSnap.exists()) {
+        globalOrderNumber = (counterSnap.data().globalOrders || 0) + 1;
+        transaction.update(counterRef, { globalOrders: globalOrderNumber });
+      } else {
+        transaction.set(counterRef, { globalOrders: 1 });
+      }
+
+      // Add numbering to orderData
+      orderData.storeOrderNumber = storeOrderNumber;
+      orderData.customerOrderNumber = customerOrderNumber;
+      orderData.globalOrderNumber = globalOrderNumber;
+      
+      // Generate readable invoice ID coordinating store and customer numbers
+      // e.g. S12-C5
+      const invoiceId = `S${storeOrderNumber}-C${customerOrderNumber}`;
+      orderData.invoiceId = invoiceId;
+
+      // 1. Handle Payment Initialization atomically
+      if (orderData.paymentMethod) {
+        const paymentRef = doc(collection(db, 'payments'));
+        const initialStatus = orderData.paymentMethod === 'cash_on_delivery' ? 'pending' : 'pending_verification';
+        
+        transaction.set(paymentRef, {
+          orderId,
+          method: orderData.paymentMethod,
+          amount: orderData.total || 0,
+          status: initialStatus,
+          metadata: { receiptUrl: orderData.paymentReceipt || null },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+
+        // Directly embed the payment info into the order before saving
+        orderData.paymentStatus = initialStatus;
+        orderData.paymentId = paymentRef.id;
+      }
+
+      // 2. Set the Order Document
+      transaction.set(doc(db, 'orders', orderId), orderData);
+
+      // 3. Handle Points
+      if (pointsToRedeem > 0 && currentUserUid) {
+        const pointsHistoryId = `${orderId}_${currentUserUid}_redeem`;
+        transaction.set(doc(db, 'pointsHistory', pointsHistoryId), {
+          id: pointsHistoryId,
+          userId: currentUserUid,
+          orderId: orderId,
+          points: pointsToRedeem,
+          type: 'redeem',
+          createdAt: new Date().toISOString()
+        });
+      }
+
+      // 4. Handle Coupons
+      if (couponSnap && couponSnap.exists()) {
+        transaction.update(couponRef, { usageCount: (couponSnap.data().usageCount || 0) + 1 });
+      }
+
+      // 5. Atomic Inventory Updates
+      for (const p of productSnaps) {
+        if (p.snap.exists()) {
+          const newStock = Math.max(0, (p.snap.data().currentStock || 0) - p.quantity);
+          transaction.update(p.ref, { currentStock: newStock });
+        }
+      }
+    });
   }
 }
 

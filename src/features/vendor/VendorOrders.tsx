@@ -150,7 +150,7 @@ export const VendorOrders: React.FC = () => {
               </div>
 
               <div className="border-t border-b border-theme-border py-3 space-y-1.5 text-xs font-bold text-theme-muted print:border-black print:text-black">
-                <div className="flex justify-between"><span>{t('str_864')}</span> <span className="font-black text-theme-text print:text-black">{invoiceService.generateInvoiceNumber(activeInvoice.id)}</span></div>
+                <div className="flex justify-between"><span>{t('str_864')}</span> <span className="font-black text-theme-text print:text-black">{invoiceService.generateInvoiceNumber(activeInvoice.invoiceId || activeInvoice.id)}</span></div>
                 <div className="flex justify-between"><span>{t('str_865')}</span> <span>{new Date(activeInvoice.createdAt).toLocaleString(isRTL ? 'ar-EG' : 'en-US')}</span></div>
                 <div className="flex justify-between"><span>{t('str_866')}</span> <span className="font-black">{activeInvoice.shopName}</span></div>
                 <div className="flex justify-between"><span>{t('str_122')}</span> <span>{activeInvoice.paymentMethod === 'cash_on_delivery' ? (t('str_149')) : activeInvoice.paymentMethod === 'vodafone_cash' ? 'Vodafone Cash' : 'InstaPay'}</span></div>
@@ -239,7 +239,7 @@ export const VendorOrders: React.FC = () => {
               <div className="flex justify-between items-start pb-3 border-b border-theme-border/60">
                 <div>
                   <h4 className="font-black text-xs text-theme-text">{t('str_879')}</h4>
-                  <p className="text-[10px] text-theme-muted font-bold mt-0.5">{t('str_880')}</p>
+                  <p className="text-[10px] text-theme-muted font-bold mt-0.5">{t('str_880')} {order.invoiceId || order.id}</p>
                 </div>
                 <button
                   onClick={() => setActiveInvoice(order)}
