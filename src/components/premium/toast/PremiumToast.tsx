@@ -63,28 +63,28 @@ export const PremiumToast: React.FC<PremiumToastProps> = ({ toast, onClose, isRT
   return (
     <div 
       className={`
-        relative w-full max-w-[420px] mx-auto overflow-hidden
-        rounded-2xl border backdrop-blur-xl shadow-lg
-        flex items-center gap-3 p-4
+        relative w-fit max-w-[95%] overflow-hidden
+        rounded-full border backdrop-blur-2xl shadow-sm
+        flex items-center gap-2.5 px-4 py-2.5
         transition-all duration-300 ease-in-out
         ${getBgClass()}
         ${isLeaving ? 'opacity-0 -translate-y-4 scale-95' : 'opacity-100 translate-y-0 scale-100'}
       `}
       style={{ animation: 'slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
     >
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0 scale-90">
         {getIcon()}
       </div>
       
-      <p className="flex-1 text-sm font-bold text-theme-text" dir={isRTL ? 'rtl' : 'ltr'}>
+      <p className="flex-1 text-[12px] font-black text-theme-text text-center px-1" dir={isRTL ? 'rtl' : 'ltr'}>
         {toast.message}
       </p>
 
       <button 
         onClick={handleClose}
-        className="flex-shrink-0 p-1 rounded-full hover:bg-theme-bg/50 text-theme-muted hover:text-theme-text transition-colors"
+        className="flex-shrink-0 p-1 rounded-full hover:bg-theme-bg/50 text-theme-muted hover:text-theme-text transition-colors opacity-80 hover:opacity-100"
       >
-        <X size={16} />
+        <X size={14} />
       </button>
       
       <style>{`

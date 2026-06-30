@@ -18,7 +18,7 @@ export const ToastManager: React.FC = () => {
       }}
     >
       {toasts.map(toast => (
-        <div key={toast.id} className="pointer-events-auto w-[90vw] max-w-[420px] transition-all duration-300">
+        <div key={toast.id} className="pointer-events-auto w-full flex justify-center transition-all duration-300">
           <PremiumToast 
             toast={toast} 
             onClose={removeToast} 
