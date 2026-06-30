@@ -650,9 +650,9 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
               <span className="text-theme-muted">{t('str_75')}</span>
               <span className="font-black text-theme-text" dir="ltr">{currentUser?.phone || ''}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-theme-muted">{t('str_117')}</span>
-              <span className="font-black text-theme-text text-left" style={{maxWidth: '60%'}}>
+            <div className="flex justify-between gap-4">
+              <span className="text-theme-muted whitespace-nowrap">{t('str_117')}</span>
+              <span className="font-black text-theme-text text-right flex-1 leading-relaxed">
                 {activeAddress ? getAddressTextStr(activeAddress) : ''}
               </span>
             </div>
@@ -675,43 +675,52 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
           </div>
         </PremiumCard>
 
+        {/* Order Summary Block (Moved from fixed panel) */}
+        <PremiumCard hoverable={false} className="space-y-3 mb-4">
+          <h3 className="font-black text-theme-text text-xs flex items-center gap-1.5 border-b border-theme-border pb-2.5 uppercase tracking-wide">
+            <ShoppingBag size={15} className="text-primary" />
+            {t('str_59')}
+          </h3>
+          <div className="space-y-2.5 text-xs bg-theme-bg/50 p-3.5 rounded-2xl border border-theme-border/50">
+            <div className="flex justify-between text-theme-muted font-semibold">
+              <span>{t('str_60')}</span>
+              <span className="font-sans">{cart.items.reduce((sum, item) => sum + item.quantity, 0)}</span>
+            </div>
+            <div className="flex justify-between text-theme-muted font-semibold">
+              <span>{t('str_128')}</span>
+              <span className="font-sans font-bold text-theme-text">{subtotal} ج.م</span>
+            </div>
+            {discountAmount > 0 && (
+              <div className="flex justify-between text-green-500 font-bold animate-fade-in bg-green-500/10 p-2 rounded-lg mt-1">
+                <span>{t('str_61')}</span>
+                <span className="font-sans">-{discountAmount} ج.م</span>
+              </div>
+            )}
+            {pointsDiscount > 0 && (
+              <div className="flex justify-between text-green-500 font-bold animate-fade-in bg-green-500/10 p-2 rounded-lg mt-1">
+                <span>{t('str_129')}</span>
+                <span className="font-sans">-{pointsDiscount} ج.م</span>
+              </div>
+            )}
+            <div className="flex justify-between text-theme-muted font-semibold">
+              <span>{t('str_130')}</span>
+              <span className="font-sans font-bold text-theme-text">{deliveryFee === 0 ? (t('str_131')) : `${deliveryFee} ج.م`}</span>
+            </div>
+            <div className="border-t border-theme-border/80 my-2 pt-3 flex justify-between items-center text-theme-text font-black">
+              <span className="text-sm">{t('total')}</span>
+              <span className="text-primary font-sans font-black text-lg">{total} ج.م</span>
+            </div>
+          </div>
+        </PremiumCard>
+
       </div>
 
       {/* Checkout Totals & Place Order Panel */}
-      <div className="fixed bottom-0 left-0 right-0 max-w-[400px] mx-auto w-full bg-theme-card border-t border-theme-border p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] rounded-t-[32px] shadow-[0_-12px_28px_rgba(0,0,0,0.06)] z-30 theme-transition space-y-4">
-        <h3 className="font-black text-sm text-theme-text">{t('str_59')}</h3>
-        <div className="space-y-2.5 text-xs bg-theme-bg/50 p-3.5 rounded-2xl border border-theme-border/50">
-          
-
-
-          <div className="flex justify-between text-theme-muted font-semibold">
-            <span>{t('str_60')}</span>
-            <span className="font-sans">{cart.items.reduce((sum, item) => sum + item.quantity, 0)}</span>
-          </div>
-          <div className="flex justify-between text-theme-muted font-semibold">
-            <span>{t('str_128')}</span>
-            <span className="font-sans font-bold text-theme-text">{subtotal} ج.م</span>
-          </div>
-          {discountAmount > 0 && (
-            <div className="flex justify-between text-green-500 font-bold animate-fade-in bg-green-500/10 p-2 rounded-lg mt-1">
-              <span>{t('str_61')}</span>
-              <span className="font-sans">-{discountAmount} ج.م</span>
-            </div>
-          )}
-          {pointsDiscount > 0 && (
-            <div className="flex justify-between text-green-500 font-bold animate-fade-in bg-green-500/10 p-2 rounded-lg mt-1">
-              <span>{t('str_129')}</span>
-              <span className="font-sans">-{pointsDiscount} ج.م</span>
-            </div>
-          )}
-          <div className="flex justify-between text-theme-muted font-semibold">
-            <span>{t('str_130')}</span>
-            <span className="font-sans font-bold text-theme-text">{deliveryFee === 0 ? (t('str_131')) : `${deliveryFee} ج.م`}</span>
-          </div>
-          <div className="border-t border-theme-border/80 my-2 pt-3 flex justify-between items-center text-theme-text font-black">
-            <span className="text-sm">{t('total')}</span>
-            <span className="text-primary font-sans font-black text-lg">{total} ج.م</span>
-          </div>
+      <div className="fixed bottom-0 left-0 right-0 max-w-[400px] mx-auto w-full bg-theme-card border-t border-theme-border p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] rounded-t-[24px] shadow-[0_-8px_20px_rgba(0,0,0,0.06)] z-30 theme-transition flex items-center justify-between gap-4">
+        
+        <div className="flex flex-col">
+          <span className="text-[10px] font-bold text-theme-muted mb-0.5">{t('total')}</span>
+          <span className="text-primary font-sans font-black text-xl leading-none">{total} <span className="text-xs">ج.م</span></span>
         </div>
 
         <PremiumButton 
@@ -720,7 +729,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
           isLoading={loading}
           variant="primary"
           size="lg"
-          className="w-full shadow-lg shadow-primary/20 rounded-2xl font-black text-xs h-12"
+          className="flex-1 shadow-lg shadow-primary/20 rounded-2xl font-black text-sm h-12"
         >
           {t('confirmOrder')}
         </PremiumButton>
