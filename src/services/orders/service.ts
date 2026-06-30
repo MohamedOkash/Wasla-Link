@@ -17,12 +17,35 @@ export class OrderService {
     orderData.id = orderId;
 
     const batch = writeBatch(db);
+
+    // 1. Handle Payment Initialization atomically
+    if (orderData.paymentMethod) {
+      const paymentRef = doc(collection(db, 'payments'));
+      const initialStatus = orderData.paymentMethod === 'cash_on_delivery' ? 'pending' : 'pending_verification';
+      
+      batch.set(paymentRef, {
+        orderId,
+        method: orderData.paymentMethod,
+        amount: orderData.total || 0,
+        status: initialStatus,
+        metadata: { receiptUrl: orderData.paymentReceipt || null },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+
+      // Directly embed the payment info into the order before saving
+      orderData.paymentStatus = initialStatus;
+      orderData.paymentId = paymentRef.id;
+    }
+
+    // 2. Set the Order Document
     batch.set(doc(db, 'orders', orderId), orderData);
 
+    // 3. Handle Points
     if (pointsToRedeem > 0 && currentUserUid) {
-      batch.update(doc(db, 'users', currentUserUid), {
+      batch.set(doc(db, 'users', currentUserUid), {
         points: increment(-pointsToRedeem)
-      });
+      }, { merge: true });
 
       const pointsHistoryId = `${orderId}_${currentUserUid}_redeem`;
       batch.set(doc(db, 'pointsHistory', pointsHistoryId), {
@@ -35,19 +58,20 @@ export class OrderService {
       });
     }
 
+    // 4. Handle Coupons
     if (activeCouponId) {
-      batch.update(doc(db, 'coupons', activeCouponId), {
+      batch.set(doc(db, 'coupons', activeCouponId), {
         usageCount: increment(1)
-      });
+      }, { merge: true });
     }
 
-    // Atomic Inventory Updates
+    // 5. Atomic Inventory Updates (Safely handles missing product documents with merge: true)
     if (orderData.items && Array.isArray(orderData.items)) {
       orderData.items.forEach((item: any) => {
         if (item.id) {
-          batch.update(doc(db, 'products', item.id), {
+          batch.set(doc(db, 'products', item.id), {
             currentStock: increment(-item.quantity)
-          });
+          }, { merge: true });
         }
       });
     }

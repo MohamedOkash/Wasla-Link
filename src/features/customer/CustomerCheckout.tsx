@@ -109,8 +109,6 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
   const total = Math.max(0, subtotal - discountAmount - pointsDiscount) + deliveryFee;
 
   const handleReceiptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const {} = useTranslation();
-
     const file = e.target.files?.[0];
     if (file) {
       setReceiptFile(file);
@@ -124,6 +122,8 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
   };
 
   const handleConfirmOrder = async () => {
+    if (loading) return;
+
     if (!isCovered) {
       showToast(t('str_65'));
       return;
@@ -237,17 +237,8 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
           });
         });
 
-        // 6. Cleanup
+        // 6. Cleanup Cart
         setCart({ shopId: null, shopName: '', items: [] });
-        
-        // Phase 16E: Initiate Payment after order creation
-        const paymentRes = await initiatePayment(orderId, paymentMethod, total, { receiptUrl: paymentReceiptUrl });
-        
-        if (!paymentRes.success) {
-          showToast(paymentRes.message || 'فشلت عملية إنشاء الدفع');
-          return;
-        }
-
       } catch (err: any) {
         console.error("EXACT_FIRESTORE_ERROR", err.code, err.message, err);
         throw err; // throw to be caught by outer catch block
