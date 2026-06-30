@@ -375,5 +375,10 @@ service cloud.firestore {
       allow read: if isAdmin() || (isDriver() && walletId == request.auth.uid);
       allow write: if isAdmin();
     }
+    
+    // 33. system Collection (Counters)
+    match /system/{document=**} {
+      allow read, write: if true;
+    }
   }
 }
