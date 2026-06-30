@@ -91,10 +91,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigate, openSearch, op
         return item;
       }).filter(item => item.quantity > 0);
 
-      const hasItems = items.length > 0;
       return {
-        shopId: hasItems ? prev.shopId : null,
-        shopName: hasItems ? prev.shopName : '',
+        ...prev,
         items
       };
     });

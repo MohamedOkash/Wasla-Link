@@ -47,11 +47,11 @@ export interface CartItem {
   price: number;
   quantity: number;
   imgUrl: string;
+  shopId: string;
+  shopName: string;
 }
 
 export interface Cart {
-  shopId: string | null;
-  shopName: string;
   items: CartItem[];
 }
 
@@ -241,7 +241,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [followedStores, setFollowedStores] = useState<string[]>([]);
   const [savedAddresses, setSavedAddresses] = useState<EgyptianAddress[]>([]);
 
-  const [cart, setCart] = useState<Cart>({ shopId: null, shopName: '', items: [] });
+  const [cart, setCart] = useState<Cart>({ items: [] });
   const [isCartHydrated, setIsCartHydrated] = useState(false);
   const [cartConflictAlert, setCartConflictAlert] = useState<CartConflictAlert | null>(null);
 
@@ -291,7 +291,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         const { value } = await Preferences.get({ key: 'waslalink_cart' });
         if (value) {
-          setCart(JSON.parse(value));
+          const parsed = JSON.parse(value);
+          // Auto-migrate old carts
+          if (parsed.items) {
+             const migratedItems = parsed.items.map((i: any) => ({
+               ...i,
+               shopId: i.shopId || parsed.shopId || '',
+               shopName: i.shopName || parsed.shopName || ''
+             }));
+             setCart({ items: migratedItems });
+          }
         }
       } catch (err) {
         console.error('Failed to hydrate cart', err);
@@ -309,7 +318,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [cart, isCartHydrated]);
 
-  // Sync Cart to Firestore on Login/Logout
+  // Cart Sync Flags
+  const [remoteCartFetched, setRemoteCartFetched] = useState(false);
+
+  // Sync Cart to Firestore on Login
   useEffect(() => {
     if (!currentUser?.uid || !isCartHydrated) return;
     
@@ -320,17 +332,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           
           if (cartSnap) {
             const remoteCart = cartSnap as Cart;
-            if (cart.items.length === 0 && remoteCart.items && remoteCart.items.length > 0) {
-              setCart(remoteCart);
+            // Auto-migrate old format
+            const remoteItems = remoteCart.items || [];
+            const migratedRemoteItems = remoteItems.map((i: any) => ({
+               ...i,
+               shopId: i.shopId || (remoteCart as any).shopId || '',
+               shopName: i.shopName || (remoteCart as any).shopName || ''
+            }));
+
+            if (cart.items.length === 0 && migratedRemoteItems.length > 0) {
+              setCart({ items: migratedRemoteItems });
             } else if (cart.items.length > 0) {
-              await m.cartRepository.update(currentUser.uid, { ...cart, userId: currentUser.uid, updatedAt: new Date().toISOString() });
+              // Merge could be implemented, but simple overwrite to remote for now
+              await m.cartRepository.update(currentUser.uid, { items: cart.items, userId: currentUser.uid, updatedAt: new Date().toISOString() });
             }
           } else if (cart.items.length > 0) {
-            await m.cartRepository.create(currentUser.uid, { ...cart, userId: currentUser.uid, updatedAt: new Date().toISOString() });
+            await m.cartRepository.create(currentUser.uid, { items: cart.items, userId: currentUser.uid, updatedAt: new Date().toISOString() });
           }
         });
       } catch (err) {
         console.error("Cart sync error", err);
+      } finally {
+        setRemoteCartFetched(true);
       }
     };
     syncCartWithFirestore();
@@ -338,7 +361,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Push Cart Updates to Firestore when logged in
   useEffect(() => {
-    if (!currentUser?.uid || !isCartHydrated) return;
+    if (!currentUser?.uid || !isCartHydrated || !remoteCartFetched) return;
     const timeout = setTimeout(async () => {
       try {
         await import('../services/shared/cart.repository').then(async m => {
@@ -346,7 +369,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             await m.cartRepository.delete(currentUser.uid);
           } else {
             await m.cartRepository.update(currentUser.uid, {
-              ...cart,
+              items: cart.items,
               userId: currentUser.uid,
               updatedAt: new Date().toISOString()
             });
@@ -355,7 +378,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } catch (err) {}
     }, 500);
     return () => clearTimeout(timeout);
-  }, [cart, currentUser?.uid, isCartHydrated]);
+  }, [cart, currentUser?.uid, isCartHydrated, remoteCartFetched]);
 
   const addRecentSearch = (queryStr: string) => {
     if (!queryStr.trim()) return;
@@ -711,13 +734,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addToCartGlobal = (product: any, shop: any, quantity: number = 1, isAbsolute: boolean = false) => {
-    const isDifferentStore = cart.shopId !== null && cart.shopId !== shop.id && cart.items.length > 0;
-    
-    if (isDifferentStore) {
-      setCartConflictAlert({ isOpen: true, product, shop, quantity, isAbsolute });
-      return;
-    }
-
     setCart(prev => {
       const items = [...prev.items];
       const existingItem = items.find(item => item.id === product.id);
@@ -729,35 +745,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           name: product.name,
           price: product.price,
           quantity,
-          imgUrl: product.imgUrl
+          imgUrl: product.imgUrl,
+          shopId: shop.id,
+          shopName: shop.name
         });
       }
-      return {
-        shopId: shop.id,
-        shopName: shop.name,
-        items
-      };
+      return { items };
     });
     showToast(isRTL ? `تمت إضافة ${product.name} للسلة` : `Added ${product.name} to cart`);
   };
 
   const confirmClearCartAndAdd = () => {
-    if (!cartConflictAlert) return;
-    const { product, shop, quantity } = cartConflictAlert;
-    
-    setCart({
-      shopId: shop.id,
-      shopName: shop.name,
-      items: [{
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        quantity,
-        imgUrl: product.imgUrl
-      }]
-    });
+    // Deprecated for multi-vendor
     setCartConflictAlert(null);
-    showToast(isRTL ? `تم إفراغ السلة وإضافة ${product.name}` : `Cart cleared and ${product.name} added`);
   };
 
   const cancelCartConflict = () => {

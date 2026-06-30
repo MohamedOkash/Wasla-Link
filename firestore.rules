@@ -90,6 +90,26 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // 6a. orderGroups Collection
+    match /orderGroups/{groupId} {
+      allow create: if (signedIn() && request.resource.data.customerId == request.auth.uid) || (!signedIn() && request.resource.data.customerId == 'guest');
+      allow read: if isAdmin() || (signedIn() && resource.data.customerId == request.auth.uid);
+      allow update: if isAdmin() || (signedIn() && resource.data.customerId == request.auth.uid && request.resource.data.status == 'cancelled');
+      allow delete: if isAdmin();
+    }
+
+    // 6b. chatThreads Collection
+    match /chatThreads/{threadId} {
+      allow read, update: if signedIn();
+      allow create: if signedIn();
+      allow delete: if isAdmin();
+      
+      match /messages/{messageId} {
+        allow read, create: if signedIn();
+        allow update, delete: if isAdmin();
+      }
+    }
+
     // 7. notifications Collection
     match /notifications/{notifId} {
       allow create: if signedIn();

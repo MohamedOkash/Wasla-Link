@@ -19,6 +19,8 @@ import { PremiumCard } from '../../components/premium/PremiumCard';
 import { PremiumBadge } from '../../components/premium/PremiumBadge';
 import { PremiumEmptyState } from '../../components/premium/PremiumEmptyState';
 import { PremiumBottomSheet } from '../../components/premium/PremiumBottomSheet';
+import { ChatWidget } from '../../components/chat/ChatWidget';
+import { MessageSquare } from 'lucide-react';
 
 interface CustomerProfileProps {
   navigate?: (name: string, params?: any) => void;
@@ -56,6 +58,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
 
   // Navigation sub-states (to open specific edit forms)
   const [activeSection, setActiveSection] = useState<'root' | 'info' | 'addresses' | 'security' | 'support' | 'loyalty' | 'referral' | 'driver_registration'>('root');
+  const [isSupportChatOpen, setIsSupportChatOpen] = useState(false);
 
   // Account Info states
   const [name, setName] = useState(currentUser?.name || 'أحمد محمود');
@@ -511,7 +514,34 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
               {t('str_260')}
             </PremiumButton>
           </form>
+          
+          <div className="pt-4 border-t border-theme-border/50">
+            <PremiumButton 
+              onClick={() => setIsSupportChatOpen(true)}
+              variant="outline" 
+              size="lg" 
+              className="w-full shadow-sm rounded-2xl h-12 text-xs font-black flex items-center justify-center gap-2 border-primary text-primary"
+            >
+              <MessageSquare size={18} />
+              {isRTL ? 'محادثة الدعم الفني المباشر' : 'Live Support Chat'}
+            </PremiumButton>
+          </div>
         </div>
+
+        {isSupportChatOpen && (
+          <ChatWidget
+            orderId={`support_${currentUser?.id}`}
+            title={isRTL ? 'الدعم الفني والشكاوى' : 'Support & Complaints'}
+            isOpen={true}
+            onClose={() => setIsSupportChatOpen(false)}
+            currentUserRole="customer"
+            participants={[currentUser?.id as string, 'admin']}
+            participantRoles={{
+              [currentUser?.id as string]: 'customer',
+              'admin': 'admin'
+            }}
+          />
+        )}
       </div>
     );
   }

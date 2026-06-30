@@ -8,6 +8,8 @@ import { dispatchService } from '../../services/dispatch.service';
 import { VendorTracking } from './VendorTracking';
 import { VendorDeliveryCenter } from './VendorDeliveryCenter';
 import { useStores } from '../../hooks/useStores';
+import { ChatWidget } from '../../components/chat/ChatWidget';
+import { MessageSquare } from 'lucide-react';
 
 export const VendorOrders: React.FC = () => {
   const { t } = useTranslation();
@@ -17,6 +19,7 @@ export const VendorOrders: React.FC = () => {
   const [activeReceipt, setActiveReceipt] = useState<string | null>(null);
   const [activeInvoice, setActiveInvoice] = useState<Order | null>(null);
   const [invoiceQRCode, setInvoiceQRCode] = useState<string | null>(null);
+  const [activeChatOrderId, setActiveChatOrderId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'new' | 'pendingVerification' | 'preparing' | 'outForDelivery' | 'delivered' | 'cancelled'>('new');
 
   useEffect(() => {
@@ -443,6 +446,17 @@ export const VendorOrders: React.FC = () => {
                   </div>
                 )}
 
+                {/* Chat Action */}
+                {order.status !== 'delivered' && order.status !== 'cancelled' && order.status !== 'returned' && (
+                  <button
+                    onClick={() => setActiveChatOrderId(order.id)}
+                    className="w-full bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 text-blue-600 text-[10px] font-black py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95 theme-transition mt-2"
+                  >
+                    <MessageSquare size={14} />
+                    <span>{isRTL ? 'محادثة الطلب' : 'Order Chat'}</span>
+                  </button>
+                )}
+
                 {order.status === 'cancelled' && (
                   <div className="flex-1 bg-red-500/10 text-red-500 font-black py-3 rounded-2xl text-xs text-center border border-red-500/20">
                     {t('str_893')}
@@ -453,6 +467,28 @@ export const VendorOrders: React.FC = () => {
           ))
         )}
       </div>
+
+      {/* Chat Widget */}
+      {activeChatOrderId && (
+        <ChatWidget
+          orderId={activeChatOrderId}
+          isOpen={true}
+          onClose={() => setActiveChatOrderId(null)}
+          currentUserRole="vendor"
+          participants={
+            [
+              orders.find(o => o.id === activeChatOrderId)?.customerId, 
+              currentUser?.id,
+              orders.find(o => o.id === activeChatOrderId)?.driverId
+            ].filter(Boolean) as string[]
+          }
+          participantRoles={{
+            [orders.find(o => o.id === activeChatOrderId)?.customerId as string]: 'customer',
+            [currentUser?.id as string]: 'vendor',
+            [orders.find(o => o.id === activeChatOrderId)?.driverId as string]: 'driver'
+          }}
+        />
+      )}
     </div>
   );
 };

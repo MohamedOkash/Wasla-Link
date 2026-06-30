@@ -39,9 +39,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
     setShop(initialShop);
   }, [initialProduct, initialShop]);
   
-  const initialQty = (cart.shopId === shop.id 
-    ? cart.items.find(i => i.id === product.id)?.quantity 
-    : 0) || 1;
+  const cartItem = cart.items.find(item => item.id === product.id && item.shopId === shop.id);
+  const initialQty = cartItem ? cartItem.quantity : 1;
 
   const [quantity, setQuantity] = useState(initialQty);
   const [reviews, setReviews] = useState<any[]>([]);

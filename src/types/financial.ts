@@ -35,6 +35,10 @@ export interface PlatformSettings {
   freeDeliveryThreshold: number;
   roadFactor: number;
   averageSpeed: number;
+  nearbyStoreRadius: number;
+  nearbyExtraFee: number;
+  farStoreExtraFee: number;
+  maximumDeliveryRadius: number;
 }
 
 export interface SettlementRequest {

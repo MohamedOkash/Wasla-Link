@@ -62,7 +62,7 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
     return matchesCat && matchesSearch;
   });
 
-  const cartItemsForStore = cart.shopId === shop.id ? cart.items : [];
+  const cartItemsForStore = cart.items.filter(item => item.shopId === shop.id);
   const totalQuantity = cartItemsForStore.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = cartItemsForStore.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
@@ -95,8 +95,6 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
   const handleRemoveFromCart = (productId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setCart(prev => {
-      if (prev.shopId !== shop.id) return prev;
-      
       const items = prev.items.map(item => {
         if (item.id === productId) {
           return { ...item, quantity: item.quantity - 1 };
@@ -105,8 +103,7 @@ export const CustomerShop: React.FC<CustomerShopProps> = ({ shop, navigate, goBa
       }).filter(item => item.quantity > 0);
 
       return {
-        shopId: items.length > 0 ? shop.id : null,
-        shopName: items.length > 0 ? shop.name : '',
+        ...prev,
         items
       };
     });

@@ -2,7 +2,8 @@ import { db } from '../firebase';
 import { doc, runTransaction, collection } from 'firebase/firestore';
 
 export interface PlaceOrderPayload {
-  orderData: any;
+  orderGroupData: any;
+  storeOrdersData: any[];
   pointsToRedeem?: number;
   currentUserUid?: string;
   activeCouponId?: string;
@@ -10,23 +11,13 @@ export interface PlaceOrderPayload {
 
 export class OrderService {
   async placeOrder(payload: PlaceOrderPayload): Promise<void> {
-    const { orderData, pointsToRedeem = 0, currentUserUid, activeCouponId } = payload;
+    const { orderGroupData, storeOrdersData, pointsToRedeem = 0, currentUserUid, activeCouponId } = payload;
     
-    // We assume orderData already has an ID, if not, generate one.
-    const orderId = orderData.id || doc(collection(db, 'orders')).id;
-    orderData.id = orderId;
+    const groupId = orderGroupData.id || doc(collection(db, 'orderGroups')).id;
+    orderGroupData.id = groupId;
 
     await runTransaction(db, async (transaction) => {
-      // 1. Read store to get current storeOrderCount
-      let storeOrderNumber = 1;
-      let storeRef = null;
-      let storeSnap = null;
-      if (orderData.shopId) {
-        storeRef = doc(db, 'stores', orderData.shopId);
-        storeSnap = await transaction.get(storeRef);
-      }
-
-      // 2. Read customer to get current customerOrderCount
+      // 1. Read customer to get current customerOrderCount
       let customerOrderNumber = 1;
       let userRef = null;
       let userSnap = null;
@@ -35,12 +26,12 @@ export class OrderService {
         userSnap = await transaction.get(userRef);
       }
 
-      // 3. Read global counter (optional, but good for general invoice)
+      // 2. Read global counter
       let globalOrderNumber = 1;
       const counterRef = doc(db, 'system', 'counters');
       const counterSnap = await transaction.get(counterRef);
 
-      // 4. Handle Coupons Read
+      // 3. Handle Coupons Read
       let couponRef = null;
       let couponSnap = null;
       if (activeCouponId) {
@@ -48,29 +39,34 @@ export class OrderService {
         couponSnap = await transaction.get(couponRef);
       }
 
-      // 5. Handle Products Read
+      // 4. Handle Products Read
       const productSnaps = [];
-      if (orderData.items && Array.isArray(orderData.items)) {
-        for (const item of orderData.items) {
-          if (item.id) {
-            const productRef = doc(db, 'products', item.id);
-            const productSnap = await transaction.get(productRef);
-            productSnaps.push({ ref: productRef, snap: productSnap, quantity: item.quantity });
+      for (const storeOrder of storeOrdersData) {
+        if (storeOrder.items && Array.isArray(storeOrder.items)) {
+          for (const item of storeOrder.items) {
+            if (item.id) {
+              const productRef = doc(db, 'products', item.id);
+              const productSnap = await transaction.get(productRef);
+              productSnaps.push({ ref: productRef, snap: productSnap, quantity: item.quantity });
+            }
           }
         }
       }
 
-      // --- ALL READS DONE, BEGIN WRITES ---
-
-      if (storeSnap && storeSnap.exists()) {
-        storeOrderNumber = (storeSnap.data().totalOrders || 0) + 1;
-        transaction.update(storeRef, { totalOrders: storeOrderNumber });
-      } else if (storeRef) {
-        // Just in case store doesn't exist but we have ref
-        transaction.set(storeRef, { totalOrders: storeOrderNumber }, { merge: true });
+      // 5. Handle Stores Read
+      const storeSnaps: any[] = [];
+      for (const storeOrder of storeOrdersData) {
+         if (storeOrder.shopId) {
+            const storeRef = doc(db, 'stores', storeOrder.shopId);
+            const storeSnap = await transaction.get(storeRef);
+            storeSnaps.push({ ref: storeRef, snap: storeSnap, shopId: storeOrder.shopId });
+         }
       }
 
-      if (userSnap && userSnap.exists()) {
+      // --- ALL READS DONE, BEGIN WRITES ---
+
+      // Customer update
+      if (userSnap && userSnap.exists() && userRef) {
         customerOrderNumber = (userSnap.data().totalOrders || 0) + 1;
         const currentPoints = userSnap.data().points || 0;
         transaction.update(userRef, { 
@@ -81,6 +77,7 @@ export class OrderService {
         transaction.set(userRef, { totalOrders: customerOrderNumber }, { merge: true });
       }
 
+      // Global counter update
       if (counterSnap.exists()) {
         globalOrderNumber = (counterSnap.data().globalOrders || 0) + 1;
         transaction.update(counterRef, { globalOrders: globalOrderNumber });
@@ -88,58 +85,79 @@ export class OrderService {
         transaction.set(counterRef, { globalOrders: 1 });
       }
 
-      // Add numbering to orderData
-      orderData.storeOrderNumber = storeOrderNumber;
-      orderData.customerOrderNumber = customerOrderNumber;
-      orderData.globalOrderNumber = globalOrderNumber;
-      
-      // Generate readable invoice ID coordinating store and customer numbers
-      // e.g. S12-C5
-      const invoiceId = `S${storeOrderNumber}-C${customerOrderNumber}`;
-      orderData.invoiceId = invoiceId;
+      orderGroupData.customerOrderNumber = customerOrderNumber;
+      orderGroupData.globalOrderNumber = globalOrderNumber;
 
-      // 1. Handle Payment Initialization atomically
-      if (orderData.paymentMethod) {
+      // Handle Payment Initialization atomically
+      if (orderGroupData.paymentMethod) {
         const paymentRef = doc(collection(db, 'payments'));
-        const initialStatus = orderData.paymentMethod === 'cash_on_delivery' ? 'pending' : 'pending_verification';
+        const initialStatus = orderGroupData.paymentMethod === 'cash_on_delivery' ? 'pending' : 'pending_verification';
         
         transaction.set(paymentRef, {
-          orderId,
-          method: orderData.paymentMethod,
-          amount: orderData.total || 0,
+          groupId,
+          method: orderGroupData.paymentMethod,
+          amount: orderGroupData.total || 0,
           status: initialStatus,
-          metadata: { receiptUrl: orderData.paymentReceipt || null },
+          metadata: { receiptUrl: orderGroupData.paymentReceipt || null },
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         });
 
-        // Directly embed the payment info into the order before saving
-        orderData.paymentStatus = initialStatus;
-        orderData.paymentId = paymentRef.id;
+        orderGroupData.paymentStatus = initialStatus;
+        orderGroupData.paymentId = paymentRef.id;
       }
 
-      // 2. Set the Order Document
-      transaction.set(doc(db, 'orders', orderId), orderData);
+      // Save OrderGroup
+      transaction.set(doc(db, 'orderGroups', groupId), orderGroupData);
 
-      // 3. Handle Points
+      // Save StoreOrders
+      for (const storeOrder of storeOrdersData) {
+         const storeSnapData = storeSnaps.find(s => s.shopId === storeOrder.shopId);
+         let storeOrderNumber = 1;
+         
+         if (storeSnapData && storeSnapData.snap.exists()) {
+           storeOrderNumber = (storeSnapData.snap.data().totalOrders || 0) + 1;
+           transaction.update(storeSnapData.ref, { totalOrders: storeOrderNumber });
+         } else if (storeSnapData) {
+           transaction.set(storeSnapData.ref, { totalOrders: storeOrderNumber }, { merge: true });
+         }
+
+         storeOrder.groupId = groupId;
+         storeOrder.storeOrderNumber = storeOrderNumber;
+         storeOrder.customerOrderNumber = customerOrderNumber;
+         storeOrder.globalOrderNumber = globalOrderNumber;
+         storeOrder.invoiceId = `S${storeOrderNumber}-C${customerOrderNumber}`;
+         
+         if (orderGroupData.paymentMethod) {
+            storeOrder.paymentStatus = orderGroupData.paymentStatus;
+            storeOrder.paymentId = orderGroupData.paymentId;
+         }
+
+         const childOrderId = storeOrder.id || doc(collection(db, 'orders')).id;
+         storeOrder.id = childOrderId;
+         
+         transaction.set(doc(db, 'orders', childOrderId), storeOrder);
+      }
+
+      // Handle Points
       if (pointsToRedeem > 0 && currentUserUid) {
-        const pointsHistoryId = `${orderId}_${currentUserUid}_redeem`;
+        const pointsHistoryId = `${groupId}_${currentUserUid}_redeem`;
         transaction.set(doc(db, 'pointsHistory', pointsHistoryId), {
           id: pointsHistoryId,
           userId: currentUserUid,
-          orderId: orderId,
+          orderId: groupId, // using groupId for redeemed points
           points: pointsToRedeem,
           type: 'redeem',
           createdAt: new Date().toISOString()
         });
       }
 
-      // 4. Handle Coupons
-      if (couponSnap && couponSnap.exists()) {
+      // Update coupon
+      if (couponSnap && couponSnap.exists() && couponRef) {
         transaction.update(couponRef, { usageCount: (couponSnap.data().usageCount || 0) + 1 });
       }
 
-      // 5. Atomic Inventory Updates
+      // Atomic Inventory Updates
       for (const p of productSnaps) {
         if (p.snap.exists()) {
           const newStock = Math.max(0, (p.snap.data().currentStock || 0) - p.quantity);

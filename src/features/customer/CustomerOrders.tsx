@@ -1,11 +1,12 @@
 import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState } from 'react';
-import { ClipboardList, Clock, CheckCircle2, MapPin, Bike, ShieldAlert, Star, ThumbsUp, Package, UserCheck, RotateCcw, AlertCircle, RefreshCw } from 'lucide-react';
+import { ClipboardList, Clock, CheckCircle2, MapPin, Bike, ShieldAlert, Star, ThumbsUp, Package, UserCheck, RotateCcw, AlertCircle, RefreshCw, MessageSquare } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { CustomerHeader } from '../../components/common/CustomerHeader';
 import { ReviewModal } from './ReviewModal';
 import { db } from '../../services/firebase';
 import { doc, setDoc } from 'firebase/firestore';
+import { ChatWidget } from '../../components/chat/ChatWidget';
 
 interface CustomerOrdersProps {
   goBack?: () => void;
@@ -32,6 +33,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
   const [returnReason, setReturnReason] = useState('');
   const [returnType, setReturnType] = useState<'refund' | 'replacement'>('refund');
+  const [activeChatOrderId, setActiveChatOrderId] = useState<string | null>(null);
 
   const customerReturns = returnRequests.filter(r => r.customerId === (currentUser?.id || 'customer_1'));
 
@@ -51,14 +53,14 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
 
 
     setCart({
-      shopId: order.shopId,
-      shopName: order.shopName,
       items: order.items.map((item: any) => ({
         id: item.id,
         name: item.name,
         price: item.price,
         quantity: item.quantity,
-        imgUrl: item.imgUrl
+        imgUrl: item.imgUrl,
+        shopId: order.shopId,
+        shopName: order.shopName,
       }))
     });
     showToast(t('str_132'));
@@ -336,6 +338,17 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
                     </span>
                   </div>
 
+                  {/* Chat Action */}
+                  {order.status !== 'delivered' && order.status !== 'cancelled' && order.status !== 'returned' && (
+                    <button
+                      onClick={() => setActiveChatOrderId(order.id)}
+                      className="w-full bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 text-blue-600 text-[10px] font-black py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95 theme-transition mt-2"
+                    >
+                      <MessageSquare size={14} />
+                      <span>{isRTL ? 'محادثة الطلب' : 'Order Chat'}</span>
+                    </button>
+                  )}
+
                   {/* Live Tracking Link */}
                   {['driver_assigned', 'driver_accepted', 'picked_up', 'on_the_way'].includes(order.status) && navigate && (
                     <button
@@ -548,6 +561,28 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
         <ReviewModal 
           order={reviewOrder} 
           onClose={() => setReviewOrder(null)} 
+        />
+      )}
+
+      {/* Chat Widget */}
+      {activeChatOrderId && (
+        <ChatWidget
+          orderId={activeChatOrderId}
+          isOpen={true}
+          onClose={() => setActiveChatOrderId(null)}
+          currentUserRole="customer"
+          participants={
+            [
+              currentUser?.id, 
+              orders.find(o => o.id === activeChatOrderId)?.shopId,
+              orders.find(o => o.id === activeChatOrderId)?.driverId
+            ].filter(Boolean) as string[]
+          }
+          participantRoles={{
+            [currentUser?.id as string]: 'customer',
+            [orders.find(o => o.id === activeChatOrderId)?.shopId as string]: 'vendor',
+            [orders.find(o => o.id === activeChatOrderId)?.driverId as string]: 'driver'
+          }}
         />
       )}
     </div>

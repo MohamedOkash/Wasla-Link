@@ -25,12 +25,14 @@ export interface Order {
   paymentReceiptUrl?: string;
   paymentReference?: string;
   paymentReceipt?: string;
+  invoiceId?: string;
+  groupId?: string;
   location: {
     name: string;
     coords?: { lat: number; lng: number } | null;
     isVerified: boolean;
   };
-  status: 'pending' | 'accepted' | 'preparing' | 'ready_for_delivery' | 'driver_assigned' | 'driver_accepted' | 'picked_up' | 'on_the_way' | 'delivered' | 'cancelled' | 'returned';
+  status: 'new' | 'pendingVerification' | 'pending' | 'accepted' | 'preparing' | 'ready_for_delivery' | 'driver_assigned' | 'driver_accepted' | 'picked_up' | 'on_the_way' | 'delivered' | 'cancelled' | 'returned';
   driverId?: string;
   driverName?: string;
   assignedDriverId?: string;

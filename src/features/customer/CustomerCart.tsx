@@ -45,31 +45,23 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
         return item;
       }).filter(item => item.quantity > 0);
       
-      return {
-        shopId: items.length > 0 ? prev.shopId : null,
-        shopName: items.length > 0 ? prev.shopName : '',
-        items
-      };
+      return { items };
     });
   };
 
   const handleRemove = (id: string) => {
     setCart(prev => {
       const items = prev.items.filter(item => item.id !== id);
-      return {
-        shopId: items.length > 0 ? prev.shopId : null,
-        shopName: items.length > 0 ? prev.shopName : '',
-        items
-      };
+      return { items };
     });
   };
 
   const [couponCode, setCouponCode] = useState(activeCoupon ? activeCoupon.code : '');
   const [couponError, setCouponError] = useState<string | null>(null);
 
-  // Find store to get its actual delivery fee
-  const store = stores.find(s => s.id === cart.shopId);
-  const deliveryFee = store ? store.fee : 0;
+  // Calculate combined delivery fee for all unique stores
+  const storeIds = [...new Set(cart.items.map(item => item.shopId))];
+  const deliveryFee = storeIds.reduce((acc, id) => acc + (stores.find(s => s.id === id)?.fee || 0), 0);
   
   // Apply actual dynamic discount calculations
   const subtotal = cart.items.reduce((sum, item) => {
@@ -99,7 +91,7 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
       coupon,
       subtotal,
       currentUser?.id || 'guest',
-      cart.shopId || '',
+      cart.items[0]?.shopId || '',
       categoryIds,
       isFirstOrder,
       cart.items.map(i => ({ id: i.id, quantity: i.quantity, price: i.price }))
@@ -153,7 +145,7 @@ export const CustomerCart: React.FC<CustomerCartProps> = ({ goBack, goToCheckout
         <h1 className="text-sm font-black text-theme-text flex items-center gap-2">
           <span>{t('cart')}</span>
           <span className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary rounded-lg border border-primary/15 font-sans">
-            {cart.shopName}
+            {cart.items.length} {t('str_1250') || 'عنصر'}
           </span>
         </h1>
       </div>

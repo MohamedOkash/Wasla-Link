@@ -3,6 +3,10 @@ import React from 'react';
 import { Bike, MapPin, DollarSign, Clock, ClipboardList, CheckCircle2, ArrowRight } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 
+import { ChatWidget } from '../../components/chat/ChatWidget';
+import { MessageSquare } from 'lucide-react';
+import { useState } from 'react';
+
 interface DriverOrdersProps {
   driver: any;
 }
@@ -10,10 +14,11 @@ interface DriverOrdersProps {
 export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
   const { t } = useTranslation();
   const { orders, isRTL, showToast } = useApp();
+  const [activeChatOrderId, setActiveChatOrderId] = useState<string | null>(null);
 
   // Filters based on phase 14 order statuses
   const availableOrders = orders.filter(o => o.status === 'ready_for_delivery' && !o.driverId);
-  const activeOrders = orders.filter(o => o.driverId === driver.id && ['accepted', 'picked_up', 'on_the_way'].includes(o.status));
+  const activeOrders = orders.filter(o => o.driverId === driver.id && ['accepted', 'picked_up', 'on_the_way', 'delivering'].includes(o.status));
   const completedOrders = orders.filter(o => o.driverId === driver.id && o.status === 'delivered');
 
   const handleAcceptOrder = async (orderId: string) => {
@@ -103,6 +108,15 @@ export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
                     </div>
                   </div>
 
+                  {/* Chat Action */}
+                  <button
+                    onClick={() => setActiveChatOrderId(order.id)}
+                    className="w-full bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 text-blue-600 text-[10px] font-black py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95 theme-transition"
+                  >
+                    <MessageSquare size={14} />
+                    <span>{isRTL ? 'محادثة الطلب' : 'Order Chat'}</span>
+                  </button>
+
                   <button
                     onClick={() => handleUpdateStatus(order.id, order.status)}
                     className="w-full bg-primary hover:bg-primary-hover text-white py-3 rounded-xl font-black text-sm shadow-md transition flex justify-center items-center gap-2"
@@ -176,6 +190,27 @@ export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
         </div>
       </div>
 
+      {/* Chat Widget */}
+      {activeChatOrderId && (
+        <ChatWidget
+          orderId={activeChatOrderId}
+          isOpen={true}
+          onClose={() => setActiveChatOrderId(null)}
+          currentUserRole="driver"
+          participants={
+            [
+              orders.find(o => o.id === activeChatOrderId)?.customerId, 
+              orders.find(o => o.id === activeChatOrderId)?.shopId,
+              driver.id
+            ].filter(Boolean) as string[]
+          }
+          participantRoles={{
+            [orders.find(o => o.id === activeChatOrderId)?.customerId as string]: 'customer',
+            [orders.find(o => o.id === activeChatOrderId)?.shopId as string]: 'vendor',
+            [driver.id as string]: 'driver'
+          }}
+        />
+      )}
     </div>
   );
 };

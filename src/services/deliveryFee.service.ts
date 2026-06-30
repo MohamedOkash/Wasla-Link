@@ -19,7 +19,11 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   remoteAreaMultiplier: 10, // Flat fee added
   freeDeliveryThreshold: 250,
   roadFactor: 1.35,
-  averageSpeed: 30
+  averageSpeed: 30,
+  nearbyStoreRadius: 1, // 1 km
+  nearbyExtraFee: 0,
+  farStoreExtraFee: 10,
+  maximumDeliveryRadius: 15
 };
 
 class DeliveryFeeService {

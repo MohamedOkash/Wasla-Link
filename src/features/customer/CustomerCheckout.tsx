@@ -53,10 +53,17 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
   const [newNotes, setNewNotes] = useState('');
   const [saveToBook, setSaveToBook] = useState(true);
 
-  // Find store to check coverage
-  const store = stores.find(s => s.id === cart.shopId);
-  const storeStatusObj = store ? getStoreStatus(store, isRTL) : { status: 'open' };
-  const isStoreClosed = storeStatusObj.status === 'closed';
+  // Group items by store
+  const cartItemsByStore = cart.items.reduce((acc, item) => {
+    if (!acc[item.shopId]) acc[item.shopId] = [];
+    acc[item.shopId].push(item);
+    return acc;
+  }, {} as Record<string, typeof cart.items>);
+  const uniqueStoreIds = Object.keys(cartItemsByStore);
+  const storesInCart = uniqueStoreIds.map(id => stores.find(s => s.id === id)).filter(Boolean) as any[];
+
+  // Find if any store is closed
+  const isAnyStoreClosed = storesInCart.some(store => getStoreStatus(store, isRTL).status === 'closed');
 
   // Resolve current address object being used
   const activeAddress = selectedAddressId === 'new' 
@@ -74,30 +81,23 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
     : savedAddresses.find(a => a.id === selectedAddressId);
 
   // Coverage validation
-  const isCovered = store && activeAddress 
-    ? (store.coveredVillages ? store.coveredVillages.includes(activeAddress.village) : true)
-    : false;
+  const isCovered = storesInCart.every(store => activeAddress ? (store.coveredVillages ? store.coveredVillages.includes(activeAddress.village) : true) : false);
   const currentSettings = platformSettings || DEFAULT_PLATFORM_SETTINGS;
-  const { fee: deliveryFee, eta: deliveryETA } = store && activeAddress && isCovered
-    ? deliveryFeeService.calculateFeeAndEta(
-        store.village || store.coveredVillages?.[0] || '',
-        activeAddress.village || '',
-        store.fee,
-        `${store.time} دقيقة`,
-        currentSettings
-      )
-    : {
-        fee: store && activeAddress && isCovered
-          ? (store.deliveryFees && store.deliveryFees[activeAddress.village] !== undefined 
-              ? store.deliveryFees[activeAddress.village] 
-              : store.fee)
-          : (store ? store.fee : 0),
-        eta: store && activeAddress && isCovered
-          ? (store.etas && store.etas[activeAddress.village] !== undefined 
-              ? store.etas[activeAddress.village] 
-              : `${store.time} دقيقة`)
-          : (store ? `${store.time} دقيقة` : '')
-      };
+  
+  const storeDeliveryFees = storesInCart.reduce((acc, store, index) => {
+    let fee = store.fee;
+    if (activeAddress && store.deliveryFees && store.deliveryFees[activeAddress.village] !== undefined) {
+      fee = store.deliveryFees[activeAddress.village];
+    }
+    if (index === 0) {
+      acc[store.id] = fee;
+    } else {
+      acc[store.id] = currentSettings.nearbyExtraFee !== undefined ? currentSettings.nearbyExtraFee : 5; 
+    }
+    return acc;
+  }, {} as Record<string, number>);
+
+  const deliveryFee = (Object.values(storeDeliveryFees) as number[]).reduce((a, b) => a + b, 0);
 
   const subtotal = cart.items.reduce((sum, item) => {
     const prod = (products.find(p => p.id === item.id) || { ...item, price: item.price }) as Product;
@@ -135,12 +135,12 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
 
     setLoading(true);
     try {
-      const orderRef = doc(collection(db, 'orders'));
-      const orderId = orderRef.id;
+      const orderRef = doc(collection(db, 'orderGroups'));
+      const orderGroupId = orderRef.id;
       let paymentReceiptUrl = '';
 
       if (paymentMethod !== 'cash_on_delivery' && receiptFile) {
-        paymentReceiptUrl = await mediaService.uploadImage(receiptFile, `receipts/${orderId}`);
+        paymentReceiptUrl = await mediaService.uploadImage(receiptFile, `receipts/${orderGroupId}`);
       }
 
       if (selectedAddressId === 'new' && saveToBook) {
@@ -166,14 +166,14 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
 
       const customerId = auth.currentUser?.uid || currentUser?.uid;
       
-      // Checkout Validation (Task 3)
+      // Checkout Validation
       if (!customerId) {
         showToast(t('str_67'));
         setLoading(false);
         return;
       }
       
-      if (!cart.shopId || cart.items.length === 0) {
+      if (cart.items.length === 0) {
         showToast(t('str_68'));
         setLoading(false);
         return;
@@ -185,21 +185,10 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
         return;
       }
 
-      const newOrder: any = {
-        id: orderId,
-        shopId: cart.shopId || '',
-        shopName: cart.shopName,
-        scheduledOrder: isStoreClosed,
-        scheduledFor: isStoreClosed ? 'next_open' : undefined,
-        customerId: auth.currentUser?.uid || currentUser?.uid || 'guest',
+      const orderGroupData: any = {
+        id: orderGroupId,
+        customerId: customerId,
         customerName: currentUser?.name || 'عميل تجريبي',
-        items: cart.items.map(item => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          imgUrl: item.imgUrl
-        })),
         subtotal,
         deliveryFee,
         discount: discountAmount + pointsDiscount,
@@ -213,38 +202,63 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
           coords: location.coords,
           isVerified: true
         },
-        status: 'new', // Real status will be updated if it's pendingVerification
+        status: paymentMethod === 'instapay' ? 'pendingVerification' : 'new',
         createdAt: new Date().toISOString()
       };
 
-      if (paymentMethod === 'instapay') {
-        newOrder.status = 'pendingVerification';
-      }
+      const storeOrdersData = Object.entries(cartItemsByStore).map(([shopId, items]) => {
+         const store = storesInCart.find(s => s.id === shopId);
+         const storeSubtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+         // Simplified discount pro-rata
+         const storeDiscount = (storeSubtotal / subtotal) * discountAmount;
+         const storePointsDiscount = (storeSubtotal / subtotal) * pointsDiscount;
 
-      const cleanedOrder = sanitizeFirestoreData(newOrder);
+         return sanitizeFirestoreData({
+            shopId,
+            shopName: store?.name || items[0].shopName,
+            vendorId: store?.vendorId || '',
+            scheduledOrder: store ? getStoreStatus(store, isRTL).status === 'closed' : false,
+            scheduledFor: store && getStoreStatus(store, isRTL).status === 'closed' ? 'next_open' : undefined,
+            customerId: customerId,
+            customerName: currentUser?.name || 'عميل تجريبي',
+            items: items.map(item => ({
+              id: item.id,
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+              imgUrl: item.imgUrl
+            })),
+            subtotal: storeSubtotal,
+            deliveryFee: storeDeliveryFees[shopId] || 0,
+            discount: storeDiscount + storePointsDiscount,
+            total: storeSubtotal + (storeDeliveryFees[shopId] || 0) - (storeDiscount + storePointsDiscount),
+            location: orderGroupData.location,
+            status: paymentMethod === 'instapay' ? 'pendingVerification' : 'new',
+            createdAt: orderGroupData.createdAt
+         });
+      });
 
-      console.log("ORDER_PAYLOAD", cleanedOrder);
-      console.log("AUTH_UID", auth.currentUser?.uid);
-      console.log("CUSTOMER_ID", cleanedOrder.customerId);
+      const cleanedGroupOrder = sanitizeFirestoreData(orderGroupData);
 
       try {
         await import('../../services/orders/service').then(module => {
           return module.orderService.placeOrder({
-            orderData: cleanedOrder,
+            orderGroupData: cleanedGroupOrder,
+            storeOrdersData: storeOrdersData,
             pointsToRedeem: pointsToRedeem,
             currentUserUid: currentUser?.uid,
             activeCouponId: activeCoupon?.id
           });
         });
 
-        // 6. Cleanup Cart
-        setCart({ shopId: null, shopName: '', items: [] });
+        // Cleanup Cart
+        setCart({ items: [] });
       } catch (err: any) {
         console.error("EXACT_FIRESTORE_ERROR", err.code, err.message, err);
-        throw err; // throw to be caught by outer catch block
+        throw err;
       }
 
-      setCart({ shopId: null, shopName: '', items: [] });
+      setCart({ items: [] });
       setActiveCoupon(null);
       showToast(paymentMethod === 'cash_on_delivery' ? 'تم تأكيد طلبك بنجاح وجاري التحضير' : 'تم استلام الطلب بنجاح');
       placeOrder();
@@ -276,7 +290,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
 
       <div className="flex-1 overflow-y-auto no-scrollbar pb-[180px] pb-[calc(env(safe-area-inset-bottom)+180px)]">
         {/* Scheduled Order Warning */}
-        {isStoreClosed && (
+        {isAnyStoreClosed && (
           <div className="mx-5 mt-5 bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex items-start gap-3">
             <Info size={20} className="text-amber-500 flex-shrink-0 mt-0.5" />
             <div>
@@ -314,7 +328,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
               </span>
               <div className="grid grid-cols-1 gap-2.5">
                 {savedAddresses.map(addr => {
-                  const covered = store?.coveredVillages?.includes(addr.village) ?? true;
+                  const covered = storesInCart.every(s => s.coveredVillages?.includes(addr.village)) ?? true;
                   const isSelected = selectedAddressId === addr.id;
                   
                   return (
@@ -398,7 +412,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
                   onChange={e => setNewVillage(e.target.value)}
                   className="w-full bg-theme-card border border-theme-border rounded-xl p-3 text-xs font-black text-theme-text outline-none focus:border-primary theme-transition"
                 >
-                  {store?.coveredVillages?.map(v => (
+                  {storesInCart[0]?.coveredVillages?.map((v: string) => (
                     <option key={v} value={v}>{v}</option>
                   )) || (
                     <>
@@ -485,7 +499,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
             <div className="text-[10px] font-black leading-relaxed">
               {isCovered ? (
                 <span>
-                  {t('str_95', { deliveryFee, deliveryETA })}
+                  {t('str_95', { deliveryFee, deliveryETA: '25-45 دقيقة' })}
                 </span>
               ) : (
                 <span>
@@ -536,7 +550,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
         </PremiumCard>
 
         {/* Instapay Transfer Instructions Panel */}
-        {paymentMethod === 'instapay' && store && (
+        {paymentMethod === 'instapay' && (
           <div className="bg-theme-card p-4 rounded-[24px] border border-primary/20 shadow-sm space-y-4 animate-fade-in theme-transition">
             <div className="bg-primary/5 p-3.5 rounded-xl flex gap-3 border border-primary/10">
               <AlertCircle className="text-primary flex-shrink-0" size={16} />
@@ -545,7 +559,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
                     <p className="font-black text-theme-text mb-0.5">{t('str_103')}</p>
                     <p>{t('str_104')}<span className="text-primary font-black">{total} ج.م</span> {t('str_105')}</p>
                     <p className="text-sm font-black text-primary mt-1 tracking-wide">
-                      {store.paymentInfo?.instapay || `${store.id}@instapay`}
+                      {storesInCart.map(s => s.paymentInfo?.instapay).filter(Boolean).join(', ') || 'waslalink@instapay'}
                     </p>
                   </>
                 <p className="text-[9.5px] text-primary mt-1.5 font-black">{t('str_106')}</p>
@@ -663,7 +677,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
             <div className="flex justify-between">
               <span className="text-theme-muted">{t('str_119')}</span>
               <span className="font-black text-theme-text">
-                {isStoreClosed ? (t('str_120')) : (t('str_121'))}
+                {isAnyStoreClosed ? (t('str_120')) : (t('str_121'))}
               </span>
             </div>
             <div className="flex justify-between">
