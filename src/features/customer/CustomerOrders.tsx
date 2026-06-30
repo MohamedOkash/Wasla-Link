@@ -337,7 +337,7 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
                   </div>
 
                   {/* Live Tracking Link */}
-                  {order.status !== 'cancelled' && navigate && (
+                  {['driver_assigned', 'driver_accepted', 'picked_up', 'on_the_way'].includes(order.status) && navigate && (
                     <button
                       onClick={() => navigate('tracking', { orderId: order.id })}
                       className="w-full bg-primary/10 border border-primary/20 hover:bg-primary/20 text-primary text-[10px] font-black py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95 theme-transition mt-2"

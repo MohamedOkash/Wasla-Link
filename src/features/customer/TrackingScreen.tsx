@@ -19,8 +19,8 @@ interface TrackingScreenProps {
 
 export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack }) => {
   const { t } = useTranslation();
-  const { isRTL, location, orders } = useApp();
-  const { stores } = useStores();;
+  const { isRTL, location, orders, drivers } = useApp();
+  const { stores } = useStores();
   const [trackingState, setTrackingState] = useState<TrackingState | null>(null);
   
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -184,6 +184,7 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
   const order = orders.find(o => o.id === orderId);
   const currentStepNum = order ? getOrderStepNumber(order.status) : 2;
   const storeData = order ? stores.find(s => s.id === order.shopId) : null;
+  const driverDetail = order?.driverId ? drivers.find(d => d.id === order.driverId) : null;
 
   return (
     <div className="bg-theme-bg h-full flex flex-col overflow-hidden animate-slide-in-right theme-transition relative">
@@ -263,34 +264,38 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
         <div className="w-12 h-1 bg-theme-border/80 rounded-full mx-auto mb-4"></div>
 
         {/* Courier Captain Details */}
-        <div className="bg-theme-bg/50 border border-theme-border/60 rounded-2xl p-3.5 flex items-center justify-between mb-4.5 theme-transition">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center text-white font-black text-base shadow-sm font-sans">
-              {t('str_195')}
+        {order?.driverId && (
+          <div className="bg-theme-bg/50 border border-theme-border/60 rounded-2xl p-3.5 flex items-center justify-between mb-4.5 theme-transition">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center text-white font-black text-base shadow-sm font-sans">
+                {driverDetail?.name ? driverDetail.name.charAt(0).toUpperCase() : t('str_195')}
+              </div>
+              <div>
+                <h3 className="text-xs font-black text-theme-text">{driverDetail?.name || order?.driverName || t('str_196')}</h3>
+                <p className="text-[9px] text-theme-muted font-bold mt-1 font-sans">
+                  {driverDetail?.vehicleType || t('str_197')}
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-xs font-black text-theme-text">{t('str_196')}</h3>
-              <p className="text-[9px] text-theme-muted font-bold mt-1 font-sans">
-                {t('str_197')}
-              </p>
-            </div>
+            
+            {driverDetail?.phone && (
+              <div className="flex items-center gap-2">
+                <a 
+                  href={`tel:${driverDetail.phone}`} 
+                  className="p-2.5 bg-theme-card border border-theme-border text-theme-text rounded-xl hover:scale-105 active:scale-95 transition shadow-sm flex items-center justify-center"
+                >
+                  <Phone size={14} />
+                </a>
+                <button 
+                  onClick={() => window.open(`https://wa.me/2${driverDetail.phone.startsWith('0') ? driverDetail.phone.substring(1) : driverDetail.phone}`)}
+                  className="p-2.5 bg-green-500 text-white rounded-xl hover:scale-105 active:scale-95 transition shadow-sm flex items-center justify-center"
+                >
+                  <MessageSquare size={14} />
+                </button>
+              </div>
+            )}
           </div>
-          
-          <div className="flex items-center gap-2">
-            <a 
-              href="tel:01000000000" 
-              className="p-2.5 bg-theme-card border border-theme-border text-theme-text rounded-xl hover:scale-105 active:scale-95 transition shadow-sm flex items-center justify-center"
-            >
-              <Phone size={14} />
-            </a>
-            <button 
-              onClick={() => window.open('https://wa.me/201000000000')}
-              className="p-2.5 bg-green-500 text-white rounded-xl hover:scale-105 active:scale-95 transition shadow-sm flex items-center justify-center"
-            >
-              <MessageSquare size={14} />
-            </button>
-          </div>
-        </div>
+        )}
 
         {/* Store & Order Details summary inside Sheet */}
         {order && (
