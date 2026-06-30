@@ -4,6 +4,8 @@ import { ClipboardList, Clock, CheckCircle2, MapPin, Bike, ShieldAlert, Star, Th
 import { useApp } from '../../contexts/AppContext';
 import { CustomerHeader } from '../../components/common/CustomerHeader';
 import { ReviewModal } from './ReviewModal';
+import { db } from '../../services/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 interface CustomerOrdersProps {
   goBack?: () => void;
@@ -32,6 +34,18 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
   const [returnType, setReturnType] = useState<'refund' | 'replacement'>('refund');
 
   const customerReturns = returnRequests.filter(r => r.customerId === (currentUser?.id || 'customer_1'));
+
+  const handleCancelOrder = async (orderId: string) => {
+    if (window.confirm(isRTL ? 'هل أنت متأكد من إلغاء هذا الطلب؟' : 'Are you sure you want to cancel this order?')) {
+      try {
+        const orderRef = doc(db, 'orders', orderId);
+        await setDoc(orderRef, { status: 'cancelled' }, { merge: true });
+        showToast(isRTL ? 'تم إلغاء الطلب بنجاح' : 'Order cancelled successfully');
+      } catch (error) {
+        showToast(isRTL ? 'حدث خطأ أثناء إلغاء الطلب' : 'Error cancelling order');
+      }
+    }
+  };
 
   const handleReorder = (order: any) => {
 
@@ -330,6 +344,17 @@ export const CustomerOrders: React.FC<CustomerOrdersProps> = ({ goBack, navigate
                     >
                       <Bike size={14} />
                       <span>{t('str_167')}</span>
+                    </button>
+                  )}
+
+                  {/* Cancel Order Button */}
+                  {order.status === 'pending' && (
+                    <button
+                      onClick={() => handleCancelOrder(order.id)}
+                      className="w-full bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-500 text-[10px] font-black py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95 theme-transition mt-2"
+                    >
+                      <AlertCircle size={14} />
+                      <span>{isRTL ? 'إلغاء الطلب' : 'Cancel Order'}</span>
                     </button>
                   )}
 

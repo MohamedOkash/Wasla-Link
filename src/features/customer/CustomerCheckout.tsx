@@ -682,27 +682,7 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
         <h3 className="font-black text-sm text-theme-text">{t('str_59')}</h3>
         <div className="space-y-2.5 text-xs bg-theme-bg/50 p-3.5 rounded-2xl border border-theme-border/50">
           
-          {/* Customer Delivery Info Card */}
-          <div className="bg-theme-card border border-theme-border/50 rounded-xl p-3 mb-3 space-y-1.5">
-            <div className="flex justify-between items-center text-theme-muted font-semibold">
-              <span>{t('str_74')}</span>
-              <span className="font-black text-theme-text">{currentUser?.name || ''}</span>
-            </div>
-            <div className="flex justify-between items-center text-theme-muted font-semibold">
-              <span>{t('str_126')}</span>
-              <span className="font-sans font-black text-theme-text">{currentUser?.phone || ''}</span>
-            </div>
-            <div className="flex justify-between items-start text-theme-muted font-semibold gap-2">
-              <span className="whitespace-nowrap">{t('str_127')}</span>
-              <span className="font-bold text-theme-text text-left max-w-[200px] leading-relaxed line-clamp-2">
-                {activeAddress ? `${activeAddress.street}، عمارة ${activeAddress.building}` : ''}
-              </span>
-            </div>
-            <div className="flex justify-between items-center text-theme-muted font-semibold">
-              <span>{t('str_118')}</span>
-              <span className="font-bold text-theme-text">{activeAddress?.village || ''}</span>
-            </div>
-          </div>
+
 
           <div className="flex justify-between text-theme-muted font-semibold">
             <span>{t('str_60')}</span>

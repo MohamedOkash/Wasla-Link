@@ -294,7 +294,7 @@ export const AuthScreen: React.FC = () => {
         onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')} 
         className="absolute top-6 left-6 bg-theme-card border border-theme-border/60 p-2.5 rounded-2xl text-xs font-black flex items-center gap-2 hover:border-primary/20 transition active:scale-95 shadow-sm z-10"
       >
-        <Globe size={15}/> {t('str_250')}
+        <Globe size={15}/> {lang === 'ar' ? 'EN' : 'عربي'}
       </button>
 
       {/* Theme Switch (cycles immediately) */}
@@ -344,24 +344,13 @@ export const AuthScreen: React.FC = () => {
               {t('login')}
             </PremiumButton>
 
-            <div className="border-t border-theme-border/60 my-6 pt-4 text-center">
-              <span className="text-[10px] font-black text-theme-muted uppercase tracking-wider">{t('str_317')}</span>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2">
+            <div className="text-left mt-2 pb-4 border-b border-theme-border/60">
               <button 
                 type="button"
-                onClick={() => handleDemoLogin('vendor')} 
-                className="bg-primary/10 text-primary font-black py-3 rounded-xl border border-primary/20 hover:bg-primary/15 transition text-[10px] truncate"
+                onClick={() => { setView('forgot_password'); setEmail(''); }}
+                className="text-xs font-bold text-primary hover:underline transition"
               >
-                {t('str_318')}
-              </button>
-              <button 
-                type="button"
-                onClick={() => handleDemoLogin('driver')} 
-                className="bg-primary/10 text-primary font-black py-3 rounded-xl border border-primary/20 hover:bg-primary/15 transition text-[10px] truncate"
-              >
-                {t('str_319')}
+                {t('str_294') || 'نسيت كلمة المرور؟'}
               </button>
             </div>
 
