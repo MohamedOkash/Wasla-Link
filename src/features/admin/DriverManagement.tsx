@@ -10,7 +10,7 @@ import { PremiumInput } from '../../components/premium/PremiumInput';
 export const DriverManagement: React.FC = () => {
   const { t } = useTranslation();
   const { isRTL, showToast, currentUser } = useApp();
-  const [activeFilter, setActiveFilter] = useState<'approved' | 'pending_review' | 'needs_documents' | 'rejected'>('pending_review');
+  const [activeFilter, setActiveFilter] = useState<'approved' | 'pending_review' | 'needs_documents' | 'blocked' | 'rejected'>('pending_review');
   const [searchQuery, setSearchQuery] = useState('');
   const [drivers, setDrivers] = useState<any[]>([]);
 
@@ -71,11 +71,11 @@ export const DriverManagement: React.FC = () => {
   const handleSuspend = async (driverId: string) => {
     try {
       await driverRepository.update(driverId, { 
-        status: 'suspended',
+        status: 'blocked',
         isActive: false,
         availability: 'offline'
       });
-      showToast(t('str_538') || 'Driver suspended');
+      showToast('Driver account blocked', 'success');
     } catch (error) {
       console.error(error);
       showToast(t('str_537') || 'Error', 'error');
@@ -178,6 +178,7 @@ export const DriverManagement: React.FC = () => {
             { id: 'pending_review', label: 'Pending Review', count: stats.pending },
             { id: 'needs_documents', label: 'Needs Docs', count: stats.needsDocs },
             { id: 'approved', label: 'Approved', count: stats.total },
+            { id: 'blocked', label: 'Blocked', count: drivers.filter(d => d.status === 'blocked').length },
             { id: 'rejected', label: 'Rejected', count: drivers.filter(d => d.status === 'rejected').length }
           ].map(tab => (
             <button
@@ -248,9 +249,9 @@ export const DriverManagement: React.FC = () => {
                       Rejected
                     </div>
                   )}
-                  {driver.status === 'suspended' && (
+                  {driver.status === 'blocked' && (
                     <div className="flex-1 text-xs font-black text-amber-500 bg-amber-500/10 py-2 rounded-xl text-center border border-amber-500/20">
-                      Suspended
+                      Blocked
                     </div>
                   )}
                   {driver.status === 'needs_documents' && (
@@ -313,25 +314,25 @@ export const DriverManagement: React.FC = () => {
                       onClick={() => handleSuspend(driver.id)}
                       className="flex-1 bg-amber-500/10 border border-amber-500/20 py-2 rounded-xl text-amber-500 hover:bg-amber-500/20 transition flex items-center justify-center gap-1 text-xs font-black"
                     >
-                      <Ban size={14} /> {t('str_554')}
+                      <Ban size={14} /> Block
                     </button>
                   )}
 
-                  {driver.status === 'suspended' && (
+                  {driver.status === 'blocked' && (
                     <button
                       onClick={() => handleReactivate(driver.id)}
                       className="flex-1 bg-green-500/10 border border-green-500/20 py-2 rounded-xl text-green-500 hover:bg-green-500/20 transition flex items-center justify-center gap-1 text-xs font-black"
                     >
-                      <RefreshCw size={14} /> {t('str_555')}
+                      <RefreshCw size={14} /> Reactivate
                     </button>
                   )}
                   
-                  {(driver.status === 'rejected' || driver.status === 'suspended') && (
+                  {(driver.status === 'rejected' || driver.status === 'blocked') && (
                      <button
                      onClick={() => handleApprove(driver)}
                      className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-xl shadow-md transition flex items-center justify-center gap-1 text-xs font-black"
                    >
-                     <Check size={14} /> {t('str_556')}
+                     <Check size={14} /> Approve
                    </button>
                   )}
                 </div>

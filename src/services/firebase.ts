@@ -14,6 +14,21 @@ const firebaseConfig = {
 };
 
 export const app = initializeApp(firebaseConfig);
+
+// Initialize Firebase App Check for security validation BEFORE other services
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
+if (typeof window !== 'undefined') {
+  try {
+    // For local development, set: (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+    initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider('6Ld_PlaceholderKeyForAppCheck_Web'),
+      isTokenAutoRefreshEnabled: true
+    });
+  } catch (err) {
+    console.warn('App Check failed to initialize (ReCAPTCHA Key placeholder):', err);
+  }
+}
+
 export const auth = getAuth(app);
 
 // Enable offline persistence
@@ -23,6 +38,7 @@ export const db = initializeFirestore(app, {
 });
 
 export const storage = getStorage(app);
+
 
 export const sanitizeFirestoreData = (data: any): any => {
   if (Array.isArray(data)) {
@@ -50,3 +66,15 @@ export const safeAddDoc = (ref: CollectionReference<any>, data: any) => {
 export const safeUpdateDoc = (ref: DocumentReference<any>, data: any) => {
   return updateDoc(ref, sanitizeFirestoreData(data));
 };
+
+import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
+export const functions = getFunctions(app);
+
+if (import.meta.env.DEV) {
+  try {
+    connectFunctionsEmulator(functions, 'localhost', 5001);
+  } catch (e) {
+    console.warn('Functions emulator connection failed:', e);
+  }
+}
+

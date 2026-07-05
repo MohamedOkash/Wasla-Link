@@ -1,102 +1,99 @@
 import { db } from '../../services/firebase';
-import { doc, writeBatch, runTransaction, collection, addDoc, updateDoc } from 'firebase/firestore';
+import { doc, collection, addDoc, updateDoc, setDoc } from 'firebase/firestore';
 
 export class DriverService {
-  async acceptOrder(driverId: string, orderId: string) {
-    const batch = writeBatch(db);
-    batch.update(doc(db, 'orders', orderId), {
-      status: 'accepted',
-      driverId: driverId,
+  async acceptOrder(driverId: string, orderId: string, driverName?: string) {
+    const { functions } = await import('../../services/firebase');
+    const { httpsCallable } = await import('firebase/functions');
+    const updateOrderStatusFn = httpsCallable(functions, 'updateOrderStatus');
+    
+    await updateOrderStatusFn({
+      orderId,
+      nextStatus: 'accepted',
+      driverId,
+      driverName: driverName || ''
     });
-    batch.update(doc(db, 'drivers', driverId), {
+
+    await updateDoc(doc(db, 'drivers', driverId), {
       availability: 'busy',
       currentOrderId: orderId
     });
-    await batch.commit();
   }
 
-  async updateOrderStatus(driverId: string, orderId: string, newStatus: string, fee: number) {
-    const batch = writeBatch(db);
-    batch.update(doc(db, 'orders', orderId), { status: newStatus });
+  async updateOrderStatus(driverId: string, orderId: string, newStatus: string, fee?: number) {
+    const { functions } = await import('../../services/firebase');
+    const { httpsCallable } = await import('firebase/functions');
+    const updateOrderStatusFn = httpsCallable(functions, 'updateOrderStatus');
+    
+    await updateOrderStatusFn({
+      orderId,
+      nextStatus: newStatus,
+      driverId
+    });
 
-    if (newStatus === 'delivered') {
-      // Need runTransaction to read driver stats accurately, or use increment
-      await runTransaction(db, async (transaction) => {
-        const driverRef = doc(db, 'drivers', driverId);
-        const dSnap = await transaction.get(driverRef);
-        if (!dSnap.exists()) return;
-        const data = dSnap.data();
-        
-        transaction.update(doc(db, 'orders', orderId), { status: newStatus });
-        transaction.update(driverRef, {
-          availability: 'online',
-          currentOrderId: null,
-          completedOrders: (data.completedOrders || 0) + 1,
-          totalDeliveries: (data.totalDeliveries || 0) + 1,
-          totalEarnings: (data.totalEarnings || 0) + fee
-        });
+    if (newStatus !== 'delivered') {
+      await updateDoc(doc(db, 'drivers', driverId), {
+        availability: newStatus === 'picked_up' ? 'busy' : 'online'
       });
-    } else {
-      await batch.commit();
     }
   }
 
   async rejectOrder(driverId: string, orderId: string) {
-    await runTransaction(db, async (transaction) => {
-      const orderRef = doc(db, 'orders', orderId);
-      const docSnap = await transaction.get(orderRef);
-      if (!docSnap.exists()) return;
-      const o = docSnap.data();
-      const rejectedBy = o.rejectedBy || [];
-      rejectedBy.push(driverId);
-      
-      transaction.update(orderRef, {
-         status: 'ready_for_delivery',
-         assignedDriverId: null,
-         rejectedBy: rejectedBy
-      });
-      
-      transaction.update(doc(db, 'users', driverId), {
-         currentOrderId: null
-      });
+    const { functions } = await import('../../services/firebase');
+    const { httpsCallable } = await import('firebase/functions');
+    const updateOrderStatusFn = httpsCallable(functions, 'updateOrderStatus');
+    
+    await updateOrderStatusFn({
+      orderId,
+      nextStatus: 'ready_for_delivery',
+      driverId
+    });
+
+    await updateDoc(doc(db, 'drivers', driverId), {
+      currentOrderId: null,
+      availability: 'online'
     });
   }
 
   async updateDriverLocationAndStatus(driverId: string, coords: any, isOnline: boolean) {
-    await runTransaction(db, async (transaction) => {
-      const driverRef = doc(db, 'drivers', driverId);
-      const locRef = doc(db, 'driverLocations', driverId);
-      transaction.update(driverRef, { isOnline });
-      transaction.set(locRef, {
-        driverId,
-        coords,
-        isOnline,
-        updatedAt: new Date().toISOString(),
-      }, { merge: true });
+    const driverRef = doc(db, 'drivers', driverId);
+    const locRef = doc(db, 'driverLocations', driverId);
+    
+    await updateDoc(driverRef, { 
+      availability: isOnline ? 'online' : 'offline'
     });
+
+    await setDoc(locRef, {
+      driverId,
+      coords,
+      isOnline,
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
   }
 
   async requestSettlement(userId: string, amount: number, details: any) {
-    await addDoc(collection(db, 'settlementRequests'), {
-      userId,
-      amount,
-      details,
-      status: 'pending',
-      requestedAt: new Date().toISOString(),
-    });
+    const { functions } = await import('../../services/firebase');
+    const { httpsCallable } = await import('firebase/functions');
+    const requestSettlementFn = httpsCallable(functions, 'requestWalletSettlement');
+    await requestSettlementFn({ amount, details });
   }
 
-  async assignDriverToOrder(orderId: string, driverId: string) {
-    const batch = writeBatch(db);
-    batch.update(doc(db, 'orders', orderId), {
-      status: 'accepted',
-      driverId: driverId,
+  async assignDriverToOrder(orderId: string, driverId: string, driverName?: string) {
+    const { functions } = await import('../../services/firebase');
+    const { httpsCallable } = await import('firebase/functions');
+    const updateOrderStatusFn = httpsCallable(functions, 'updateOrderStatus');
+    
+    await updateOrderStatusFn({
+      orderId,
+      nextStatus: 'accepted',
+      driverId,
+      driverName: driverName || ''
     });
-    batch.update(doc(db, 'drivers', driverId), {
+
+    await updateDoc(doc(db, 'drivers', driverId), {
       availability: 'busy',
       currentOrderId: orderId
     });
-    await batch.commit();
   }
 }
 

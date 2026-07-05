@@ -243,11 +243,23 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
       try {
         await import('../../services/orders/service').then(module => {
           return module.orderService.placeOrder({
-            orderGroupData: cleanedGroupOrder,
-            storeOrdersData: storeOrdersData,
+            cartItems: cart.items.map(item => ({ id: item.id, quantity: item.quantity })),
+            storeId: storesInCart[0]?.id || '',
+            activeCouponId: activeCoupon?.id || null,
             pointsToRedeem: pointsToRedeem,
-            currentUserUid: currentUser?.uid,
-            activeCouponId: activeCoupon?.id
+            address: activeAddress || {
+              governorate: newGov,
+              center: newCenter,
+              village: newVillage,
+              street: newStreet,
+              building: newBuilding,
+              floor: newFloor,
+              apartment: newApartment,
+              landmark: newLandmark,
+              gpsCoords: location.coords ? { latitude: location.coords.lat, longitude: location.coords.lng } : null
+            },
+            paymentMethod: paymentMethod,
+            paymentReceipt: paymentReceiptUrl || null
           });
         });
 

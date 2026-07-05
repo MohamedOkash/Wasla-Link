@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { LanguageProvider } from './contexts/LanguageProvider';
 import { useTranslation } from './hooks/useTranslation';
@@ -9,12 +9,30 @@ import { CartConflictModal } from './components/premium/CartConflictModal';
 import { OfflineIndicator } from './components/common/OfflineIndicator';
 
 import { App as CapacitorApp } from '@capacitor/app';
-import { useEffect } from 'react';
+import { RefreshCw } from 'lucide-react';
+
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from './services/firebase';
+
+const CURRENT_VERSION = '1.0.0';
+
+function isOutdated(local: string, server: string): boolean {
+  const localParts = local.split('.').map(Number);
+  const serverParts = server.split('.').map(Number);
+  for (let i = 0; i < Math.max(localParts.length, serverParts.length); i++) {
+    const l = localParts[i] || 0;
+    const s = serverParts[i] || 0;
+    if (s > l) return true;
+    if (l > s) return false;
+  }
+  return false;
+}
 
 function AppContent() {
   const { role, theme } = useApp();
   const { isRTL } = useTranslation();
   const isDesktop = role === 'vendor' || role === 'admin';
+  const [updateInfo, setUpdateInfo] = useState<{ critical: boolean; message: string; version: string } | null>(null);
   
   useEffect(() => {
     CapacitorApp.addListener('backButton', ({ canGoBack }) => {
@@ -29,6 +47,69 @@ function AppContent() {
     };
   }, []);
 
+  useEffect(() => {
+    async function checkVersion() {
+      try {
+        const snap = await getDoc(doc(db, 'system', 'appVersion'));
+        if (snap.exists()) {
+          const data = snap.data();
+          const serverVersion = data.version || '1.0.0';
+          const isCritical = data.critical === true;
+          const msg = data.message || 'New version available!';
+          if (isOutdated(CURRENT_VERSION, serverVersion)) {
+            setUpdateInfo({ critical: isCritical, message: msg, version: serverVersion });
+          }
+        }
+      } catch (err) {
+        console.error('Version check failed:', err);
+      }
+    }
+    checkVersion();
+  }, []);
+
+  const renderUpdateOverlay = () => {
+    if (!updateInfo) return null;
+
+    return (
+      <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex items-center justify-center p-6 text-center">
+        <div className="bg-theme-card border border-theme-border rounded-[32px] p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 flex flex-col items-center">
+          <div className="w-16 h-16 bg-primary/20 text-primary rounded-full flex items-center justify-center mb-6 border border-primary/30 animate-pulse">
+            <RefreshCw size={32} />
+          </div>
+          <h2 className="text-xl font-black mb-2 text-theme-text">{isRTL ? 'تحديث جديد متوفر' : 'New Update Available'} ({updateInfo.version})</h2>
+          <p className="text-sm font-bold text-theme-muted mb-6 leading-relaxed">
+            {updateInfo.message}
+          </p>
+          <div className="flex flex-col gap-2 w-full">
+            <button
+              onClick={() => {
+                window.open('https://play.google.com/store/apps', '_blank');
+              }}
+              className="w-full bg-primary hover:bg-primary-hover text-white font-black py-3.5 rounded-xl text-sm transition shadow-md active:scale-95"
+            >
+              {isRTL ? 'تحديث الآن' : 'Update Now'}
+            </button>
+            {!updateInfo.critical && (
+              <button
+                onClick={() => setUpdateInfo(null)}
+                className="w-full bg-theme-bg border border-theme-border text-theme-text font-black py-3 rounded-xl text-sm transition hover:bg-theme-border/30 active:scale-95"
+              >
+                {isRTL ? 'لاحقاً' : 'Later'}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  if (updateInfo && updateInfo.critical) {
+    return (
+      <div dir={isRTL ? 'rtl' : 'ltr'} className="bg-black min-h-screen font-sans flex items-center justify-center">
+        {renderUpdateOverlay()}
+      </div>
+    );
+  }
   
   return (
     <div 
@@ -55,6 +136,7 @@ function AppContent() {
           <AppRoutes />
           <CartConflictModal />
           <ToastManager />
+          {renderUpdateOverlay()}
         </ErrorBoundary>
       </div>
     </div>

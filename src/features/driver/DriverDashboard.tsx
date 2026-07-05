@@ -1,6 +1,6 @@
 import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState, useEffect } from 'react';
-import { BarChart3, ClipboardList, User, LogOut, Bike, Star, Power, Wallet, MapPin, Navigation, Signal, AlertTriangle } from 'lucide-react';
+import { BarChart3, ClipboardList, User, LogOut, Bike, Star, Power, Wallet, MapPin, Navigation, Signal, AlertTriangle, Ban } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -200,6 +200,23 @@ export const DriverDashboard: React.FC = () => {
         </div>
         <h2 className="text-xl font-black mb-2 text-theme-text">Application Rejected</h2>
         <p className="text-theme-muted text-sm font-bold">Unfortunately, your application was not approved.</p>
+      </div>
+    );
+  }
+
+  if (driver.status === 'blocked' || driver.status === 'suspended') {
+    return (
+      <div className="h-screen bg-theme-bg flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mb-6">
+          <Ban size={40} />
+        </div>
+        <h2 className="text-xl font-black mb-2 text-theme-text">{isRTL ? 'حسابك معطل مؤقتاً' : 'Account Suspended'}</h2>
+        <p className="text-theme-muted text-sm font-bold">
+          {isRTL ? 'تم إيقاف حسابك مؤقتاً من قبل الإدارة. يرجى التواصل مع الدعم.' : 'Your driver account has been suspended by administration. Please contact support.'}
+        </p>
+        <button onClick={() => { goHome(); window.location.reload(); }} className="mt-8 px-6 py-3 bg-theme-card border border-theme-border rounded-xl text-theme-text text-sm font-black">
+          {isRTL ? 'تحديث' : 'Refresh'}
+        </button>
       </div>
     );
   }

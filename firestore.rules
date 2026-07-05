@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Auth & Role Helpers
+    // Auth & Role Helpers using Secure Custom Claims
     function signedIn() {
       return request.auth != null;
     }
@@ -15,46 +15,48 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
     
-    function hasRole(role) {
-      return signedIn() && getUserData().role == role;
-    }
-    
     function isAdmin() {
-      return hasRole('admin');
+      return signedIn() && (request.auth.token.role == 'admin' || request.auth.token.admin == true);
     }
     
     function isVendor() {
-      return hasRole('vendor');
+      return signedIn() && (request.auth.token.role == 'vendor' || request.auth.token.vendor == true);
     }
     
     function isDriver() {
-      return hasRole('driver');
+      return signedIn() && (request.auth.token.role == 'driver' || request.auth.token.driver == true);
+    }
+
+    function isVendorOfStore(storeId) {
+      return signedIn() && get(/databases/$(database)/documents/stores/$(storeId)).data.vendorId == request.auth.uid;
     }
 
     // --- COLLECTION RULES ---
 
-    // 1. users Collection
+    // 1. users Collection (Protect role, points, and referrals from client updates)
     match /users/{userId} {
-      allow create: if signedIn() && request.auth.uid == userId;
+      allow create: if signedIn() && request.auth.uid == userId 
+                    && (!request.resource.data.keys().contains('role') || request.resource.data.role == 'customer')
+                    && (!request.resource.data.keys().contains('points') || request.resource.data.points == 0);
       allow read: if isOwner(userId) || isAdmin();
-      allow update: if isOwner(userId) || isAdmin();
+      allow update: if (isOwner(userId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'points', 'referralCode', 'referredBy', 'createdAt'])) || isAdmin();
       allow delete: if isAdmin();
     }
 
-    // 2. stores Collection
+    // 2. stores Collection (Disable client-side updates of totalOrders and pricing/fee zones)
     match /stores/{storeId} {
-      allow read: if true; // Publicly readable for customers to browse stores
+      allow read: if true;
       allow create: if isAdmin() || (isVendor() && request.resource.data.vendorId == request.auth.uid);
-      allow update: if isAdmin() || (isVendor() && resource.data.vendorId == request.auth.uid) || true; // Allow customers to update totalOrders during checkout
+      allow update: if isAdmin() || (isVendor() && resource.data.vendorId == request.auth.uid && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['totalOrders', 'vendorId', 'createdAt']));
       allow delete: if isAdmin();
     }
 
-    // 3. products Collection
+    // 3. products Collection (Strictly prevent price modifications by customers or anonymous users)
     match /products/{productId} {
-      allow read: if true; // Publicly readable for browsing catalog
-      allow create: if isAdmin() || (isVendor() && get(/databases/$(database)/documents/stores/$(request.resource.data.storeId)).data.vendorId == request.auth.uid);
-      allow update: if isAdmin() || (isVendor() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid && request.resource.data.storeId == resource.data.storeId) || true; // Allow stock deductions during checkout
-      allow delete: if isAdmin() || (isVendor() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
+      allow read: if true;
+      allow create: if isAdmin() || (isVendor() && isVendorOfStore(request.resource.data.storeId));
+      allow update: if isAdmin() || (isVendor() && isVendorOfStore(resource.data.storeId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['storeId', 'createdAt', 'currentStock', 'reservedStock', 'averageRating', 'ratingsCount']));
+      allow delete: if isAdmin() || (isVendor() && isVendorOfStore(resource.data.storeId));
     }
 
     // 4. categories Collection
@@ -69,40 +71,29 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // 6. orders Collection
+    // 6. orders & orderGroups Collections (Zero client-side order creation/status update)
     match /orders/{orderId} {
-      allow create: if (signedIn() && request.resource.data.customerId == request.auth.uid) || (!signedIn() && request.resource.data.customerId == 'guest');
       allow read: if isAdmin()
-  || (signedIn() && resource.data.customerId == request.auth.uid)
-  || (
-    signedIn() &&
-    get(/databases/$(database)/documents/stores/$(resource.data.shopId))
-      .data.vendorId == request.auth.uid
-  )
-  || (
-    isDriver() &&
-    resource.data.driverId == request.auth.uid
-  );
-      allow update: if isAdmin()
-                  || (signedIn() && resource.data.customerId == request.auth.uid && request.resource.data.status == 'cancelled')
-                  || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.shopId)).data.vendorId == request.auth.uid)
-                  || (isDriver() && (resource.data.status == 'new' || resource.data.driverId == request.auth.uid));
+                  || (signedIn() && resource.data.customerId == request.auth.uid)
+                  || (signedIn() && isVendorOfStore(resource.data.shopId))
+                  || (isDriver() && resource.data.driverId == request.auth.uid);
+      // Client cannot create orders directly. Must call Cloud Function.
+      allow create: if false;
+      // Client can only update reviews/ratings on their orders. Other updates must use Cloud Functions.
+      allow update: if isAdmin() || (signedIn() && resource.data.customerId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ratingStore', 'ratingDriver', 'ratingProducts', 'ratingComment']));
       allow delete: if isAdmin();
     }
 
-    // 6a. orderGroups Collection
     match /orderGroups/{groupId} {
-      allow create: if (signedIn() && request.resource.data.customerId == request.auth.uid) || (!signedIn() && request.resource.data.customerId == 'guest');
       allow read: if isAdmin() || (signedIn() && resource.data.customerId == request.auth.uid);
-      allow update: if isAdmin() || (signedIn() && resource.data.customerId == request.auth.uid && request.resource.data.status == 'cancelled');
+      allow create: if false;
+      allow update: if isAdmin();
       allow delete: if isAdmin();
     }
 
-    // 6b. chatThreads Collection
+    // 7. chatThreads Collection (Secure chat between parties)
     match /chatThreads/{threadId} {
-      allow read, update: if signedIn();
-      allow create: if signedIn();
-      allow delete: if isAdmin();
+      allow read, write: if signedIn();
       
       match /messages/{messageId} {
         allow read, create: if signedIn();
@@ -110,13 +101,13 @@ service cloud.firestore {
       }
     }
 
-    // 7. notifications Collection
+    // 8. notifications Collection
     match /notifications/{notifId} {
-      allow create: if signedIn();
+      allow create: if isAdmin() || signedIn();
       allow read, update, delete: if signedIn() && resource.data.userId == request.auth.uid;
     }
 
-    // 8. reviews Collection
+    // 9. reviews Collection
     match /reviews/{reviewId} {
       allow read: if true;
       allow create: if signedIn() && request.resource.data.customerId == request.auth.uid;
@@ -124,41 +115,36 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // 9. drivers Collection
+    // 10. drivers Collection
     match /drivers/{driverId} {
       allow read: if true;
       allow create: if signedIn() && request.auth.uid == driverId;
-      allow update: if isAdmin() || (signedIn() && isOwner(driverId));
+      allow update: if isAdmin() || (signedIn() && isOwner(driverId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'isApproved', 'createdAt']));
       allow delete: if isAdmin();
     }
     
-    // 9.1 driverLocations Collection
     match /driverLocations/{driverId} {
       allow read: if signedIn();
       allow write: if isOwner(driverId) || isAdmin();
     }
     
-    // 9.2 driverLocationHistory Collection
     match /driverLocationHistory/{driverId}/points/{pointId} {
       allow read: if isOwner(driverId) || isAdmin();
       allow create: if isOwner(driverId);
       allow update, delete: if isAdmin();
     }
 
-    // 10. driverMetrics Collection
     match /driverMetrics/{metricId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // 11. walletTransactions Collection
+    // 11. Wallets & Financial Transactions (Cloud Function/Admin ONLY write)
     match /walletTransactions/{transId} {
-      allow read: if isAdmin()
-  || resource.data.userId == request.auth.uid;
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid) || (isVendor() && resource.data.storeId == getUserData().storeId);
       allow write: if isAdmin();
     }
 
-    // 12. walletSettlements Collection
     match /walletSettlements/{settleId} {
       allow read: if signedIn();
       allow create: if isVendor() && request.resource.data.storeId == getUserData().storeId;
@@ -166,119 +152,86 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // 13. returnRequests / refundRequests / replacementRequests Collections
+    // 12. Returns & Refunds
     match /returnRequests/{reqId} {
       allow create: if signedIn() && request.resource.data.customerId == request.auth.uid;
-      allow read: if isAdmin()
-  || resource.data.customerId == request.auth.uid
-  || get(
-       /databases/$(database)/documents/stores/$(resource.data.storeId)
-     ).data.vendorId == request.auth.uid;
-      allow update: if isAdmin() 
-                  || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
+      allow read: if isAdmin() || resource.data.customerId == request.auth.uid || isVendorOfStore(resource.data.storeId);
+      allow update: if isAdmin() || (isVendor() && isVendorOfStore(resource.data.storeId));
       allow delete: if isAdmin();
     }
     match /refundRequests/{reqId} {
       allow create: if signedIn() && request.resource.data.customerId == request.auth.uid;
-      allow read: if isAdmin()
-  || resource.data.customerId == request.auth.uid
-  || get(
-       /databases/$(database)/documents/stores/$(resource.data.storeId)
-     ).data.vendorId == request.auth.uid;
-      allow update: if isAdmin() 
-                  || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
+      allow read: if isAdmin() || resource.data.customerId == request.auth.uid || isVendorOfStore(resource.data.storeId);
+      allow update: if isAdmin() || (isVendor() && isVendorOfStore(resource.data.storeId));
       allow delete: if isAdmin();
     }
     match /replacementRequests/{reqId} {
       allow create: if signedIn() && request.resource.data.customerId == request.auth.uid;
-      allow read: if isAdmin()
-  || resource.data.customerId == request.auth.uid
-  || get(
-       /databases/$(database)/documents/stores/$(resource.data.storeId)
-     ).data.vendorId == request.auth.uid;
-      allow update: if isAdmin() 
-                  || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
+      allow read: if isAdmin() || resource.data.customerId == request.auth.uid || isVendorOfStore(resource.data.storeId);
+      allow update: if isAdmin() || (isVendor() && isVendorOfStore(resource.data.storeId));
       allow delete: if isAdmin();
     }
 
-    // 14. coupons Collection
+    // 13. coupons Collection (Read-only for clients, updates locked to Admin/Server)
     match /coupons/{couponId} {
       allow read: if true;
       allow write: if isAdmin();
-      allow update: if true; // Allows coupon usage increment during checkout
     }
 
-    // 15. campaigns Collection
+    // 14. campaigns Collection
     match /campaigns/{campaignId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // 16. deliveryZones Collection
+    // 15. deliveryZones Collection
     match /deliveryZones/{zoneId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // 17. businessHours Collection
+    // 16. businessHours Collection
     match /businessHours/{hoursId} {
       allow read: if true;
-      allow create: if isAdmin()
-  || (
-    isVendor()
-    && get(
-         /databases/$(database)/documents/stores/$(request.resource.data.storeId)
-       ).data.vendorId == request.auth.uid
-  );
-
-      allow update: if isAdmin()
-  || (
-    isVendor()
-    && get(
-         /databases/$(database)/documents/stores/$(resource.data.storeId)
-       ).data.vendorId == request.auth.uid
-  );
-
+      allow create: if isAdmin() || (isVendor() && isVendorOfStore(request.resource.data.storeId));
+      allow update: if isAdmin() || (isVendor() && isVendorOfStore(resource.data.storeId));
       allow delete: if isAdmin();
     }
 
-    // 18. invoices Collection
+    // 17. invoices Collection
     match /invoices/{invoiceId} {
       allow read: if isAdmin() 
                   || (signedIn() && resource.data.customerId == request.auth.uid)
-                  || (signedIn() && get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.vendorId == request.auth.uid);
+                  || (signedIn() && isVendorOfStore(resource.data.storeId));
       allow write: if isAdmin();
     }
 
-    // 19. platformMetrics Collection
+    // 18. platformMetrics Collection
     match /platformMetrics/{metricId} {
       allow read, write: if isAdmin();
     }
 
-    // 20. productTemplates Collection
+    // 19. productTemplates Collection
     match /productTemplates/{templateId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // 21. assets Collection
+    // 20. assets Collection
     match /assets/{assetId} {
       allow read: if true;
       allow create: if signedIn();
-
-      allow update: if isAdmin()
-  || resource.data.ownerId == request.auth.uid;
-
+      allow update: if isAdmin() || resource.data.ownerId == request.auth.uid;
       allow delete: if isAdmin();
     }
 
-    // 22. stockMovements
+    // 21. stockMovements (Only vendor/admin can write, customer can only read stock statuses)
     match /stockMovements/{movementId} {
-      allow read: if true;
+      allow read: if signedIn();
       allow write: if isAdmin() || isVendor();
     }
 
-    // 23. config & adminSettings
+    // 22. config & settings
     match /config/{document=**} {
       allow read: if true;
       allow write: if isAdmin();
@@ -286,8 +239,12 @@ service cloud.firestore {
     match /adminSettings/{document=**} {
       allow read, write: if isAdmin();
     }
+    match /platformSettings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
 
-    // 24. analytics & brands (global)
+    // 23. analytics & brands
     match /analytics/{docId} {
       allow read, write: if isAdmin();
     }
@@ -296,13 +253,10 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // 25. Vendor specific catalog
+    // 24. Vendor Catalog Settings
     match /vendorCategories/{categoryId} {
       allow read: if true;
-
-      allow create, update, delete:
-        if isVendor()
-        && request.resource.data.storeId == getUserData().storeId;
+      allow create, update, delete: if isVendor() && request.resource.data.storeId == getUserData().storeId;
     }
     match /vendorSubCategories/{subCatId} {
       allow read: if true;
@@ -312,19 +266,12 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin() || (isVendor() && request.resource.data.storeId == getUserData().storeId);
     }
-    
     match /offers/{offerId} {
       allow read: if true;
-
-      allow create, update, delete:
-        if isAdmin()
-        || (
-          isVendor()
-          && request.resource.data.storeId == getUserData().storeId
-        );
+      allow create, update, delete: if isAdmin() || (isVendor() && request.resource.data.storeId == getUserData().storeId);
     }
     
-    // 26. driverRequests Collection
+    // 25. driverRequests Collection
     match /driverRequests/{requestId} {
       allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
       allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
@@ -332,7 +279,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // 27. referrals Collection
+    // 26. referrals Collection
     match /referrals/{referralId} {
       allow read: if isAdmin() || (signedIn() && (resource.data.referrerId == request.auth.uid || resource.data.referredId == request.auth.uid));
       allow create: if signedIn();
@@ -340,22 +287,22 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // 28. pointsHistory Collection
+    // 27. pointsHistory Collection
     match /pointsHistory/{historyId} {
       allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
-      allow create: if isAdmin() || signedIn();
+      allow create: if isAdmin(); // Server-only creation
       allow update, delete: if isAdmin();
     }
-    // 29. carts Collection
+
+    // 28. carts Collection
     match /carts/{cartId} {
       allow read, write: if signedIn() && request.auth.uid == cartId;
     }
 
-    // 30. securityLogs Collection
+    // 29. securityLogs & Immutable Ledger
     match /securityLogs/{logId} {
       allow read, write: if isAdmin();
     }
-    // 31. Financial Ledger Collections
     match /platformTransactions/{txId} {
       allow read, write: if isAdmin();
     }
@@ -372,19 +319,19 @@ service cloud.firestore {
       allow create: if signedIn();
       allow update, delete: if isAdmin();
     }
-    match /platformSettings/{docId} {
-      allow read: if true;
+
+    // 30. payments, refunds, and logs
+    match /payments/{paymentId} {
+      allow read: if signedIn() && (resource.data.customerId == request.auth.uid || isAdmin());
       allow write: if isAdmin();
     }
-    // 32. Vendor and Driver Wallets
-    match /payments/{paymentId} {
-      allow read, write: if signedIn();
-    }
     match /refundRequests/{refundId} {
-      allow read, write: if signedIn();
+      allow read: if signedIn() && (resource.data.customerId == request.auth.uid || isAdmin());
+      allow write: if isAdmin();
     }
     match /paymentLogs/{logId} {
-      allow read, write: if signedIn();
+      allow read: if isAdmin();
+      allow write: if isAdmin();
     }
 
     match /vendorWallets/{walletId} {
@@ -396,9 +343,10 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
-    // 33. system Collection (Counters)
+    // 31. system Collection (Counters & App Version)
     match /system/{document=**} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }
