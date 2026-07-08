@@ -15,6 +15,7 @@ export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
   const { t } = useTranslation();
   const { orders, isRTL, showToast } = useApp();
   const [activeChatOrderId, setActiveChatOrderId] = useState<string | null>(null);
+  const [enteredOtps, setEnteredOtps] = useState<Record<string, string>>({});
 
   // Filters based on phase 14 order statuses
   const availableOrders = orders.filter(o => o.status === 'ready_for_delivery' && !o.driverId);
@@ -39,10 +40,20 @@ export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
 
     if (!newStatus) return;
 
+    let otpParam: string | undefined;
+    if (currentStatus === 'delivering') {
+      const enteredOtp = enteredOtps[orderId] || '';
+      if (enteredOtp.length !== 6) {
+        showToast(isRTL ? 'يرجى إدخال رمز التحقق المكون من 6 أرقام للتسليم' : 'Please enter the 6-digit verification OTP to complete delivery', 'warning');
+        return;
+      }
+      otpParam = enteredOtp;
+    }
+
     try {
       const orderObj = orders.find(o => o.id === orderId);
       const fee = orderObj?.estimatedDriverEarnings ?? orderObj?.deliveryFee ?? 20;
-      await import('../../services/driver/service').then(m => m.driverService.updateOrderStatus(driver.id, orderId, newStatus, fee));
+      await import('../../services/driver/service').then(m => m.driverService.updateOrderStatus(driver.id, orderId, newStatus, fee, otpParam));
       showToast(t('str_1117'));
     } catch (error) {
       console.error(error);
@@ -117,13 +128,50 @@ export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
                     <span>{isRTL ? 'محادثة الطلب' : 'Order Chat'}</span>
                   </button>
 
+                  {/* Navigation Links */}
+                  <div className="flex gap-2 w-full">
+                    <a
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${order.location?.coords?.lat || 30.0444},${order.location?.coords?.lng || 31.2357}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 bg-theme-bg border border-theme-border text-[9px] font-black text-theme-text py-2.5 rounded-xl text-center flex items-center justify-center hover:bg-theme-border/20 transition"
+                    >
+                      Google Maps
+                    </a>
+                    <a
+                      href={`https://waze.com/ul?ll=${order.location?.coords?.lat || 30.0444},${order.location?.coords?.lng || 31.2357}&navigate=yes`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 bg-theme-bg border border-theme-border text-[9px] font-black text-blue-500 py-2.5 rounded-xl text-center flex items-center justify-center hover:bg-theme-border/20 transition"
+                    >
+                      Waze
+                    </a>
+                  </div>
+
+                  {/* OTP Input for Delivery Verification */}
+                  {(order.status as string) === 'delivering' && (
+                    <div className="space-y-1.5 border-t border-theme-border/40 pt-2.5">
+                      <label className="text-[10px] text-theme-muted font-black block">
+                        {isRTL ? 'أدخل رمز التحقق (OTP)' : 'Enter Verification OTP'}
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={6}
+                        placeholder="e.g. 123456"
+                        value={enteredOtps[order.id] || ''}
+                        onChange={(e) => setEnteredOtps(prev => ({ ...prev, [order.id]: e.target.value }))}
+                        className="w-full bg-theme-bg border border-theme-border px-3 py-2 rounded-xl text-center font-mono font-black text-sm tracking-widest text-theme-text"
+                      />
+                    </div>
+                  )}
+
                   <button
                     onClick={() => handleUpdateStatus(order.id, order.status)}
                     className="w-full bg-primary hover:bg-primary-hover text-white py-3 rounded-xl font-black text-sm shadow-md transition flex justify-center items-center gap-2"
                   >
                     {order.status === 'accepted' && (t('str_1119'))}
                     {order.status === 'picked_up' && (t('str_1120'))}
-                    {order.status === 'on_the_way' && (t('str_1121'))}
+                    {(order.status as string) === 'delivering' && (isRTL ? 'توصيل الطلب والتحقق' : 'Complete Delivery & Verify')}
                     <ArrowRight size={16} className={isRTL ? 'rotate-180' : ''} />
                   </button>
                 </div>

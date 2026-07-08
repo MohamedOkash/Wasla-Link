@@ -20,7 +20,7 @@ export class DriverService {
     });
   }
 
-  async updateOrderStatus(driverId: string, orderId: string, newStatus: string, fee?: number) {
+  async updateOrderStatus(driverId: string, orderId: string, newStatus: string, fee?: number, otp?: string) {
     const { functions } = await import('../../services/firebase');
     const { httpsCallable } = await import('firebase/functions');
     const updateOrderStatusFn = httpsCallable(functions, 'updateOrderStatus');
@@ -28,12 +28,18 @@ export class DriverService {
     await updateOrderStatusFn({
       orderId,
       nextStatus: newStatus,
-      driverId
+      driverId,
+      otp: otp || null
     });
 
-    if (newStatus !== 'delivered') {
+    if (newStatus === 'delivered') {
       await updateDoc(doc(db, 'drivers', driverId), {
-        availability: newStatus === 'picked_up' ? 'busy' : 'online'
+        availability: 'available',
+        currentOrderId: null
+      });
+    } else {
+      await updateDoc(doc(db, 'drivers', driverId), {
+        availability: newStatus === 'picked_up' ? 'delivering' : 'busy'
       });
     }
   }

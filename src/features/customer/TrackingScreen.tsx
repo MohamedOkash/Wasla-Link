@@ -297,6 +297,23 @@ export const TrackingScreen: React.FC<TrackingScreenProps> = ({ orderId, goBack 
           </div>
         )}
 
+        {/* Verification OTP code for security */}
+        {order && (order as any).deliveryOtp && (order.status as string) !== 'delivered' && (order.status as string) !== 'completed' && (
+          <div className="bg-primary/5 border border-primary/20 p-3.5 rounded-2xl flex justify-between items-center mb-4.5 theme-transition">
+            <div>
+              <span className="text-[10px] text-theme-muted font-black block leading-none mb-1">
+                {isRTL ? 'رمز التحقق من التوصيل (OTP)' : 'Delivery Verification OTP'}
+              </span>
+              <span className="text-[9px] text-theme-muted font-bold block">
+                {isRTL ? 'أعطِ هذا الرمز للكابتن عند استلام الطلب' : 'Provide this code to the captain on delivery'}
+              </span>
+            </div>
+            <span className="text-lg font-black text-primary tracking-wider font-mono bg-primary/10 px-3.5 py-1.5 rounded-xl border border-primary/20">
+              {(order as any).deliveryOtp}
+            </span>
+          </div>
+        )}
+
         {/* Store & Order Details summary inside Sheet */}
         {order && (
           <div className="bg-theme-bg/40 border border-theme-border/50 rounded-2xl p-3.5 mb-5 space-y-2.5 text-xs font-semibold theme-transition">

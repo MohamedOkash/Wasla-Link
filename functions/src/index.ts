@@ -422,6 +422,8 @@ export const createOrder = functions.https.onCall(async (data, context) => {
       transaction.set(systemCounterRef, { globalOrders: 1 });
     }
 
+    const deliveryOtp = Math.floor(100000 + Math.random() * 900000).toString();
+
     const childOrderIds: string[] = [];
     for (const storeId of storeIds) {
       const calc = storeCalculations[storeId];
@@ -471,6 +473,7 @@ export const createOrder = functions.https.onCall(async (data, context) => {
           isVerified: true
         },
         status: initialStatus,
+        deliveryOtp,
         createdAt: new Date().toISOString(),
         storeOrderNumber,
         customerOrderNumber,
@@ -498,6 +501,7 @@ export const createOrder = functions.https.onCall(async (data, context) => {
         isVerified: true
       },
       status: initialStatus,
+      deliveryOtp,
       createdAt: new Date().toISOString(),
       customerOrderNumber,
       globalOrderNumber,
@@ -564,6 +568,14 @@ export const updateOrderStatus = functions.https.onCall(async (data, context) =>
     const allowed = ALLOWED_TRANSITIONS[currentStatus] || [];
     if (!allowed.includes(nextStatus)) {
       throw new functions.https.HttpsError('failed-precondition', `Invalid state transition from ${currentStatus} to ${nextStatus}.`);
+    }
+
+    if (nextStatus === 'delivered') {
+      const submittedOtp = data.otp;
+      const actualOtp = orderData.deliveryOtp;
+      if (actualOtp && submittedOtp !== actualOtp) {
+        throw new functions.https.HttpsError('failed-precondition', 'Invalid verification OTP code. Delivery rejected.');
+      }
     }
 
     const updates: any = {
