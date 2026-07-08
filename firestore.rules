@@ -36,8 +36,8 @@ service cloud.firestore {
     // 1. users Collection (Protect role, points, and referrals from client updates)
     match /users/{userId} {
       allow create: if signedIn() && request.auth.uid == userId 
-                    && (!request.resource.data.keys().contains('role') || request.resource.data.role == 'customer')
-                    && (!request.resource.data.keys().contains('points') || request.resource.data.points == 0);
+                    && (!('role' in request.resource.data) || request.resource.data.role == 'customer')
+                    && (!('points' in request.resource.data) || request.resource.data.points == 0);
       allow read: if isOwner(userId) || isAdmin();
       allow update: if (isOwner(userId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'points', 'referralCode', 'referredBy', 'createdAt'])) || isAdmin();
       allow delete: if isAdmin();
