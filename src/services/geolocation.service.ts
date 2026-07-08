@@ -21,6 +21,7 @@ class GeolocationService {
   private lastLat: number | null = null;
   private lastLng: number | null = null;
   private lastSyncTime: number = 0;
+  private syncIntervalMs: number = 30000;
 
   // Configuration
   private readonly MIN_MOVEMENT_METERS = 5;
@@ -34,6 +35,18 @@ class GeolocationService {
   // History batch buffer
   private historyBuffer: any[] = [];
   private historyFlushInterval: any = null;
+
+  setTrackingIntervalForStatus(status: string) {
+    if (status === 'delivering') {
+      this.syncIntervalMs = 5000;
+    } else if (status === 'busy') {
+      this.syncIntervalMs = 15000;
+    } else if (status === 'available' || status === 'online') {
+      this.syncIntervalMs = 30000;
+    } else {
+      this.syncIntervalMs = 30000;
+    }
+  }
 
   startTracking(driverId: string, onStatusChange: (s: GpsStatus) => void, onLocationUpdate: (l: LocationData) => void) {
     this.driverId = driverId;
@@ -114,7 +127,7 @@ class GeolocationService {
 
     const now = Date.now();
     
-    // Check if we need to sync based on time (3s) or distance (5m)
+    // Check if we need to sync based on time (syncIntervalMs) or distance (5m)
     let shouldSync = false;
 
     if (!this.lastLat || !this.lastLng) {
@@ -123,9 +136,9 @@ class GeolocationService {
       const timeSinceLastSync = now - this.lastSyncTime;
       const distance = this.calculateDistance(this.lastLat, this.lastLng, latitude, longitude);
 
-      if (timeSinceLastSync >= this.FORCE_SYNC_INTERVAL_MS) {
+      if (timeSinceLastSync >= this.syncIntervalMs) {
         shouldSync = true;
-      } else if (distance >= this.MIN_MOVEMENT_METERS && timeSinceLastSync >= this.MIN_SYNC_INTERVAL_MS) {
+      } else if (distance >= this.MIN_MOVEMENT_METERS && timeSinceLastSync >= 3000) {
         shouldSync = true;
       }
     }

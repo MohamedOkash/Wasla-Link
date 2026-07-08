@@ -129,22 +129,28 @@ export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
                   </button>
 
                   {/* Navigation Links */}
-                  <div className="flex gap-2 w-full">
+                  <div className="flex gap-1.5 w-full flex-wrap">
                     <a
                       href={`https://www.google.com/maps/dir/?api=1&destination=${order.location?.coords?.lat || 30.0444},${order.location?.coords?.lng || 31.2357}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 bg-theme-bg border border-theme-border text-[9px] font-black text-theme-text py-2.5 rounded-xl text-center flex items-center justify-center hover:bg-theme-border/20 transition"
+                      className="flex-1 min-w-[70px] bg-theme-bg border border-theme-border text-[9px] font-black text-theme-text py-2 rounded-lg text-center flex items-center justify-center hover:bg-theme-border/20 transition"
                     >
-                      Google Maps
+                      Google
                     </a>
                     <a
                       href={`https://waze.com/ul?ll=${order.location?.coords?.lat || 30.0444},${order.location?.coords?.lng || 31.2357}&navigate=yes`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 bg-theme-bg border border-theme-border text-[9px] font-black text-blue-500 py-2.5 rounded-xl text-center flex items-center justify-center hover:bg-theme-border/20 transition"
+                      className="flex-1 min-w-[70px] bg-theme-bg border border-theme-border text-[9px] font-black text-blue-500 py-2 rounded-lg text-center flex items-center justify-center hover:bg-theme-border/20 transition"
                     >
                       Waze
+                    </a>
+                    <a
+                      href={`maps://?daddr=${order.location?.coords?.lat || 30.0444},${order.location?.coords?.lng || 31.2357}&dirflg=d`}
+                      className="flex-1 min-w-[70px] bg-theme-bg border border-theme-border text-[9px] font-black text-emerald-600 py-2 rounded-lg text-center flex items-center justify-center hover:bg-theme-border/20 transition"
+                    >
+                      Apple
                     </a>
                   </div>
 

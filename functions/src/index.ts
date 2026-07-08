@@ -60,6 +60,71 @@ async function getPlatformSettings(): Promise<PlatformSettings> {
   return DEFAULT_SETTINGS;
 }
 
+function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+async function assignBestDriver(transaction: any, orderId: string, orderData: any, rejectedBy: string[]) {
+  const driversQuery = db.collection('drivers')
+    .where('status', '==', 'approved')
+    .where('availability', 'in', ['available', 'online']);
+  
+  const driversSnap = await driversQuery.get();
+  if (driversSnap.empty) {
+    return null;
+  }
+
+  const storeCoords = orderData.location?.coords || null;
+  const eligibleDrivers: any[] = [];
+
+  for (const docSnap of driversSnap.docs) {
+    const driverId = docSnap.id;
+    if (rejectedBy && rejectedBy.includes(driverId)) {
+      continue;
+    }
+
+    const dData = docSnap.data();
+    let distance = 9999;
+
+    const locRef = db.collection('driverLocations').doc(driverId);
+    const locSnap = await transaction.get(locRef);
+    if (locSnap.exists) {
+      const locData = locSnap.data()!;
+      if (locData.lat && locData.lng && storeCoords && storeCoords.lat && storeCoords.lng) {
+        distance = calculateDistanceKm(locData.lat, locData.lng, storeCoords.lat, storeCoords.lng);
+      }
+    }
+
+    eligibleDrivers.push({
+      id: driverId,
+      name: dData.name,
+      rating: dData.rating || 5.0,
+      activeOrders: dData.activeOrders || 0,
+      distance
+    });
+  }
+
+  if (eligibleDrivers.length === 0) {
+    return null;
+  }
+
+  eligibleDrivers.sort((a, b) => {
+    if (a.distance !== b.distance) return a.distance - b.distance;
+    if (b.rating !== a.rating) return b.rating - a.rating;
+    return a.activeOrders - b.activeOrders;
+  });
+
+  return eligibleDrivers[0];
+}
+
 async function writeAuditLog(transaction: admin.firestore.Transaction, log: {
   action: string;
   collection: string;
@@ -453,6 +518,30 @@ export const createOrder = functions.https.onCall(async (data, context) => {
         };
       });
 
+      let orderStatus = initialStatus;
+      let assignedDriverId = null;
+      let driverName = null;
+
+      if (initialStatus === 'new') {
+        const bestDriver = await assignBestDriver(transaction, childOrderId, {
+          location: {
+            coords: address.gpsCoords || null
+          }
+        }, []);
+        
+        if (bestDriver) {
+          orderStatus = 'driver_assigned';
+          assignedDriverId = bestDriver.id;
+          driverName = bestDriver.name;
+
+          const driverRef = db.collection('drivers').doc(bestDriver.id);
+          transaction.update(driverRef, {
+            availability: 'busy',
+            currentOrderId: childOrderId
+          });
+        }
+      }
+
       const childOrderRef = db.collection('orders').doc(childOrderId);
       transaction.set(childOrderRef, {
         id: childOrderId,
@@ -472,7 +561,10 @@ export const createOrder = functions.https.onCall(async (data, context) => {
           coords: address.gpsCoords || null,
           isVerified: true
         },
-        status: initialStatus,
+        status: orderStatus,
+        assignedDriverId,
+        driverId: assignedDriverId,
+        driverName,
         deliveryOtp,
         createdAt: new Date().toISOString(),
         storeOrderNumber,
@@ -591,6 +683,20 @@ export const updateOrderStatus = functions.https.onCall(async (data, context) =>
       if (driverId && !rejectedBy.includes(driverId)) {
         rejectedBy.push(driverId);
         updates.rejectedBy = rejectedBy;
+      }
+
+      const bestDriver = await assignBestDriver(transaction, orderId, orderData, rejectedBy);
+      if (bestDriver) {
+        updates.status = 'driver_assigned';
+        updates.assignedDriverId = bestDriver.id;
+        updates.driverId = bestDriver.id;
+        updates.driverName = bestDriver.name;
+
+        const driverRef = db.collection('drivers').doc(bestDriver.id);
+        transaction.update(driverRef, {
+          availability: 'busy',
+          currentOrderId: orderId
+        });
       }
     } else if (driverId) {
       updates.driverId = driverId;

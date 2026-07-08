@@ -28,7 +28,9 @@ export const DriverDashboard: React.FC = () => {
 
     const unsub = onSnapshot(doc(db, 'drivers', currentUser.uid), (docSnap) => {
       if (docSnap.exists()) {
-        setDriver({ id: docSnap.id, ...docSnap.data() });
+        const data = docSnap.data();
+        setDriver({ id: docSnap.id, ...data });
+        geoService.setTrackingIntervalForStatus(data.availability || 'offline');
       } else {
         // Fallback profile if drivers document is not created yet
         setDriver({
