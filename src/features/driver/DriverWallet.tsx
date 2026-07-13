@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Wallet, ArrowUpRight, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { db } from '../../services/firebase';
@@ -14,6 +14,7 @@ export function DriverWallet() {
   const [paidBalance, setPaidBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState<SettlementRequest[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [amountInput, setAmountInput] = useState('');
 
   useEffect(() => {
@@ -41,6 +42,18 @@ export function DriverWallet() {
       }
     }
     loadData();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const { onSnapshot } = require('firebase/firestore');
+    const q = query(collection(db, 'driverTransactions'), where('driverId', '==', user.uid), orderBy('createdAt', 'desc'));
+    const unsub = onSnapshot(q, (snap: any) => {
+      const txs: any[] = [];
+      snap.forEach((d: any) => txs.push({ id: d.id, ...d.data() }));
+      setTransactions(txs);
+    }, (err: any) => console.error(err));
+    return () => unsub();
   }, [user]);
 
   const getStatusLabel = (status: string) => {
@@ -78,6 +91,22 @@ export function DriverWallet() {
 
   if (loading) return <div>{t('loading')}</div>;
 
+  const { weeklyEarnings, monthlyEarnings } = useMemo(() => {
+    const deliveryFees = transactions.filter(tx => tx.type === 'delivery_fee');
+    const nowTime = Date.now();
+    const weeklyEarnings = deliveryFees.filter(tx => {
+      const d = tx.createdAt ? new Date(tx.createdAt) : new Date();
+      return (nowTime - d.getTime()) <= 7 * 24 * 60 * 60 * 1000;
+    }).reduce((sum, tx) => sum + (tx.amount || 0), 0);
+
+    const monthlyEarnings = deliveryFees.filter(tx => {
+      const d = tx.createdAt ? new Date(tx.createdAt) : new Date();
+      return (nowTime - d.getTime()) <= 30 * 24 * 60 * 60 * 1000;
+    }).reduce((sum, tx) => sum + (tx.amount || 0), 0);
+
+    return { weeklyEarnings, monthlyEarnings };
+  }, [transactions]);
+
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6 text-theme-text pb-20">
       <h1 className="text-2xl font-bold mb-6">{t('driverWallet')}</h1>
@@ -94,6 +123,20 @@ export function DriverWallet() {
         <div className="bg-theme-card p-6 rounded-2xl border border-theme-border/60 shadow-sm">
           <p className="text-theme-text/70 font-medium">{t('totalPaidOut')}</p>
           <p className="text-3xl font-bold mt-1 text-green-500">{paidBalance.toFixed(2)} {t('currencyEGP')}</p>
+        </div>
+      </div>
+
+      {/* Weekly & Monthly Breakdowns */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+        <div className="bg-theme-card p-5 rounded-2xl border border-theme-border/60 shadow-sm">
+          <p className="text-theme-text/70 font-black text-xs uppercase tracking-wider">Weekly Deliveries Revenue</p>
+          <p className="text-2xl font-black mt-2 text-primary">{weeklyEarnings.toFixed(2)} {t('currencyEGP')}</p>
+          <p className="text-[10px] text-theme-muted font-bold mt-1">Earnings from delivery commissions over the last 7 days</p>
+        </div>
+        <div className="bg-theme-card p-5 rounded-2xl border border-theme-border/60 shadow-sm">
+          <p className="text-theme-text/70 font-black text-xs uppercase tracking-wider">Monthly Deliveries Revenue</p>
+          <p className="text-2xl font-black mt-2 text-primary">{monthlyEarnings.toFixed(2)} {t('currencyEGP')}</p>
+          <p className="text-[10px] text-theme-muted font-bold mt-1">Earnings from delivery commissions over the last 30 days</p>
         </div>
       </div>
 
@@ -146,6 +189,39 @@ export function DriverWallet() {
                   ${req.status === 'rejected' ? 'bg-red-500/10 text-red-500' : ''}
                 `}>
                   {getStatusLabel(req.status)}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Ledger transactions section */}
+      <div className="bg-theme-card rounded-2xl border border-theme-border/60 overflow-hidden mt-6">
+        <div className="p-6 border-b border-theme-border/60">
+          <h2 className="text-xl font-bold">Transaction Statement</h2>
+        </div>
+        <div className="divide-y divide-theme-border/60">
+          {transactions.length === 0 ? (
+            <div className="p-6 text-center text-theme-text/60">No transactions recorded</div>
+          ) : (
+            transactions.map((tx, i) => (
+              <div key={tx.id || i} className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-theme-bg border border-theme-border rounded-xl flex items-center justify-center font-black text-theme-text uppercase text-xs">
+                    {tx.type === 'delivery_fee' ? 'Fee' : tx.type === 'cod_collection' ? 'COD' : 'Cash'}
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm">{tx.description || tx.type}</p>
+                    <p className="text-xs text-theme-text/60">
+                      {tx.createdAt ? new Date(tx.createdAt).toLocaleDateString() : 'Recent'}
+                    </p>
+                  </div>
+                </div>
+                <div className={`font-black text-sm ${
+                  tx.amount < 0 ? 'text-red-500' : 'text-green-500'
+                }`}>
+                  {tx.amount > 0 ? '+' : ''}{tx.amount.toFixed(2)} EGP
                 </div>
               </div>
             ))

@@ -28,13 +28,34 @@ export const CustomerRoutes: React.FC = () => {
     showMap,
     setShowMap,
     showNotifications,
-    setShowNotifications
+    setShowNotifications,
+    registerBackHandler
   } = useApp();
   const [route, setRoute] = useState<{ name: string; params: any }>({ name: 'home', params: {} });
+  const [history, setHistory] = useState<{ name: string; params: any }[]>([]);
 
-  const navigate = (name: string, params: any = {}) => {
+  const navigate = (name: string, params: any = {}, push = true) => {
+    if (['home', 'favorites', 'orders', 'profile'].includes(name) && push) {
+      setHistory([]);
+    } else if (push) {
+      setHistory(prev => [...prev, route]);
+    }
     setRoute({ name, params });
   };
+
+  const goBack = React.useCallback(() => {
+    if (history.length > 0) {
+      const prev = history[history.length - 1];
+      setHistory(h => h.slice(0, -1));
+      setRoute(prev);
+      return true;
+    }
+    return false;
+  }, [history]);
+
+  React.useEffect(() => {
+    return registerBackHandler(goBack);
+  }, [goBack, registerBackHandler]);
 
   const cartCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 

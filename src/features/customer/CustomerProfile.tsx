@@ -9,7 +9,8 @@ import { useApp } from '../../contexts/AppContext';
 import { LoyaltyWallet } from '../../components/loyalty/LoyaltyWallet';
 import { ReferralCenter } from '../../components/referral/ReferralCenter';
 import { DriverRegistration } from '../driver/DriverRegistration';
-import { auth } from '../../services/firebase';
+import { auth, db, safeUpdateDoc } from '../../services/firebase';
+import { doc } from 'firebase/firestore';
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential, sendPasswordResetEmail } from 'firebase/auth';
 
 // Premium Rebuild Imports
@@ -57,7 +58,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
 
   // Navigation sub-states (to open specific edit forms)
-  const [activeSection, setActiveSection] = useState<'root' | 'info' | 'addresses' | 'security' | 'support' | 'loyalty' | 'referral' | 'driver_registration'>('root');
+  const [activeSection, setActiveSection] = useState<'root' | 'info' | 'addresses' | 'security' | 'support' | 'loyalty' | 'referral' | 'driver_registration' | 'notification_prefs'>('root');
   const [isSupportChatOpen, setIsSupportChatOpen] = useState(false);
 
   // Account Info states
@@ -115,22 +116,28 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
     }
   };
 
-  const handleSaveInfo = (e: React.FormEvent) => {
+  const handleSaveInfo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim()) {
       showToast(t('str_218'));
       return;
     }
     if (currentUser) {
-      setCurrentUser({
-        ...currentUser,
-        name,
-        email,
-        phone
-      });
+      setLoading(true);
+      try {
+        await safeUpdateDoc(doc(db, 'users', currentUser.uid), {
+          name,
+          email,
+          phone
+        });
+        showToast(t('str_219'));
+        setActiveSection('root');
+      } catch (err: any) {
+        showToast(t('str_217'), 'error');
+      } finally {
+        setLoading(false);
+      }
     }
-    showToast(t('str_219'));
-    setActiveSection('root');
   };
 
   const handleSavePassword = async (e: React.FormEvent) => {
@@ -564,6 +571,205 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
   }
 
   // 6. Referral section details
+  if (activeSection === 'notification_prefs') {
+    const prefs = currentUser?.preferences || {
+      notificationsEnabled: true,
+      chatNotifications: true,
+      supportNotifications: true,
+      offers: true,
+      marketing: true,
+      sound: true,
+      vibration: true,
+      quietHours: { enabled: false, start: '22:00', end: '08:00' }
+    };
+
+    const togglePref = async (key: string, nestedKey?: string) => {
+      if (!currentUser) return;
+      
+      const newPrefs = { ...prefs } as any;
+      if (nestedKey) {
+        newPrefs[key] = {
+          ...newPrefs[key],
+          [nestedKey]: !newPrefs[key][nestedKey]
+        };
+      } else {
+        newPrefs[key] = !newPrefs[key];
+      }
+
+      try {
+        await safeUpdateDoc(doc(db, 'users', currentUser.uid), {
+          preferences: newPrefs
+        });
+        showToast(t('str_219'));
+      } catch (err) {
+        showToast(t('str_217'), 'error');
+      }
+    };
+
+    const changeQuietTime = async (key: 'start' | 'end', val: string) => {
+      if (!currentUser) return;
+      const newPrefs = {
+        ...prefs,
+        quietHours: {
+          ...prefs.quietHours,
+          [key]: val
+        }
+      };
+      try {
+        await safeUpdateDoc(doc(db, 'users', currentUser.uid), {
+          preferences: newPrefs
+        });
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    return (
+      <div className="bg-theme-bg h-full flex flex-col overflow-hidden animate-fade-in theme-transition pb-24">
+        <div className="bg-theme-card px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-4 border-b border-theme-border/60 flex items-center gap-3.5 z-20 theme-transition">
+          <button onClick={() => setActiveSection('root')} className="p-2.5 text-theme-text bg-theme-bg hover:bg-theme-border/50 rounded-full transition flex items-center justify-center border border-theme-border/30">
+            <ChevronLeft size={18} className={isRTL ? '' : 'rotate-180'} />
+          </button>
+          <h2 className="text-sm font-black text-theme-text">{isRTL ? 'إعدادات الإشعارات' : 'Notification Preferences'}</h2>
+        </div>
+        
+        <div className="flex-grow overflow-y-auto p-5 space-y-4 no-scrollbar">
+          <PremiumCard hoverable={false} className="p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="font-black text-xs text-theme-text block">{isRTL ? 'تمكين الإشعارات' : 'Enable Notifications'}</span>
+                <span className="text-[10px] text-theme-muted">{isRTL ? 'تلقي إشعارات النظام الأساسية' : 'Receive standard push notifications'}</span>
+              </div>
+              <input 
+                type="checkbox" 
+                checked={prefs.notificationsEnabled !== false}
+                onChange={() => togglePref('notificationsEnabled')}
+                className="w-5 h-5 accent-primary" 
+              />
+            </div>
+
+            <div className="h-px bg-theme-border/40" />
+
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="font-black text-xs text-theme-text block">{isRTL ? 'إشعارات المحادثة' : 'Chat Notifications'}</span>
+                <span className="text-[10px] text-theme-muted">{isRTL ? 'إشعارات رسائل المحادثات المباشرة' : 'Direct messages notifications'}</span>
+              </div>
+              <input 
+                type="checkbox" 
+                checked={prefs.chatNotifications !== false}
+                onChange={() => togglePref('chatNotifications')}
+                className="w-5 h-5 accent-primary" 
+              />
+            </div>
+
+            <div className="h-px bg-theme-border/40" />
+
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="font-black text-xs text-theme-text block">{isRTL ? 'إشعارات الدعم الفني' : 'Support Notifications'}</span>
+                <span className="text-[10px] text-theme-muted">{isRTL ? 'تنبيهات الرد على تذاكر الدعم' : 'Support tickets updates alerts'}</span>
+              </div>
+              <input 
+                type="checkbox" 
+                checked={prefs.supportNotifications !== false}
+                onChange={() => togglePref('supportNotifications')}
+                className="w-5 h-5 accent-primary" 
+              />
+            </div>
+
+            <div className="h-px bg-theme-border/40" />
+
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="font-black text-xs text-theme-text block">{isRTL ? 'العروض والخصومات' : 'Offers & Discounts'}</span>
+                <span className="text-[10px] text-theme-muted">{isRTL ? 'تنبيهات العروض الحصرية والكوبونات' : 'Exclusive coupon offers updates'}</span>
+              </div>
+              <input 
+                type="checkbox" 
+                checked={prefs.offers !== false}
+                onChange={() => togglePref('offers')}
+                className="w-5 h-5 accent-primary" 
+              />
+            </div>
+
+            <div className="h-px bg-theme-border/40" />
+
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="font-black text-xs text-theme-text block">{isRTL ? 'الصوت والتنبيه' : 'Sound Alerts'}</span>
+                <span className="text-[10px] text-theme-muted">{isRTL ? 'تشغيل أصوات مع كل إشعار جديد' : 'Play notification alert sounds'}</span>
+              </div>
+              <input 
+                type="checkbox" 
+                checked={prefs.sound !== false}
+                onChange={() => togglePref('sound')}
+                className="w-5 h-5 accent-primary" 
+              />
+            </div>
+
+            <div className="h-px bg-theme-border/40" />
+
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="font-black text-xs text-theme-text block">{isRTL ? 'الاهتزاز' : 'Vibration'}</span>
+                <span className="text-[10px] text-theme-muted">{isRTL ? 'تمكين اهتزاز الهاتف عند وصول إشعار' : 'Enable device vibration on alerts'}</span>
+              </div>
+              <input 
+                type="checkbox" 
+                checked={prefs.vibration !== false}
+                onChange={() => togglePref('vibration')}
+                className="w-5 h-5 accent-primary" 
+              />
+            </div>
+
+            <div className="h-px bg-theme-border/40" />
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="font-black text-xs text-theme-text block">{isRTL ? 'ساعات الهدوء' : 'Quiet Hours'}</span>
+                  <span className="text-[10px] text-theme-muted">{isRTL ? 'تعطيل الإشعارات خلال أوقات معينة' : 'Mute alerts during custom hours'}</span>
+                </div>
+                <input 
+                  type="checkbox" 
+                  checked={prefs.quietHours?.enabled === true}
+                  onChange={() => togglePref('quietHours', 'enabled')}
+                  className="w-5 h-5 accent-primary" 
+                />
+              </div>
+
+              {prefs.quietHours?.enabled && (
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <div>
+                    <label className="text-[10px] font-black text-theme-muted block mb-1">{isRTL ? 'من' : 'From'}</label>
+                    <input 
+                      type="time" 
+                      value={prefs.quietHours.start || '22:00'} 
+                      onChange={(e) => changeQuietTime('start', e.target.value)}
+                      className="w-full p-2 rounded-xl bg-theme-bg border border-theme-border/60 text-xs font-black text-theme-text" 
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-theme-muted block mb-1">{isRTL ? 'إلى' : 'To'}</label>
+                    <input 
+                      type="time" 
+                      value={prefs.quietHours.end || '08:00'} 
+                      onChange={(e) => changeQuietTime('end', e.target.value)}
+                      className="w-full p-2 rounded-xl bg-theme-bg border border-theme-border/60 text-xs font-black text-theme-text" 
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+          </PremiumCard>
+        </div>
+      </div>
+    );
+  }
+
+  // 6. Referral section details
   if (activeSection === 'referral') {
     return (
       <div className="bg-theme-bg h-full flex flex-col overflow-hidden animate-fade-in theme-transition pb-24">
@@ -681,6 +887,14 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
                 <div className="flex items-center gap-3">
                   <div className="bg-orange-500/10 p-2 rounded-lg text-orange-500"><Bell size={16} /></div>
                   <span className="font-black text-xs text-theme-text">{t('str_276')}</span>
+                </div>
+                <ChevronLeft size={16} className={`text-theme-muted ${isRTL ? '' : 'rotate-180'}`} />
+              </button>
+
+              <button onClick={() => setActiveSection('notification_prefs')} className="w-full flex items-center justify-between p-4 hover:bg-theme-border/20 transition-colors text-left">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 p-2 rounded-lg text-primary"><Settings size={16} /></div>
+                  <span className="font-black text-xs text-theme-text">{isRTL ? 'إعدادات الإشعارات' : 'Notification Settings'}</span>
                 </div>
                 <ChevronLeft size={16} className={`text-theme-muted ${isRTL ? '' : 'rotate-180'}`} />
               </button>

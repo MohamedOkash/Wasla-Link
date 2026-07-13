@@ -2,7 +2,7 @@ import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, X, Search, History, Sparkles, Folder } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
-import { searchProductsAndStores } from '../../services/search.service';
+import { searchIndexCollection } from '../../services/search.service';
 import { useStores } from '../../hooks/useStores';
 import { useProducts } from '../../hooks/useProducts';
 
@@ -44,17 +44,73 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ closeSearch, navigat
   const matchedCategories = results.categories || [];
 
   useEffect(() => {
-    const delay = setTimeout(() => {
-      if (!query.trim()) {
+    const delay = setTimeout(async () => {
+      const trimmed = query.trim();
+      if (!trimmed) {
         setResults({ shops: [], products: [], categories: [] });
         return;
       }
-      const searchRes = searchProductsAndStores(query, products, stores, categories);
-      setResults(searchRes);
+      try {
+        const indexResults = await searchIndexCollection(trimmed);
+        const shops: any[] = [];
+        const matchedProducts: any[] = [];
+        const matchedCategories: any[] = [];
+
+        indexResults.forEach(item => {
+          if (item.type === 'store' || item.type === 'restaurant' || item.type === 'pharmacy') {
+            const found = stores.find(s => s.id === item.id);
+            if (found) {
+              shops.push(found);
+            } else {
+              shops.push({
+                id: item.id,
+                name: item.title,
+                description: item.subtitle,
+                logoUrl: item.metadata?.logo || '',
+                averageRating: item.metadata?.rating || 5.0,
+                isRestaurant: item.type === 'restaurant',
+                isPharmacy: item.type === 'pharmacy'
+              });
+            }
+          } else if (item.type === 'product') {
+            const found = products.find(p => p.id === item.id);
+            const shop = stores.find(s => s.id === item.metadata?.storeId);
+            if (found) {
+              matchedProducts.push({ ...found, shop });
+            } else {
+              matchedProducts.push({
+                id: item.id,
+                name: item.title,
+                desc: item.subtitle,
+                price: item.metadata?.price || 0,
+                imgUrl: item.metadata?.imageUrl || '',
+                storeId: item.metadata?.storeId || '',
+                category: item.metadata?.category || '',
+                shop
+              });
+            }
+          } else if (item.type === 'category') {
+            const found = categories.find(c => c.id === item.id);
+            if (found) {
+              matchedCategories.push(found);
+            } else {
+              matchedCategories.push({
+                id: item.id,
+                name: { ar: item.title, en: item.title },
+                imgUrl: item.metadata?.icon || ''
+              });
+            }
+          }
+        });
+
+        setResults({ shops, products: matchedProducts, categories: matchedCategories });
+      } catch (err) {
+        console.error('Search index execution error:', err);
+      }
     }, 250);
     
     return () => clearTimeout(delay);
-  }, [query, stores, products]);
+  }, [query, stores, products, categories]);
 
   const handleSearchTrigger = (searchWord: string) => {
     setQuery(searchWord);

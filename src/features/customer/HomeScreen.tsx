@@ -42,7 +42,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigate, openSearch, op
   useEffect(() => {
     if (banners.length === 0) return;
     const timer = setInterval(() => setCurrentBanner((prev) => (prev + 1) % banners.length), 4000);
-    return () => clearTimeout(timer);
+    return () => clearInterval(timer);
   }, [banners.length]);
 
   // Recommendation & Segment lists

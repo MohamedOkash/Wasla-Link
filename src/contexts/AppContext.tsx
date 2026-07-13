@@ -209,6 +209,20 @@ interface AppContextType {
   referrals: Referral[];
   platformSettings: PlatformSettings | null;
   updatePlatformSettings: (settings: PlatformSettings) => Promise<void>;
+  backHandlers: (() => boolean)[];
+  registerBackHandler: (handler: () => boolean) => () => void;
+  features: FeatureFlags;
+}
+
+export interface FeatureFlags {
+  chatEnabled: boolean;
+  walletEnabled: boolean;
+  driverQueueEnabled: boolean;
+  scheduledOrdersEnabled: boolean;
+  reviewsEnabled: boolean;
+  notificationsEnabled: boolean;
+  maintenanceMode: boolean;
+  versionCheckEnabled: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -234,6 +248,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [pointsHistory, setPointsHistory] = useState<PointsHistoryEntry[]>([]);
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [platformSettings, setPlatformSettings] = useState<PlatformSettings | null>(null);
+  const [features, setFeatures] = useState<FeatureFlags>({
+    chatEnabled: true,
+    walletEnabled: true,
+    driverQueueEnabled: true,
+    scheduledOrdersEnabled: true,
+    reviewsEnabled: true,
+    notificationsEnabled: true,
+    maintenanceMode: false,
+    versionCheckEnabled: true
+  });
 
   // User sub-collections states mapped from currentUser profile
   const [favoriteStores, setFavoriteStores] = useState<string[]>([]);
@@ -254,6 +278,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [theme, setThemeState] = useState<ThemeName>(() => {
     return (localStorage.getItem('waslalink_theme') as ThemeName) || 'orange';
   });
+
+  const [backHandlers, setBackHandlers] = useState<(() => boolean)[]>([]);
+
+  const registerBackHandler = (handler: () => boolean) => {
+    setBackHandlers(prev => [...prev, handler]);
+    return () => {
+      setBackHandlers(prev => prev.filter(h => h !== handler));
+    };
+  };
 
   useEffect(() => {
     const applyThemeTokens = (themeName: ThemeName) => {
@@ -504,6 +537,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     fetchPublicData();
     return () => { mounted = false; };
+  }, []);
+
+  // Load dynamic feature flags from Firestore (Part 10)
+  useEffect(() => {
+    const unsubscribe = onSnapshot(doc(db, 'adminSettings', 'features'), (docSnap) => {
+      if (docSnap.exists()) {
+        setFeatures(prev => ({
+          ...prev,
+          ...docSnap.data()
+        }));
+      }
+    }, err => {
+      console.warn('Feature flags listener error:', err);
+    });
+    return unsubscribe;
   }, []);
 
   // --- Real-time Listeners for role-dependent collections ---
@@ -1257,7 +1305,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         pointsHistory,
         referrals,
         platformSettings,
-        updatePlatformSettings
+        updatePlatformSettings,
+        backHandlers,
+        registerBackHandler,
+        features
       }}
     >
       {children}

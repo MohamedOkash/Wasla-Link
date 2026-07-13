@@ -1,11 +1,121 @@
 import { useTranslation } from '../../hooks/useTranslation';
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { Bike, MapPin, DollarSign, Clock, ClipboardList, CheckCircle2, ArrowRight } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
-
 import { ChatWidget } from '../../components/chat/ChatWidget';
 import { MessageSquare } from 'lucide-react';
-import { useState } from 'react';
+
+interface SignaturePadProps {
+  onSave: (url: string) => void;
+  isRTL: boolean;
+}
+
+export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, isRTL }) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [hasDrawed, setHasDrawed] = useState(false);
+
+  const getCoordinates = (e: any) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
+  };
+
+  const startDrawing = (e: any) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const coords = getCoordinates(e);
+    ctx.beginPath();
+    ctx.moveTo(coords.x, coords.y);
+    setIsDrawing(true);
+  };
+
+  const draw = (e: any) => {
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const coords = getCoordinates(e);
+    ctx.lineTo(coords.x, coords.y);
+    ctx.stroke();
+    setHasDrawed(true);
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+  };
+
+  const handleClear = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setHasDrawed(false);
+  };
+
+  const handleSave = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !hasDrawed) return;
+    
+    canvas.toBlob(async (blob) => {
+      if (blob) {
+        try {
+          const file = new File([blob], 'signature.webp', { type: 'image/webp' });
+          const { mediaService } = await import('../../services/media.service');
+          const url = await mediaService.uploadImage(file, 'proofs/signatures');
+          onSave(url);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    }, 'image/webp', 0.8);
+  };
+
+  return (
+    <div className="space-y-2 mt-2 bg-theme-bg/60 p-3 rounded-2xl border border-theme-border/60">
+      <canvas
+        ref={canvasRef}
+        width={300}
+        height={120}
+        onMouseDown={startDrawing}
+        onMouseMove={draw}
+        onMouseUp={stopDrawing}
+        onMouseLeave={stopDrawing}
+        onTouchStart={startDrawing}
+        onTouchMove={draw}
+        onTouchEnd={stopDrawing}
+        className="w-full h-28 bg-theme-bg border border-theme-border rounded-xl cursor-crosshair touch-none"
+      />
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={handleClear}
+          className="flex-1 bg-theme-border/50 text-[10px] font-black py-2 rounded-lg text-theme-text"
+        >
+          {isRTL ? 'مسح التوقيع' : 'Clear'}
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={!hasDrawed}
+          className="flex-1 bg-primary text-white text-[10px] font-black py-2 rounded-lg disabled:opacity-50"
+        >
+          {isRTL ? 'حفظ توقيع العميل' : 'Save Signature'}
+        </button>
+      </div>
+    </div>
+  );
+};
 
 interface DriverOrdersProps {
   driver: any;
@@ -16,6 +126,25 @@ export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
   const { orders, isRTL, showToast } = useApp();
   const [activeChatOrderId, setActiveChatOrderId] = useState<string | null>(null);
   const [enteredOtps, setEnteredOtps] = useState<Record<string, string>>({});
+  const [signatureUrls, setSignatureUrls] = useState<Record<string, string>>({});
+  const [deliveryPhotoUrls, setDeliveryPhotoUrls] = useState<Record<string, string>>({});
+  const [damagePhotoUrls, setDamagePhotoUrls] = useState<Record<string, string>>({});
+
+  const handlePhotoUpload = async (orderId: string, file: File, type: 'delivery' | 'damage') => {
+    try {
+      const { mediaService } = await import('../../services/media.service');
+      const url = await mediaService.uploadImage(file, `proofs/${type}`);
+      if (type === 'delivery') {
+        setDeliveryPhotoUrls(prev => ({ ...prev, [orderId]: url }));
+      } else {
+        setDamagePhotoUrls(prev => ({ ...prev, [orderId]: url }));
+      }
+      showToast(t('str_219') || 'Uploaded successfully');
+    } catch (err) {
+      console.error(err);
+      showToast(t('str_537') || 'Upload failed', 'error');
+    }
+  };
 
   // Filters based on phase 14 order statuses
   const availableOrders = orders.filter(o => o.status === 'ready_for_delivery' && !o.driverId);
@@ -41,6 +170,10 @@ export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
     if (!newStatus) return;
 
     let otpParam: string | undefined;
+    let signatureUrl: string | undefined;
+    let deliveryPhotoUrl: string | undefined;
+    let damagePhotoUrl: string | undefined;
+
     if (currentStatus === 'delivering') {
       const enteredOtp = enteredOtps[orderId] || '';
       if (enteredOtp.length !== 6) {
@@ -48,12 +181,34 @@ export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
         return;
       }
       otpParam = enteredOtp;
+
+      signatureUrl = signatureUrls[orderId];
+      deliveryPhotoUrl = deliveryPhotoUrls[orderId];
+      damagePhotoUrl = damagePhotoUrls[orderId];
+
+      if (!signatureUrl) {
+        showToast(isRTL ? 'يرجى حفظ توقيع العميل أولاً' : 'Please save customer signature first', 'warning');
+        return;
+      }
+      if (!deliveryPhotoUrl) {
+        showToast(isRTL ? 'يرجى رفع صورة التوصيل أولاً' : 'Please upload delivery photo first', 'warning');
+        return;
+      }
     }
 
     try {
       const orderObj = orders.find(o => o.id === orderId);
       const fee = orderObj?.estimatedDriverEarnings ?? orderObj?.deliveryFee ?? 20;
-      await import('../../services/driver/service').then(m => m.driverService.updateOrderStatus(driver.id, orderId, newStatus, fee, otpParam));
+      await import('../../services/driver/service').then(m => m.driverService.updateOrderStatus(
+        driver.id,
+        orderId,
+        newStatus,
+        fee,
+        otpParam,
+        signatureUrl,
+        deliveryPhotoUrl,
+        damagePhotoUrl
+      ));
       showToast(t('str_1117'));
     } catch (error) {
       console.error(error);
@@ -154,20 +309,105 @@ export const DriverOrders: React.FC<DriverOrdersProps> = ({ driver }) => {
                     </a>
                   </div>
 
-                  {/* OTP Input for Delivery Verification */}
+                  {/* Proof of Delivery V2 Panel */}
                   {(order.status as string) === 'delivering' && (
-                    <div className="space-y-1.5 border-t border-theme-border/40 pt-2.5">
-                      <label className="text-[10px] text-theme-muted font-black block">
-                        {isRTL ? 'أدخل رمز التحقق (OTP)' : 'Enter Verification OTP'}
-                      </label>
-                      <input
-                        type="text"
-                        maxLength={6}
-                        placeholder="e.g. 123456"
-                        value={enteredOtps[order.id] || ''}
-                        onChange={(e) => setEnteredOtps(prev => ({ ...prev, [order.id]: e.target.value }))}
-                        className="w-full bg-theme-bg border border-theme-border px-3 py-2 rounded-xl text-center font-mono font-black text-sm tracking-widest text-theme-text"
-                      />
+                    <div className="space-y-3.5 border-t border-theme-border/40 pt-3">
+                      {/* OTP Code */}
+                      <div>
+                        <label className="text-[10px] text-theme-muted font-black block mb-1">
+                          {isRTL ? 'رمز التحقق (OTP) من العميل' : 'Customer Verification OTP'}
+                        </label>
+                        <input
+                          type="text"
+                          maxLength={6}
+                          placeholder="e.g. 123456"
+                          value={enteredOtps[order.id] || ''}
+                          onChange={(e) => setEnteredOtps(prev => ({ ...prev, [order.id]: e.target.value }))}
+                          className="w-full bg-theme-bg border border-theme-border px-3 py-2 rounded-xl text-center font-mono font-black text-sm tracking-widest text-theme-text"
+                        />
+                      </div>
+
+                      {/* Delivery Photo */}
+                      <div>
+                        <label className="text-[10px] text-theme-muted font-black block mb-1">
+                          {isRTL ? 'صورة إثبات التوصيل (مطلوب)' : 'Delivery Proof Photo (Required)'}
+                        </label>
+                        {deliveryPhotoUrls[order.id] ? (
+                          <div className="flex items-center gap-2 bg-green-500/10 p-2.5 rounded-xl border border-green-500/20">
+                            <span className="text-[10px] font-bold text-green-600 truncate flex-1">{deliveryPhotoUrls[order.id]}</span>
+                            <button
+                              type="button"
+                              onClick={() => setDeliveryPhotoUrls(prev => ({ ...prev, [order.id]: '' }))}
+                              className="text-[9px] font-black text-red-500 hover:underline"
+                            >
+                              {isRTL ? 'إزالة' : 'Remove'}
+                            </button>
+                          </div>
+                        ) : (
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handlePhotoUpload(order.id, file, 'delivery');
+                            }}
+                            className="w-full text-xs text-theme-text file:bg-primary file:text-white file:border-0 file:py-1.5 file:px-3 file:rounded-lg file:font-black file:text-[10px] file:mr-2"
+                          />
+                        )}
+                      </div>
+
+                      {/* Damage Photo */}
+                      <div>
+                        <label className="text-[10px] text-theme-muted font-black block mb-1">
+                          {isRTL ? 'صورة التلف/الأضرار إن وجدت (اختياري)' : 'Damage Photo (Optional)'}
+                        </label>
+                        {damagePhotoUrls[order.id] ? (
+                          <div className="flex items-center gap-2 bg-yellow-500/10 p-2.5 rounded-xl border border-yellow-500/20">
+                            <span className="text-[10px] font-bold text-yellow-600 truncate flex-1">{damagePhotoUrls[order.id]}</span>
+                            <button
+                              type="button"
+                              onClick={() => setDamagePhotoUrls(prev => ({ ...prev, [order.id]: '' }))}
+                              className="text-[9px] font-black text-red-500 hover:underline"
+                            >
+                              {isRTL ? 'إزالة' : 'Remove'}
+                            </button>
+                          </div>
+                        ) : (
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handlePhotoUpload(order.id, file, 'damage');
+                            }}
+                            className="w-full text-xs text-theme-text file:bg-theme-border file:text-theme-text file:border-0 file:py-1.5 file:px-3 file:rounded-lg file:font-black file:text-[10px] file:mr-2"
+                          />
+                        )}
+                      </div>
+
+                      {/* Customer Signature Pad */}
+                      <div>
+                        <label className="text-[10px] text-theme-muted font-black block">
+                          {isRTL ? 'توقيع العميل (مطلوب)' : 'Customer Signature (Required)'}
+                        </label>
+                        {signatureUrls[order.id] ? (
+                          <div className="flex items-center gap-2 bg-green-500/10 p-2.5 rounded-xl border border-green-500/20 mt-1">
+                            <span className="text-[10px] font-bold text-green-600 truncate flex-1">{signatureUrls[order.id]}</span>
+                            <button
+                              type="button"
+                              onClick={() => setSignatureUrls(prev => ({ ...prev, [order.id]: '' }))}
+                              className="text-[9px] font-black text-red-500 hover:underline"
+                            >
+                              {isRTL ? 'إعادة التوقيع' : 'Re-sign'}
+                            </button>
+                          </div>
+                        ) : (
+                          <SignaturePad
+                            onSave={(url) => setSignatureUrls(prev => ({ ...prev, [order.id]: url }))}
+                            isRTL={isRTL}
+                          />
+                        )}
+                      </div>
                     </div>
                   )}
 

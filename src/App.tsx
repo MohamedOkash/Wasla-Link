@@ -29,23 +29,30 @@ function isOutdated(local: string, server: string): boolean {
 }
 
 function AppContent() {
-  const { role, theme } = useApp();
+  const { role, theme, backHandlers } = useApp();
   const { isRTL } = useTranslation();
   const isDesktop = role === 'vendor' || role === 'admin';
-  const [updateInfo, setUpdateInfo] = useState<{ critical: boolean; message: string; version: string } | null>(null);
+  const [updateInfo, setUpdateInfo] = useState<{ critical: boolean; message: string; version: string; url?: string } | null>(null);
   
   useEffect(() => {
-    CapacitorApp.addListener('backButton', ({ canGoBack }) => {
-      if(!canGoBack){
-        CapacitorApp.exitApp();
-      } else {
-        window.history.back();
+    const handleBack = () => {
+      // Run handlers in reverse order (newest first)
+      for (let i = backHandlers.length - 1; i >= 0; i--) {
+        const handled = backHandlers[i]();
+        if (handled) return;
       }
-    });
-    return () => {
-      CapacitorApp.removeAllListeners();
+      // If nothing handled, exit the app
+      CapacitorApp.exitApp();
     };
-  }, []);
+
+    const listener = CapacitorApp.addListener('backButton', () => {
+      handleBack();
+    });
+
+    return () => {
+      listener.then(l => l.remove());
+    };
+  }, [backHandlers]);
 
   useEffect(() => {
     async function checkVersion() {
@@ -53,11 +60,19 @@ function AppContent() {
         const snap = await getDoc(doc(db, 'system', 'appVersion'));
         if (snap.exists()) {
           const data = snap.data();
-          const serverVersion = data.version || '1.0.0';
-          const isCritical = data.critical === true;
-          const msg = data.message || 'New version available!';
-          if (isOutdated(CURRENT_VERSION, serverVersion)) {
-            setUpdateInfo({ critical: isCritical, message: msg, version: serverVersion });
+          const latestVersion = data.latestVersion || '1.0.0';
+          const minimumVersion = data.minimumVersion || '1.0.0';
+          const forceUpdate = data.forceUpdate === true || isOutdated(CURRENT_VERSION, minimumVersion);
+          const changelog = data.changelog || 'New enhancements and bug fixes!';
+          const playStoreUrl = data.playStoreUrl || 'https://play.google.com/store/apps';
+
+          if (isOutdated(CURRENT_VERSION, latestVersion) || forceUpdate) {
+            setUpdateInfo({
+              critical: forceUpdate,
+              message: changelog,
+              version: latestVersion,
+              url: playStoreUrl
+            });
           }
         }
       } catch (err) {
@@ -83,7 +98,7 @@ function AppContent() {
           <div className="flex flex-col gap-2 w-full">
             <button
               onClick={() => {
-                window.open('https://play.google.com/store/apps', '_blank');
+                window.open(updateInfo.url || 'https://play.google.com/store/apps', '_blank');
               }}
               className="w-full bg-primary hover:bg-primary-hover text-white font-black py-3.5 rounded-xl text-sm transition shadow-md active:scale-95"
             >

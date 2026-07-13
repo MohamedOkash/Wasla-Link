@@ -60,6 +60,26 @@ async function getPlatformSettings(): Promise<PlatformSettings> {
   return DEFAULT_SETTINGS;
 }
 
+async function getAdminSettings(): Promise<any> {
+  const docSnap = await db.collection('adminSettings').doc('driver').get();
+  const defaultSettings = {
+    maxQueueSize: 3,
+    dispatchRadius: 10, // km
+    acceptTimeout: 30, // seconds
+    locationInterval: 30, // seconds
+    codLimit: 2000, // EGP
+    withdrawalLimit: 1000, // EGP
+    maxActiveOrders: 3,
+    otpExpiration: 900, // 15 mins
+    lateDeliveryThreshold: 45, // mins
+    impossibleSpeedLimit: 120 // km/h
+  };
+  if (docSnap.exists) {
+    return { ...defaultSettings, ...docSnap.data() };
+  }
+  return defaultSettings;
+}
+
 function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // km
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -73,9 +93,10 @@ function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: num
 }
 
 async function assignBestDriver(transaction: any, orderId: string, orderData: any, rejectedBy: string[]) {
+  const settings = await getAdminSettings();
+  
   const driversQuery = db.collection('drivers')
-    .where('status', '==', 'approved')
-    .where('availability', 'in', ['available', 'online']);
+    .where('status', '==', 'approved');
   
   const driversSnap = await driversQuery.get();
   if (driversSnap.empty) {
@@ -92,8 +113,23 @@ async function assignBestDriver(transaction: any, orderId: string, orderData: an
     }
 
     const dData = docSnap.data();
-    let distance = 9999;
+    // Ignore every state except available (Part 5)
+    const availability = (dData.availability || '').toUpperCase();
+    if (availability !== 'AVAILABLE') {
+      continue;
+    }
 
+    const activeOrdersSnap = await db.collection('orders')
+      .where('driverId', '==', driverId)
+      .where('status', 'in', ['accepted', 'picked_up', 'on_the_way', 'delivering'])
+      .get();
+    
+    const workload = activeOrdersSnap.size;
+    if (workload >= settings.maxQueueSize) {
+      continue;
+    }
+
+    let distance = 9999;
     const locRef = db.collection('driverLocations').doc(driverId);
     const locSnap = await transaction.get(locRef);
     if (locSnap.exists) {
@@ -103,11 +139,15 @@ async function assignBestDriver(transaction: any, orderId: string, orderData: an
       }
     }
 
+    if (distance > settings.dispatchRadius) {
+      continue;
+    }
+
     eligibleDrivers.push({
       id: driverId,
       name: dData.name,
       rating: dData.rating || 5.0,
-      activeOrders: dData.activeOrders || 0,
+      activeOrders: workload,
       distance
     });
   }
@@ -116,9 +156,10 @@ async function assignBestDriver(transaction: any, orderId: string, orderData: an
     return null;
   }
 
+  // Prioritize higher-rated drivers first (Part 2), then distance, then workload
   eligibleDrivers.sort((a, b) => {
-    if (a.distance !== b.distance) return a.distance - b.distance;
     if (b.rating !== a.rating) return b.rating - a.rating;
+    if (a.distance !== b.distance) return a.distance - b.distance;
     return a.activeOrders - b.activeOrders;
   });
 
@@ -668,12 +709,51 @@ export const updateOrderStatus = functions.https.onCall(async (data, context) =>
       if (actualOtp && submittedOtp !== actualOtp) {
         throw new functions.https.HttpsError('failed-precondition', 'Invalid verification OTP code. Delivery rejected.');
       }
+
+      const signatureUrl = data.signatureUrl;
+      const deliveryPhotoUrl = data.deliveryPhotoUrl;
+      if (!signatureUrl || !deliveryPhotoUrl) {
+        throw new functions.https.HttpsError('failed-precondition', 'Customer signature and delivery photo evidence are required.');
+      }
+
+      const customerCoords = orderData.location?.coords || null;
+      if (customerCoords && customerCoords.lat && customerCoords.lng) {
+        const activeDrvId = driverId || orderData.driverId || '';
+        if (activeDrvId) {
+          const locRef = db.collection('driverLocations').doc(activeDrvId);
+          const locSnap = await transaction.get(locRef);
+          if (locSnap.exists) {
+            const locData = locSnap.data()!;
+            if (locData.lat && locData.lng) {
+              const distKm = calculateDistanceKm(locData.lat, locData.lng, customerCoords.lat, customerCoords.lng);
+              if (distKm > 0.3) {
+                const incidentRef = db.collection('fraudIncidents').doc();
+                transaction.set(incidentRef, {
+                  id: incidentRef.id,
+                  driverId: activeDrvId,
+                  type: 'fake_gps',
+                  details: `Driver completed order at a distance of ${(distKm * 1000).toFixed(0)}m from the customer location.`,
+                  timestamp: new Date().toISOString()
+                });
+                throw new functions.https.HttpsError('failed-precondition', 'GPS mismatch. You must be near the customer location to complete delivery.');
+              }
+            }
+          }
+        }
+      }
     }
 
     const updates: any = {
       status: nextStatus,
       updatedAt: new Date().toISOString()
     };
+
+    if (nextStatus === 'delivered') {
+      updates.signatureUrl = data.signatureUrl || null;
+      updates.deliveryPhotoUrl = data.deliveryPhotoUrl || null;
+      updates.damagePhotoUrl = data.damagePhotoUrl || null;
+      updates.deliveredAt = new Date().toISOString();
+    }
 
     if (nextStatus === 'ready_for_delivery') {
       updates.driverId = null;
@@ -705,13 +785,31 @@ export const updateOrderStatus = functions.https.onCall(async (data, context) =>
 
     transaction.update(orderRef, updates);
 
-    const eventRef = db.collection('orderHistory').doc(orderId).collection('events').doc();
+    const actorSnap = await transaction.get(db.collection('users').doc(actorId));
+    const actorData = actorSnap.exists ? actorSnap.data() || {} : {};
+    const actorRole = actorData.role || 'customer';
+    const actorName = actorData.name || 'User';
+
+    let gpsCoords = data.coords || null;
+    if (!gpsCoords && actorRole === 'driver') {
+      const locSnap = await transaction.get(db.collection('driverLocations').doc(actorId));
+      if (locSnap.exists) {
+        const loc = locSnap.data() || {};
+        gpsCoords = { lat: loc.lat, lng: loc.lng };
+      }
+    }
+
+    const eventRef = db.collection('orders').doc(orderId).collection('timeline').doc();
     transaction.set(eventRef, {
       id: eventRef.id,
       status: nextStatus,
       timestamp: new Date().toISOString(),
-      userId: actorId,
-      notes: `Status changed from ${currentStatus} to ${nextStatus}`
+      actor: actorName,
+      actorRole: actorRole,
+      GPS: gpsCoords,
+      notes: data.notes || `Status changed from ${currentStatus} to ${nextStatus}`,
+      deviceInfo: data.deviceInfo || null,
+      batteryLevel: data.batteryLevel || null
     });
 
     if (nextStatus === 'picked_up') {
@@ -734,6 +832,21 @@ export const updateOrderStatus = functions.https.onCall(async (data, context) =>
             reason: `Bill sale for order ${orderId}`,
             createdAt: new Date().toISOString()
           });
+        }
+      }
+
+      const activeDriverId = driverId || orderData.driverId;
+      if (activeDriverId) {
+        const groupRef = db.collection('orderGroups').doc(orderData.groupId || '');
+        const groupSnap = await transaction.get(groupRef);
+        if (groupSnap.exists && groupSnap.data()?.paymentMethod === 'cash_on_delivery') {
+          const driverWalletRef = db.collection('driverWallets').doc(activeDriverId);
+          const dWalletSnap = await transaction.get(driverWalletRef);
+          const oldPending = dWalletSnap.exists ? (dWalletSnap.data()?.cashPending || 0) : 0;
+          transaction.set(driverWalletRef, {
+            cashPending: oldPending + (orderData.total || 0),
+            updatedAt: new Date().toISOString()
+          }, { merge: true });
         }
       }
     } else if (nextStatus === 'cancelled' || nextStatus === 'rejected') {
@@ -784,6 +897,18 @@ export const updateOrderStatus = functions.https.onCall(async (data, context) =>
         const dWalletSnap = await transaction.get(driverWalletRef);
         const dBalance = dWalletSnap.exists ? (dWalletSnap.data()?.balance || 0) : 0;
 
+        let isCod = false;
+        const groupRef = db.collection('orderGroups').doc(orderData.groupId || '');
+        const groupSnap = await transaction.get(groupRef);
+        if (groupSnap.exists && groupSnap.data()?.paymentMethod === 'cash_on_delivery') {
+          isCod = true;
+        }
+
+        const oldCollected = dWalletSnap.exists ? (dWalletSnap.data()?.cashCollected || 0) : 0;
+        const oldRemaining = dWalletSnap.exists ? (dWalletSnap.data()?.cashRemaining || 0) : 0;
+        const oldPending = dWalletSnap.exists ? (dWalletSnap.data()?.cashPending || 0) : 0;
+        const cashAmt = isCod ? (orderData.total || 0) : 0;
+
         const distance = orderData.assignmentDistance || 3;
         let driverFee = 15;
         if (distance > 12) driverFee = 50;
@@ -793,6 +918,9 @@ export const updateOrderStatus = functions.https.onCall(async (data, context) =>
 
         transaction.set(driverWalletRef, {
           balance: dBalance + driverFee,
+          cashCollected: oldCollected + cashAmt,
+          cashRemaining: oldRemaining + cashAmt,
+          cashPending: Math.max(0, oldPending - cashAmt),
           updatedAt: new Date().toISOString()
         }, { merge: true });
 
@@ -807,6 +935,19 @@ export const updateOrderStatus = functions.https.onCall(async (data, context) =>
           status: 'completed'
         });
 
+        if (isCod) {
+          const codTxRef = db.collection('driverTransactions').doc();
+          transaction.set(codTxRef, {
+            id: codTxRef.id,
+            driverId: activeDriverId,
+            amount: cashAmt,
+            type: 'cod_collection',
+            description: `Cash collected for COD order ${orderId}`,
+            createdAt: new Date().toISOString(),
+            status: 'completed'
+          });
+        }
+
         const driverRef = db.collection('drivers').doc(activeDriverId);
         const driverSnap = await transaction.get(driverRef);
         if (driverSnap.exists) {
@@ -815,7 +956,7 @@ export const updateOrderStatus = functions.https.onCall(async (data, context) =>
             completedOrders: (dData.completedOrders || 0) + 1,
             totalDeliveries: (dData.totalDeliveries || 0) + 1,
             totalEarnings: (dData.totalEarnings || 0) + driverFee,
-            availability: 'online',
+            availability: 'available',
             currentOrderId: null
           });
         }
@@ -932,27 +1073,76 @@ export const updateProductStock = functions.https.onCall(async (data, context) =
 // FIRESTORE TRIGGERS
 // ----------------------------------------------------
 
-// 1. Recalculate average rating of products when a review is created
+// 1. Recalculate average rating of products, stores, drivers, and users when a review is created
 export const onReviewCreated = functions.firestore
   .document('reviews/{reviewId}')
   .onCreate(async (snap) => {
     const reviewData = snap.data();
+    if (!reviewData) return;
+
     const productId = reviewData.productId;
-    if (!productId) return;
+    const type = reviewData.type || '';
+    const toId = reviewData.toId || '';
 
-    const productRef = db.collection('products').doc(productId);
+    // A. Product aggregation if productId is present
+    if (productId) {
+      const productRef = db.collection('products').doc(productId);
+      await db.runTransaction(async (transaction) => {
+        const reviewsSnap = await db.collection('reviews').where('productId', '==', productId).get();
+        const ratingsList = reviewsSnap.docs.map(doc => doc.data().rating as number);
+        const ratingsCount = ratingsList.length;
+        const averageRating = parseFloat((ratingsList.reduce((sum, r) => sum + r, 0) / ratingsCount).toFixed(1));
 
-    await db.runTransaction(async (transaction) => {
-      const reviewsSnap = await db.collection('reviews').where('productId', '==', productId).get();
-      const ratingsList = reviewsSnap.docs.map(doc => doc.data().rating as number);
-      const ratingsCount = ratingsList.length;
-      const averageRating = parseFloat((ratingsList.reduce((sum, r) => sum + r, 0) / ratingsCount).toFixed(1));
-
-      transaction.update(productRef, {
-        averageRating,
-        ratingsCount
+        transaction.update(productRef, {
+          averageRating,
+          ratingsCount
+        });
       });
-    });
+    }
+
+    // B. Entity aggregation (stores, drivers, users) based on review type (Part 2)
+    if (toId && type) {
+      let targetCollection = '';
+      if (type === 'customer_to_store') {
+        targetCollection = 'stores';
+      } else if (type === 'customer_to_driver' || type === 'vendor_to_driver') {
+        targetCollection = 'drivers';
+      } else if (type === 'driver_to_customer') {
+        targetCollection = 'users';
+      }
+
+      if (targetCollection) {
+        const targetRef = db.collection(targetCollection).doc(toId);
+        await db.runTransaction(async (transaction) => {
+          const reviewsSnap = await db.collection('reviews')
+            .where('toId', '==', toId)
+            .where('type', '==', type)
+            .get();
+          const ratingsList = reviewsSnap.docs.map(doc => doc.data().rating as number);
+          const ratingsCount = ratingsList.length;
+          const averageRating = parseFloat((ratingsList.reduce((sum, r) => sum + r, 0) / ratingsCount).toFixed(2));
+
+          transaction.update(targetRef, {
+            averageRating,
+            ratingCount: ratingsCount,
+            rating: averageRating
+          });
+
+          // Also sync driver rating back to users collection
+          if (targetCollection === 'drivers') {
+            const userRef = db.collection('users').doc(toId);
+            const userSnap = await transaction.get(userRef);
+            if (userSnap.exists) {
+              transaction.update(userRef, {
+                rating: averageRating,
+                averageRating,
+                ratingCount: ratingsCount
+              });
+            }
+          }
+        });
+      }
+    }
   });
 
 // 2. Automate wallet transaction when return request is marked refunded
@@ -1224,3 +1414,524 @@ export const processSettlement = functions.https.onCall(async (data, context) =>
 
   return { success: true };
 });
+
+export const onDriverLocationUpdate = functions.firestore.document('driverLocations/{driverId}').onWrite(async (change, context) => {
+  const driverId = context.params.driverId;
+  const before = change.before.data();
+  const after = change.after.data();
+  if (!after) return;
+
+  if (before && before.lat && before.lng && after.lat && after.lng) {
+    const timeDiffHours = (after.lastUpdated - before.lastUpdated) / (1000 * 60 * 60);
+    if (timeDiffHours > 0.002) {
+      const distKm = calculateDistanceKm(before.lat, before.lng, after.lat, after.lng);
+      const speedKmh = distKm / timeDiffHours;
+      const settings = await getAdminSettings();
+      if (speedKmh > settings.impossibleSpeedLimit) {
+        const incidentRef = db.collection('fraudIncidents').doc();
+        await incidentRef.set({
+          id: incidentRef.id,
+          driverId,
+          type: 'impossible_speed',
+          details: `Driver moved at ${speedKmh.toFixed(1)} km/h. Jumped ${distKm.toFixed(2)} km in ${(timeDiffHours * 3600).toFixed(0)} seconds.`,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+  }
+});
+
+export const reconcileDriverCash = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
+  }
+
+  const userRef = db.collection('users').doc(context.auth.uid);
+  const userSnap = await userRef.get();
+  if (!userSnap.exists || userSnap.data()?.role !== 'admin') {
+    throw new functions.https.HttpsError('permission-denied', 'Only administrators can reconcile cash.');
+  }
+
+  const { driverId, amount } = data;
+  if (!driverId || amount === undefined || amount <= 0) {
+    throw new functions.https.HttpsError('invalid-argument', 'Missing parameters: driverId and positive amount.');
+  }
+
+  const walletRef = db.collection('driverWallets').doc(driverId);
+  await db.runTransaction(async (transaction) => {
+    const snap = await transaction.get(walletRef);
+    if (!snap.exists) {
+      throw new functions.https.HttpsError('not-found', 'Driver wallet not found.');
+    }
+    const wData = snap.data()!;
+    const remaining = wData.cashRemaining || 0;
+    const delivered = wData.cashDelivered || 0;
+
+    if (amount > remaining) {
+      throw new functions.https.HttpsError('failed-precondition', 'Reconciliation amount exceeds driver remaining cash.');
+    }
+
+    transaction.update(walletRef, {
+      cashRemaining: remaining - amount,
+      cashDelivered: delivered + amount,
+      updatedAt: new Date().toISOString()
+    });
+
+    const txRef = db.collection('driverTransactions').doc();
+    transaction.set(txRef, {
+      id: txRef.id,
+      driverId,
+      amount: -amount,
+      type: 'cash_handover',
+      description: `Cash handover/reconciliation to admin`,
+      createdAt: new Date().toISOString(),
+      status: 'completed'
+    });
+  });
+
+  return { success: true };
+});
+
+// ----------------------------------------------------
+// ENTERPRISE NOTIFICATION & FCM TRIGGERS (Part 1 & 9)
+// ----------------------------------------------------
+
+async function createSystemNotification(userId: string, title: string, body: string, type: string, entityId: string) {
+  const notifRef = db.collection('notifications').doc();
+  const notifData = {
+    id: notifRef.id,
+    userId,
+    title,
+    body,
+    type,
+    entityId,
+    isRead: false,
+    createdAt: new Date().toISOString()
+  };
+  await notifRef.set(notifData);
+
+  try {
+    const userSnap = await db.collection('users').doc(userId).get();
+    if (userSnap.exists) {
+      const userData = userSnap.data() || {};
+      const prefs = userData.preferences || {};
+      
+      // Part 9 - Prefs validations
+      if (prefs.notificationsEnabled === false) return;
+      if (type.includes('chat') && prefs.chatNotifications === false) return;
+      if (type.includes('support') && prefs.supportNotifications === false) return;
+      if ((type.includes('offer') || type.includes('marketing')) && prefs.offers === false) return;
+
+      const fcmTokens = userData.fcmTokens || [];
+      if (fcmTokens.length > 0) {
+        const message = {
+          notification: { title, body },
+          data: { type, entityId },
+          tokens: fcmTokens
+        };
+        await admin.messaging().sendEachForMulticast(message);
+      }
+    }
+  } catch (err) {
+    console.error('FCM messaging failed:', err);
+  }
+}
+
+export const onOrderCreated = functions.firestore
+  .document('orders/{orderId}')
+  .onCreate(async (snap, context) => {
+    const orderData = snap.data();
+    if (!orderData) return;
+
+    const orderId = context.params.orderId;
+    const shopId = orderData.shopId;
+
+    // Sync to search index (Part 7)
+    const indexRef = db.collection('searchIndex').doc(`order_${orderId}`);
+    await indexRef.set({
+      id: orderId,
+      type: 'order',
+      title: `Order #${orderId.slice(-6)}`,
+      subtitle: `${orderData.shopName || 'Store'} - ${orderData.total} EGP`,
+      tags: [orderId, orderData.shopName, orderData.customerName, orderData.status].filter(Boolean).map(s => s.toLowerCase()),
+      metadata: {
+        total: orderData.total,
+        status: orderData.status,
+        customerId: orderData.customerId,
+        shopId
+      },
+      updatedAt: new Date().toISOString()
+    });
+
+    // Notify vendor
+    const storeSnap = await db.collection('stores').doc(shopId).get();
+    if (storeSnap.exists) {
+      const vendorUid = storeSnap.data()?.ownerId;
+      if (vendorUid) {
+        await createSystemNotification(
+          vendorUid,
+          'طلب جديد وارد',
+          `لديك طلب جديد بقيمة ${orderData.total} ج.م. يرجى مراجعته وقبوله.`,
+          'order_created',
+          orderId
+        );
+      }
+    }
+  });
+
+export const onOrderUpdated = functions.firestore
+  .document('orders/{orderId}')
+  .onUpdate(async (change, context) => {
+    const before = change.before.data()!;
+    const after = change.after.data()!;
+    
+    if (before.status === after.status) return;
+
+    const orderId = context.params.orderId;
+    const status = after.status;
+    const customerId = after.customerId;
+    const shopId = after.shopId;
+    const driverId = after.driverId;
+
+    const notify = async (userId: string, title: string, body: string, type: string) => {
+      await createSystemNotification(userId, title, body, type, orderId);
+    };
+
+    switch (status) {
+      case 'accepted':
+        await notify(customerId, 'تم قبول طلبك', `المتجر ${after.shopName} قبل طلبك ويقوم بتحضيره الآن.`, 'store_accepted');
+        break;
+      case 'rejected':
+        await notify(customerId, 'تم اعتذار المتجر', `المتجر اعتذر عن قبول طلبك رقم #${orderId.slice(-6)}.`, 'store_rejected');
+        break;
+      case 'driver_assigned':
+        if (after.assignedDriverId) {
+          await notify(after.assignedDriverId, 'طلب توصيل جديد متاح', `تم تكليفك بتوصيل طلب. يرجى المراجعة والقبول.`, 'driver_assigned');
+        }
+        break;
+      case 'driver_accepted':
+        await notify(customerId, 'سائق في الطريق', `السائق ${after.driverName} قبل طلبك وهو في طريقه للمتجر.`, 'driver_accepted');
+        break;
+      case 'arrived_store':
+        const sSnap = await db.collection('stores').doc(shopId).get();
+        if (sSnap.exists) {
+          const vendorUid = sSnap.data()?.ownerId;
+          if (vendorUid) {
+            await notify(vendorUid, 'وصل السائق للمحل', `السائق ${after.driverName} متواجد الآن بالمتجر لاستلام الطلب.`, 'driver_arrived_store');
+          }
+        }
+        break;
+      case 'picked_up':
+        await notify(customerId, 'الطلب بالطريق إليك', `تم استلام طلبك من المتجر وهو في طريق التوصيل إليك.`, 'driver_picked_up');
+        break;
+      case 'arrived_customer':
+        await notify(customerId, 'وصل السائق لموقعك', `وصل السائق إليك. يرجى إعطاء كود التحقق OTP لتأكيد الاستلام.`, 'driver_arrived_customer');
+        break;
+      case 'delivered':
+        await notify(customerId, 'تم التوصيل بنجاح', `تم تسليم طلبك رقم #${orderId.slice(-6)} بنجاح. شكراً لك!`, 'order_delivered');
+        break;
+      case 'cancelled':
+        await notify(customerId, 'تم إلغاء الطلب', `تم إلغاء طلبك رقم #${orderId.slice(-6)}.`, 'order_cancelled');
+        if (driverId) {
+          await notify(driverId, 'طلب ملغى', `تم إلغاء الطلب رقم #${orderId.slice(-6)} المكلف به.`, 'order_cancelled');
+        }
+        break;
+    }
+  });
+
+// ----------------------------------------------------
+// AUTOMATED SCHEDULERS & HEALTH CHECK ENGINES (Part 4 & 6)
+// ----------------------------------------------------
+
+export const processScheduledOrders = functions.pubsub
+  .schedule('every 5 minutes')
+  .onRun(async (context) => {
+    const now = new Date();
+    // Activate scheduled orders target time <= 30 minutes from now
+    const targetTime = new Date(now.getTime() + 30 * 60 * 1000);
+    
+    const snap = await db.collection('orders')
+      .where('status', '==', 'scheduled')
+      .where('scheduledAt', '<=', targetTime.toISOString())
+      .get();
+
+    for (const docSnap of snap.docs) {
+      const orderId = docSnap.id;
+      
+      await db.runTransaction(async (transaction) => {
+        transaction.update(db.collection('orders').doc(orderId), {
+          status: 'pending',
+          updatedAt: new Date().toISOString()
+        });
+
+        const eventRef = db.collection('orders').doc(orderId).collection('timeline').doc();
+        transaction.set(eventRef, {
+          id: eventRef.id,
+          status: 'pending',
+          timestamp: new Date().toISOString(),
+          actor: 'system',
+          actorRole: 'system',
+          GPS: null,
+          notes: 'Scheduled order activated automatically.'
+        });
+      });
+    }
+  });
+
+export const checkDriverHealthAndTimeout = functions.pubsub
+  .schedule('every 1 minute')
+  .onRun(async (context) => {
+    const now = new Date();
+    
+    // A. 30 seconds acceptance timeout
+    const timeoutThreshold = new Date(now.getTime() - 30 * 1000);
+    const pendingAssigns = await db.collection('orders')
+      .where('status', '==', 'driver_assigned')
+      .get();
+
+    for (const orderDoc of pendingAssigns.docs) {
+      const orderId = orderDoc.id;
+      const orderData = orderDoc.data();
+      const assignedAtStr = orderData.updatedAt;
+      if (!assignedAtStr) continue;
+
+      const assignedAt = new Date(assignedAtStr);
+      if (assignedAt <= timeoutThreshold) {
+        await triggerReassignment(orderId, orderData, 'assignment_timeout');
+      }
+    }
+
+    // B. GPS Lost (5 mins) & Battery (<10%) Health reassignment
+    const gpsLostThreshold = new Date(now.getTime() - 5 * 60 * 1000);
+    const activeOrders = await db.collection('orders')
+      .where('status', 'in', ['accepted', 'picked_up', 'on_the_way', 'delivering'])
+      .get();
+
+    for (const orderDoc of activeOrders.docs) {
+      const orderId = orderDoc.id;
+      const orderData = orderDoc.data();
+      const driverId = orderData.driverId;
+      if (!driverId) continue;
+
+      const driverSnap = await db.collection('drivers').doc(driverId).get();
+      if (!driverSnap.exists) continue;
+
+      const dData = driverSnap.data()!;
+      const availability = (dData.availability || '').toUpperCase();
+      const status = dData.status || 'approved';
+
+      const isUnavailable = availability === 'OFFLINE' || status === 'suspended' || status === 'blocked';
+      const isBatteryCritical = dData.batteryLevel !== undefined && dData.batteryLevel < 10;
+
+      let isGpsLost = false;
+      const locSnap = await db.collection('driverLocations').doc(driverId).get();
+      if (locSnap.exists) {
+        const lastSeenStr = locSnap.data()?.lastUpdated;
+        if (lastSeenStr) {
+          const lastSeen = new Date(lastSeenStr);
+          if (lastSeen <= gpsLostThreshold) {
+            isGpsLost = true;
+          }
+        }
+      }
+
+      if (isUnavailable || isBatteryCritical || isGpsLost) {
+        let reason = 'driver_offline';
+        if (isBatteryCritical) reason = 'driver_battery_critical';
+        if (isGpsLost) reason = 'driver_gps_lost';
+        if (status === 'suspended' || status === 'blocked') reason = 'driver_suspended';
+
+        await triggerReassignment(orderId, orderData, reason);
+      }
+    }
+  });
+
+async function triggerReassignment(orderId: string, orderData: any, reason: string) {
+  const driverId = orderData.driverId || orderData.assignedDriverId;
+  const rejectedBy = orderData.rejectedBy || [];
+  
+  if (driverId && !rejectedBy.includes(driverId)) {
+    rejectedBy.push(driverId);
+  }
+
+  await db.runTransaction(async (transaction) => {
+    const orderRef = db.collection('orders').doc(orderId);
+    const updates: any = {
+      status: 'ready_for_delivery',
+      driverId: null,
+      driverName: null,
+      assignedDriverId: null,
+      rejectedBy,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (driverId) {
+      const driverRef = db.collection('drivers').doc(driverId);
+      transaction.update(driverRef, {
+        availability: 'available',
+        currentOrderId: null
+      });
+    }
+
+    const bestDriver = await assignBestDriver(transaction, orderId, { ...orderData, location: orderData.location }, rejectedBy);
+    if (bestDriver) {
+      updates.status = 'driver_assigned';
+      updates.assignedDriverId = bestDriver.id;
+      updates.driverId = bestDriver.id;
+      updates.driverName = bestDriver.name;
+
+      const newDriverRef = db.collection('drivers').doc(bestDriver.id);
+      transaction.update(newDriverRef, {
+        availability: 'busy',
+        currentOrderId: orderId
+      });
+    }
+
+    transaction.update(orderRef, updates);
+
+    const eventRef = orderRef.collection('timeline').doc();
+    transaction.set(eventRef, {
+      id: eventRef.id,
+      status: updates.status,
+      timestamp: new Date().toISOString(),
+      actor: 'system',
+      actorRole: 'system',
+      GPS: null,
+      notes: `Reassigned from driver ${driverId || 'none'} due to ${reason}.`
+    });
+  });
+}
+
+// ----------------------------------------------------
+// SEARCH INDEX REAL-TIME MIRROR TRIGGERS (Part 7)
+// ----------------------------------------------------
+
+export const syncProductToSearchIndex = functions.firestore
+  .document('products/{productId}')
+  .onWrite(async (change, context) => {
+    const docId = context.params.productId;
+    const ref = db.collection('searchIndex').doc(`product_${docId}`);
+    if (!change.after.exists) {
+      await ref.delete();
+      return;
+    }
+    const data = change.after.data()!;
+    if (data.status === 'draft') {
+      await ref.delete();
+      return;
+    }
+    await ref.set({
+      id: docId,
+      type: 'product',
+      title: data.name || '',
+      subtitle: data.description || '',
+      tags: [data.name, data.category, data.brand, data.description].filter(Boolean).map(s => s.toLowerCase()),
+      metadata: {
+        price: data.price || 0,
+        storeId: data.storeId || '',
+        category: data.category || '',
+        imageUrl: data.images?.[0] || ''
+      },
+      updatedAt: new Date().toISOString()
+    });
+  });
+
+export const syncStoreToSearchIndex = functions.firestore
+  .document('stores/{storeId}')
+  .onWrite(async (change, context) => {
+    const docId = context.params.storeId;
+    const ref = db.collection('searchIndex').doc(`store_${docId}`);
+    if (!change.after.exists) {
+      await ref.delete();
+      return;
+    }
+    const data = change.after.data()!;
+    if (data.status !== 'approved') {
+      await ref.delete();
+      return;
+    }
+    await ref.set({
+      id: docId,
+      type: data.isRestaurant ? 'restaurant' : (data.isPharmacy ? 'pharmacy' : 'store'),
+      title: data.name || '',
+      subtitle: data.description || '',
+      tags: [data.name, data.description, data.district].filter(Boolean).map(s => s.toLowerCase()),
+      metadata: {
+        rating: data.averageRating || 5.0,
+        logo: data.logo || ''
+      },
+      updatedAt: new Date().toISOString()
+    });
+  });
+
+export const syncDriverToSearchIndex = functions.firestore
+  .document('drivers/{driverId}')
+  .onWrite(async (change, context) => {
+    const docId = context.params.driverId;
+    const ref = db.collection('searchIndex').doc(`driver_${docId}`);
+    if (!change.after.exists) {
+      await ref.delete();
+      return;
+    }
+    const data = change.after.data()!;
+    await ref.set({
+      id: docId,
+      type: 'driver',
+      title: data.name || '',
+      subtitle: data.vehicleType || '',
+      tags: [data.name, data.vehicleType, data.phone].filter(Boolean).map(s => s.toLowerCase()),
+      metadata: {
+        rating: data.rating || 5.0,
+        availability: data.availability || 'offline'
+      },
+      updatedAt: new Date().toISOString()
+    });
+  });
+
+export const syncCategoryToSearchIndex = functions.firestore
+  .document('categories/{categoryId}')
+  .onWrite(async (change, context) => {
+    const docId = context.params.categoryId;
+    const ref = db.collection('searchIndex').doc(`category_${docId}`);
+    if (!change.after.exists) {
+      await ref.delete();
+      return;
+    }
+    const data = change.after.data()!;
+    await ref.set({
+      id: docId,
+      type: 'category',
+      title: data.name || '',
+      subtitle: data.slug || '',
+      tags: [data.name, data.slug].filter(Boolean).map(s => s.toLowerCase()),
+      metadata: {
+        icon: data.icon || ''
+      },
+      updatedAt: new Date().toISOString()
+    });
+  });
+
+export const syncCouponToSearchIndex = functions.firestore
+  .document('coupons/{couponId}')
+  .onWrite(async (change, context) => {
+    const docId = context.params.couponId;
+    const ref = db.collection('searchIndex').doc(`coupon_${docId}`);
+    if (!change.after.exists) {
+      await ref.delete();
+      return;
+    }
+    const data = change.after.data()!;
+    await ref.set({
+      id: docId,
+      type: 'coupon',
+      title: data.code || '',
+      subtitle: `${data.discountValue}% Off`,
+      tags: [data.code].filter(Boolean).map(s => s.toLowerCase()),
+      metadata: {
+        discountValue: data.discountValue || 0,
+        minOrder: data.minOrder || 0
+      },
+      updatedAt: new Date().toISOString()
+    });
+  });
+

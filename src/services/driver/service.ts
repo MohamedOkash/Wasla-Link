@@ -20,7 +20,16 @@ export class DriverService {
     });
   }
 
-  async updateOrderStatus(driverId: string, orderId: string, newStatus: string, fee?: number, otp?: string) {
+  async updateOrderStatus(
+    driverId: string,
+    orderId: string,
+    newStatus: string,
+    fee?: number,
+    otp?: string,
+    signatureUrl?: string,
+    deliveryPhotoUrl?: string,
+    damagePhotoUrl?: string
+  ) {
     const { functions } = await import('../../services/firebase');
     const { httpsCallable } = await import('firebase/functions');
     const updateOrderStatusFn = httpsCallable(functions, 'updateOrderStatus');
@@ -29,7 +38,10 @@ export class DriverService {
       orderId,
       nextStatus: newStatus,
       driverId,
-      otp: otp || null
+      otp: otp || null,
+      signatureUrl: signatureUrl || null,
+      deliveryPhotoUrl: deliveryPhotoUrl || null,
+      damagePhotoUrl: damagePhotoUrl || null
     });
 
     if (newStatus === 'delivered') {

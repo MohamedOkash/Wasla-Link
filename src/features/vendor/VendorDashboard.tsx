@@ -22,9 +22,20 @@ import { useProducts } from '../../hooks/useProducts';
 
 export const VendorDashboard: React.FC = () => {
   const { t } = useTranslation();
-  const { goHome,  orders, theme, isRTL, walletTransactions, walletSettlements, addSettlement, returnRequests, updateReturnStatus, showToast, currentUser } = useApp();
+  const { goHome, orders, theme, isRTL, walletTransactions, walletSettlements, addSettlement, returnRequests, updateReturnStatus, showToast, currentUser, registerBackHandler } = useApp();
   const { products } = useProducts();;
   const [activeTab, setActiveTab] = useState<'dashboard' | 'catalog_builder' | 'orders' | 'products' | 'offers' | 'campaigns' | 'reports' | 'wallet' | 'settings' | 'returns' | 'reviews'>('dashboard');
+
+  useEffect(() => {
+    const handleBack = () => {
+      if (activeTab !== 'dashboard') {
+        setActiveTab('dashboard');
+        return true;
+      }
+      return false;
+    };
+    return registerBackHandler(handleBack);
+  }, [activeTab, registerBackHandler]);
 
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawMethod, setWithdrawMethod] = useState<'vodafone' | 'instapay' | 'bank'>('vodafone');
@@ -95,6 +106,15 @@ export const VendorDashboard: React.FC = () => {
       {/* Top Premium SaaS Header */}
       <div className="bg-[#111827] px-5 pt-12 pb-4 shadow-sm border-b border-[#1F2937] flex justify-between items-center sticky top-0 z-30 theme-transition">
         <div className="flex items-center gap-3">
+          {activeTab !== 'dashboard' && (
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className="bg-[#1F2937] text-[#9CA3AF] hover:text-[#F9FAFB] p-2 rounded-xl border border-[#374151] mr-1 active:scale-95 transition flex items-center justify-center"
+              title={t('back') || 'Back'}
+            >
+              <ArrowRight size={16} className={isRTL ? '' : 'rotate-180'} />
+            </button>
+          )}
           <div className="bg-primary text-white p-2.5 rounded-2xl shadow shadow-primary/20">
             <StoreIcon size={20} />
           </div>

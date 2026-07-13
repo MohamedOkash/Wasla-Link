@@ -20,5 +20,19 @@ export interface User {
   fcmToken?: string | null;
   isOnline?: boolean;
   currentOrderId?: string;
+  preferences?: {
+    notificationsEnabled?: boolean;
+    chatNotifications?: boolean;
+    supportNotifications?: boolean;
+    offers?: boolean;
+    marketing?: boolean;
+    sound?: boolean;
+    vibration?: boolean;
+    quietHours?: {
+      enabled: boolean;
+      start: string;
+      end: string;
+    };
+  };
 }
 

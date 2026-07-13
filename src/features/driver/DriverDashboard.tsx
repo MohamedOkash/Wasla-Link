@@ -1,6 +1,6 @@
 import { useTranslation } from '../../hooks/useTranslation';
-import React, { useState, useEffect } from 'react';
-import { BarChart3, ClipboardList, User, LogOut, Bike, Star, Power, Wallet, MapPin, Navigation, Signal, AlertTriangle, Ban } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { BarChart3, ClipboardList, User, LogOut, Bike, Star, Power, Wallet, MapPin, Navigation, Signal, AlertTriangle, Ban, ArrowRight } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -13,14 +13,47 @@ import { DriverVerificationRequired } from './DriverVerificationRequired';
 
 export const DriverDashboard: React.FC = () => {
   const { t } = useTranslation();
-  const { goHome, currentUser, isRTL, showToast } = useApp();
+  const { goHome, currentUser, isRTL, showToast, registerBackHandler } = useApp();
   const [activeTab, setActiveTab] = useState<'summary' | 'orders' | 'earnings' | 'profile'>('summary');
+
+  useEffect(() => {
+    const handleBack = () => {
+      if (activeTab !== 'summary') {
+        setActiveTab('summary');
+        return true;
+      }
+      return false;
+    };
+    return registerBackHandler(handleBack);
+  }, [activeTab, registerBackHandler]);
+
   const [driver, setDriver] = useState<any>(null);
   const [gpsStatus, setGpsStatus] = useState<GpsStatus>('offline');
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const { orders, updateOrderStatus } = useApp();
   const [incomingOrder, setIncomingOrder] = useState<any>(null);
   const [assignmentTimer, setAssignmentTimer] = useState<number>(30);
+  const [wallet, setWallet] = useState<any>(null);
+  const [maxQueueSize, setMaxQueueSize] = useState<number>(3);
+
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+    const unsub = onSnapshot(doc(db, 'driverWallets', currentUser.uid), (docSnap) => {
+      if (docSnap.exists()) {
+        setWallet(docSnap.data());
+      }
+    });
+    return () => unsub();
+  }, [currentUser?.uid]);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'adminSettings', 'driver'), (snap) => {
+      if (snap.exists()) {
+        setMaxQueueSize(snap.data().maxQueueSize || 3);
+      }
+    });
+    return () => unsub();
+  }, []);
 
   // Sync active driver profile from 'drivers' collection in real-time
   useEffect(() => {
@@ -51,8 +84,13 @@ export const DriverDashboard: React.FC = () => {
   
   // Listen for assigned orders
   useEffect(() => {
-    if (!driver || driver.availability !== 'online') return;
-    
+    if (!driver) return;
+    const validStates = ['available', 'online', 'busy', 'delivering'];
+    if (!validStates.includes(driver.availability || 'offline')) return;
+
+    const activeOrders = orders.filter(o => o.driverId === driver.id && ['accepted', 'picked_up', 'on_the_way', 'delivering'].includes(o.status));
+    if (activeOrders.length >= maxQueueSize) return;
+
     const assignedOrder = orders.find(o => o.status === 'driver_assigned' && o.assignedDriverId === driver.id);
     
     if (assignedOrder && !incomingOrder) {
@@ -61,7 +99,7 @@ export const DriverDashboard: React.FC = () => {
     } else if (!assignedOrder && incomingOrder) {
       setIncomingOrder(null);
     }
-  }, [orders, driver, incomingOrder]);
+  }, [orders, driver, incomingOrder, maxQueueSize]);
 
   // Handle Assignment Countdown Timer
   useEffect(() => {
@@ -230,8 +268,44 @@ export const DriverDashboard: React.FC = () => {
   }
 
   // Calculate metrics based on driver object (from Phase 14A driver schema)
-  const isOnline = driver.availability === 'online' || driver.availability === 'busy';
-  const isBusy = driver.availability === 'busy';
+  const isOnline = driver.availability === 'online' || driver.availability === 'busy' || driver.availability === 'available' || driver.availability === 'delivering';
+  const isBusy = driver.availability === 'busy' || driver.availability === 'delivering';
+
+  const { completedToday, completedThisWeek, completedThisMonth, acceptanceRate, completionRate } = useMemo(() => {
+    const driverOrders = orders.filter(o => o.driverId === currentUser?.uid);
+    const completed = driverOrders.filter(o => o.status === 'delivered');
+    const cancelled = driverOrders.filter(o => o.status === 'cancelled');
+    const rejectedByList = orders.filter(o => o.rejectedBy && o.rejectedBy.includes(currentUser?.uid || ''));
+
+    const todayStr = new Date().toDateString();
+    const completedToday = completed.filter(o => {
+      const d = o.createdAt ? new Date(o.createdAt) : new Date();
+      return d.toDateString() === todayStr;
+    }).length;
+
+    const completedThisWeek = completed.filter(o => {
+      const d = o.createdAt ? new Date(o.createdAt) : new Date();
+      return (Date.now() - d.getTime()) <= 7 * 24 * 60 * 60 * 1000;
+    }).length;
+
+    const completedThisMonth = completed.filter(o => {
+      const d = o.createdAt ? new Date(o.createdAt) : new Date();
+      return (Date.now() - d.getTime()) <= 30 * 24 * 60 * 60 * 1000;
+    }).length;
+
+    const totalAttempts = completed.length + rejectedByList.length;
+    const acceptanceRate = totalAttempts > 0 ? ((completed.length / totalAttempts) * 100).toFixed(0) : '100';
+    const totalTerminated = completed.length + cancelled.length;
+    const completionRate = totalTerminated > 0 ? ((completed.length / totalTerminated) * 100).toFixed(0) : '100';
+
+    return {
+      completedToday,
+      completedThisWeek,
+      completedThisMonth,
+      acceptanceRate,
+      completionRate
+    };
+  }, [orders, currentUser?.uid]);
 
   const renderGpsHealth = () => {
   const {} = useTranslation();
@@ -289,6 +363,15 @@ export const DriverDashboard: React.FC = () => {
       {/* Top Header */}
       <div className="bg-theme-card px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-4 shadow-sm border-b border-theme-border flex justify-between items-center sticky top-0 z-30 theme-transition">
         <div className="flex items-center gap-2">
+          {activeTab !== 'summary' && (
+            <button
+              onClick={() => setActiveTab('summary')}
+              className="bg-theme-bg text-theme-muted hover:text-theme-text p-2 rounded-xl border border-theme-border mr-1 active:scale-95 transition flex items-center justify-center"
+              title={t('back') || 'Back'}
+            >
+              <ArrowRight size={16} className={isRTL ? '' : 'rotate-180'} />
+            </button>
+          )}
           <div className="bg-primary text-white p-2.5 rounded-xl">
             <Bike size={20} />
           </div>
@@ -434,28 +517,62 @@ export const DriverDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Stats Summary Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-theme-card border border-theme-border p-4 rounded-2xl shadow-sm">
-                <div className="flex items-center gap-2 mb-2 text-primary">
-                  <ClipboardList size={18} />
-                  <span className="text-xs font-black">{t('str_1097')}</span>
+            {/* COD Cash Tracker Widget */}
+            {wallet && (
+              <div className="bg-theme-card border border-theme-border p-4.5 rounded-[24px] shadow-sm space-y-3">
+                <h4 className="text-xs font-black text-theme-text border-b border-theme-border/60 pb-2 flex justify-between items-center">
+                  <span>{isRTL ? 'إدارة المبالغ النقدية (COD)' : 'COD Cash Management'}</span>
+                  <span className="text-[10px] font-bold text-primary">{isRTL ? 'الدفع عند الاستلام' : 'Cash on Delivery'}</span>
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-theme-bg p-3 rounded-xl border border-theme-border">
+                    <span className="text-[9px] text-theme-muted font-bold block">{isRTL ? 'النقدية المحصلة' : 'Cash Collected'}</span>
+                    <span className="text-sm font-black text-theme-text mt-1 block">{(wallet.cashCollected || 0).toFixed(2)} ج.م</span>
+                  </div>
+                  <div className="bg-theme-bg p-3 rounded-xl border border-theme-border">
+                    <span className="text-[9px] text-theme-muted font-bold block">{isRTL ? 'النقدية في يدك' : 'Cash Remaining'}</span>
+                    <span className="text-sm font-black text-amber-500 mt-1 block">{(wallet.cashRemaining || 0).toFixed(2)} ج.م</span>
+                  </div>
+                  <div className="bg-theme-bg p-3 rounded-xl border border-theme-border">
+                    <span className="text-[9px] text-theme-muted font-bold block">{isRTL ? 'نقدية قيد التوصيل' : 'Cash Pending'}</span>
+                    <span className="text-sm font-black text-blue-500 mt-1 block">{(wallet.cashPending || 0).toFixed(2)} ج.م</span>
+                  </div>
+                  <div className="bg-theme-bg p-3 rounded-xl border border-theme-border">
+                    <span className="text-[9px] text-theme-muted font-bold block">{isRTL ? 'النقدية الموردة للإدارة' : 'Cash Delivered'}</span>
+                    <span className="text-sm font-black text-green-500 mt-1 block">{(wallet.cashDelivered || 0).toFixed(2)} ج.م</span>
+                  </div>
                 </div>
-                <span className="text-2xl font-black text-theme-text block">{driver.completedOrders || 0}</span>
               </div>
-              <div className="bg-theme-card border border-theme-border p-4 rounded-2xl shadow-sm">
-                <div className="flex items-center gap-2 mb-2 text-amber-500">
-                  <Star size={18} className="fill-amber-500" />
-                  <span className="text-xs font-black">{t('str_1098')}</span>
+            )}
+
+            {/* Performance Statistics Grid */}
+            <div className="bg-theme-card border border-theme-border p-4.5 rounded-[24px] shadow-sm space-y-3.5">
+              <h4 className="text-xs font-black text-theme-text border-b border-theme-border/60 pb-2">
+                {isRTL ? 'إحصائيات الأداء الحالية' : 'Performance Statistics'}
+              </h4>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-theme-bg p-2 rounded-xl border border-theme-border">
+                  <span className="text-[8px] text-theme-muted font-bold block">{isRTL ? 'طلبات اليوم' : 'Today'}</span>
+                  <span className="text-sm font-black text-theme-text mt-0.5 block">{completedToday}</span>
                 </div>
-                <span className="text-2xl font-black text-theme-text block">{driver.rating || 5.0}</span>
+                <div className="bg-theme-bg p-2 rounded-xl border border-theme-border">
+                  <span className="text-[8px] text-theme-muted font-bold block">{isRTL ? 'طلبات الأسبوع' : 'Weekly'}</span>
+                  <span className="text-sm font-black text-theme-text mt-0.5 block">{completedThisWeek}</span>
+                </div>
+                <div className="bg-theme-bg p-2 rounded-xl border border-theme-border">
+                  <span className="text-[8px] text-theme-muted font-bold block">{isRTL ? 'طلبات الشهر' : 'Monthly'}</span>
+                  <span className="text-sm font-black text-theme-text mt-0.5 block">{completedThisMonth}</span>
+                </div>
               </div>
-              <div className="bg-theme-card border border-theme-border p-4 rounded-2xl shadow-sm col-span-2">
-                <div className="flex items-center gap-2 mb-2 text-green-500">
-                  <Wallet size={18} />
-                  <span className="text-xs font-black">{t('str_1099')}</span>
+              <div className="grid grid-cols-2 gap-2 text-center">
+                <div className="bg-theme-bg p-2.5 rounded-xl border border-theme-border">
+                  <span className="text-[8px] text-theme-muted font-bold block">{isRTL ? 'معدل قبول الطلبات' : 'Acceptance Rate'}</span>
+                  <span className="text-xs font-black text-green-500 mt-0.5 block">{acceptanceRate}%</span>
                 </div>
-                <span className="text-3xl font-black text-theme-text block">{driver.totalEarnings || 0} <span className="text-sm text-theme-muted">{t('str_1110')}</span></span>
+                <div className="bg-theme-bg p-2.5 rounded-xl border border-theme-border">
+                  <span className="text-[8px] text-theme-muted font-bold block">{isRTL ? 'معدل إكمال الطلبات' : 'Completion Rate'}</span>
+                  <span className="text-xs font-black text-primary mt-0.5 block">{completionRate}%</span>
+                </div>
               </div>
             </div>
 

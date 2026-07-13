@@ -14,7 +14,9 @@ import {
   BarChart3,
   Image as ImageIcon,
   Shield,
-  Navigation
+  Navigation,
+  ArrowRight,
+  Database
 } from 'lucide-react';
 
 import PremiumButton from '../../components/premium/PremiumButton';
@@ -32,14 +34,26 @@ import { LogisticsCenter } from './LogisticsCenter';
 import { FinancialCenter } from './FinancialCenter';
 import { SettlementRequests } from './SettlementRequests';
 import { PaymentCenter } from './PaymentCenter';
+import { BackupCenter } from './BackupCenter';
 
 export const AdminDashboard = () => {
   const { t } = useTranslation();
   const {} = useTranslation();
 
-  const { isRTL, goHome } = useApp();
+  const { isRTL, goHome, registerBackHandler } = useApp();
   
-  const [activeTab, setActiveTab] = useState<'home' | 'stores' | 'categories' | 'users' | 'drivers' | 'monitor' | 'banners' | 'delivery' | 'analytics' | 'assets' | 'security' | 'logistics' | 'finance' | 'settlements' | 'payments'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'stores' | 'categories' | 'users' | 'drivers' | 'monitor' | 'banners' | 'delivery' | 'analytics' | 'assets' | 'security' | 'logistics' | 'finance' | 'settlements' | 'payments' | 'backup'>('home');
+
+  React.useEffect(() => {
+    const handleBack = () => {
+      if (activeTab !== 'home') {
+        setActiveTab('home');
+        return true;
+      }
+      return false;
+    };
+    return registerBackHandler(handleBack);
+  }, [activeTab, registerBackHandler]);
 
   const adminModules = [
     { id: 'stores', label: t('str_348'), icon: StoreIcon, color: 'text-blue-500', bg: 'bg-blue-500/10' },
@@ -56,6 +70,7 @@ export const AdminDashboard = () => {
     { id: 'settlements', label: t('settlements'), icon: Activity, color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
     { id: 'security', label: t('str_358'), icon: Shield, color: 'text-rose-500', bg: 'bg-rose-500/10' },
     { id: 'payments', label: t('payments'), icon: Activity, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+    { id: 'backup', label: isRTL ? 'النسخ الاحتياطي والترجيع' : 'Backup & Recovery', icon: Database, color: 'text-amber-500', bg: 'bg-amber-500/10' }
   ];
 
   return (
@@ -64,6 +79,15 @@ export const AdminDashboard = () => {
       <header className="sticky top-0 z-40 bg-theme-card/85 backdrop-blur-md border-b border-theme-border/60 px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-4 shadow-sm theme-transition">
         <div className="max-w-[1200px] w-full mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
+            {activeTab !== 'home' && (
+              <button
+                onClick={() => setActiveTab('home')}
+                className="bg-theme-bg text-theme-muted hover:text-theme-text p-2 rounded-xl border border-theme-border mr-1 active:scale-95 transition flex items-center justify-center"
+                title={t('back') || 'Back'}
+              >
+                <ArrowRight size={16} className={isRTL ? '' : 'rotate-180'} />
+              </button>
+            )}
             <div className="bg-gradient-to-br from-primary to-primary-hover text-white p-2.5 rounded-2xl shadow-lg shadow-primary/25">
               <LayoutGrid size={22} />
             </div>
@@ -123,6 +147,7 @@ export const AdminDashboard = () => {
             {activeTab === 'finance' && <FinancialCenter />}
             {activeTab === 'settlements' && <SettlementRequests />}
             {activeTab === 'payments' && <PaymentCenter />}
+            {activeTab === 'backup' && <BackupCenter />}
           </div>
         )}
       </main>

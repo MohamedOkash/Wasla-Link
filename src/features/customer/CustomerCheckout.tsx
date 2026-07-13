@@ -36,6 +36,9 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [pointsToRedeem, setPointsToRedeem] = useState(0);
+  const [scheduleType, setScheduleType] = useState<'now' | 'later'>('now');
+  const [scheduledDate, setScheduledDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [scheduledTime, setScheduledTime] = useState('12:00');
 
   // Address picking states
   const defaultAddr = savedAddresses.find(a => a.isDefault) || savedAddresses[0];
@@ -133,6 +136,57 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
       return;
     }
 
+    const validateSchedule = () => {
+      if (scheduleType === 'now') return true;
+
+      const targetDate = new Date(`${scheduledDate}T${scheduledTime}:00`);
+      if (isNaN(targetDate.getTime())) {
+        showToast(isRTL ? 'الرجاء اختيار تاريخ ووقت صحيح' : 'Please select a valid date and time', 'error');
+        return false;
+      }
+
+      if (targetDate <= new Date()) {
+        showToast(isRTL ? 'الرجاء اختيار وقت مستقبلي' : 'Please select a future time', 'error');
+        return false;
+      }
+
+      const maxDays = 7;
+      const maxTime = Date.now() + maxDays * 24 * 60 * 60 * 1000;
+      if (targetDate.getTime() > maxTime) {
+        showToast(isRTL ? `لا يمكن الجدولة لأكثر من ${maxDays} أيام` : `Cannot schedule more than ${maxDays} days in advance`, 'error');
+        return false;
+      }
+
+      for (const store of storesInCart) {
+        if (store.operatingHours) {
+          const dayOfWeek = targetDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+          const hours = store.operatingHours[dayOfWeek];
+          if (hours) {
+            if (hours.closed) {
+              showToast(isRTL ? `متجر ${store.name} مغلق في هذا اليوم` : `Store ${store.name} is closed on this day`, 'error');
+              return false;
+            }
+            const [startH, startM] = hours.start.split(':').map(Number);
+            const [endH, endM] = hours.end.split(':').map(Number);
+            const targetH = targetDate.getHours();
+            const targetM = targetDate.getMinutes();
+
+            const startVal = startH * 60 + startM;
+            const endVal = endH * 60 + endM;
+            const targetVal = targetH * 60 + targetM;
+
+            if (targetVal < startVal || targetVal > endVal) {
+              showToast(isRTL ? `توقيت الجدولة خارج ساعات عمل متجر ${store.name} (${hours.start} - ${hours.end})` : `Schedule time is outside operating hours of ${store.name} (${hours.start} - ${hours.end})`, 'error');
+              return false;
+            }
+          }
+        }
+      }
+      return true;
+    };
+
+    if (!validateSchedule()) return;
+
     setLoading(true);
     try {
       const orderRef = doc(collection(db, 'orderGroups'));
@@ -185,6 +239,14 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
         return;
       }
 
+      const finalStatus = scheduleType === 'later' 
+        ? 'scheduled' 
+        : (paymentMethod === 'instapay' ? 'pendingVerification' : 'new');
+        
+      const scheduledTimeStr = scheduleType === 'later'
+        ? new Date(`${scheduledDate}T${scheduledTime}:00`).toISOString()
+        : null;
+
       const orderGroupData: any = {
         id: orderGroupId,
         customerId: customerId,
@@ -202,14 +264,14 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
           coords: location.coords,
           isVerified: true
         },
-        status: paymentMethod === 'instapay' ? 'pendingVerification' : 'new',
+        status: finalStatus,
+        scheduledAt: scheduledTimeStr,
         createdAt: new Date().toISOString()
       };
 
       const storeOrdersData = Object.entries(cartItemsByStore).map(([shopId, items]) => {
          const store = storesInCart.find(s => s.id === shopId);
          const storeSubtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-         // Simplified discount pro-rata
          const storeDiscount = (storeSubtotal / subtotal) * discountAmount;
          const storePointsDiscount = (storeSubtotal / subtotal) * pointsDiscount;
 
@@ -217,8 +279,8 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
             shopId,
             shopName: store?.name || items[0].shopName,
             vendorId: store?.vendorId || '',
-            scheduledOrder: store ? getStoreStatus(store, isRTL).status === 'closed' : false,
-            scheduledFor: store && getStoreStatus(store, isRTL).status === 'closed' ? 'next_open' : undefined,
+            scheduledOrder: scheduleType === 'later' || (store ? getStoreStatus(store, isRTL).status === 'closed' : false),
+            scheduledFor: scheduleType === 'later' ? scheduledTimeStr : (store && getStoreStatus(store, isRTL).status === 'closed' ? 'next_open' : undefined),
             customerId: customerId,
             customerName: currentUser?.name || 'عميل تجريبي',
             items: items.map(item => ({
@@ -233,7 +295,8 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
             discount: storeDiscount + storePointsDiscount,
             total: storeSubtotal + (storeDeliveryFees[shopId] || 0) - (storeDiscount + storePointsDiscount),
             location: orderGroupData.location,
-            status: paymentMethod === 'instapay' ? 'pendingVerification' : 'new',
+            status: finalStatus,
+            scheduledAt: scheduledTimeStr,
             createdAt: orderGroupData.createdAt
          });
       });
@@ -520,6 +583,66 @@ export const CustomerCheckout: React.FC<CustomerCheckoutProps> = ({ goBack, plac
               )}
             </div>
           </div>
+        </PremiumCard>
+
+        {/* Scheduled Delivery Card (Part 4) */}
+        <PremiumCard hoverable={false} className="space-y-4">
+          <h3 className="font-black text-theme-text text-xs flex items-center gap-1.5 border-b border-theme-border pb-2.5 uppercase tracking-wide">
+            <ClipboardList size={15} className="text-primary" />
+            {isRTL ? 'توقيت التوصيل' : 'Delivery Timing'}
+          </h3>
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setScheduleType('now')}
+              className={`p-3.5 rounded-2xl border text-center transition ${
+                scheduleType === 'now'
+                  ? 'border-primary bg-primary/10 text-primary font-black'
+                  : 'border-theme-border text-theme-muted font-bold hover:text-theme-text'
+              }`}
+            >
+              <div className="text-xs">{isRTL ? 'التوصيل الآن' : 'Deliver Now'}</div>
+              <div className="text-[9px] opacity-75 mt-0.5">{isRTL ? 'أسرع وقت ممكن' : 'As soon as possible'}</div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setScheduleType('later')}
+              className={`p-3.5 rounded-2xl border text-center transition ${
+                scheduleType === 'later'
+                  ? 'border-primary bg-primary/10 text-primary font-black'
+                  : 'border-theme-border text-theme-muted font-bold hover:text-theme-text'
+              }`}
+            >
+              <div className="text-xs">{isRTL ? 'جدولة الطلب' : 'Schedule Later'}</div>
+              <div className="text-[9px] opacity-75 mt-0.5">{isRTL ? 'اختر تاريخ ووقت' : 'Choose date & time'}</div>
+            </button>
+          </div>
+
+          {scheduleType === 'later' && (
+            <div className="grid grid-cols-2 gap-3 pt-2 animate-fade-in">
+              <div>
+                <label className="text-[9.5px] font-black text-theme-muted block mb-1">{isRTL ? 'تاريخ التوصيل' : 'Delivery Date'}</label>
+                <input
+                  type="date"
+                  value={scheduledDate}
+                  min={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => setScheduledDate(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-theme-bg border border-theme-border text-xs font-black text-theme-text"
+                />
+              </div>
+              <div>
+                <label className="text-[9.5px] font-black text-theme-muted block mb-1">{isRTL ? 'وقت التوصيل' : 'Delivery Time'}</label>
+                <input
+                  type="time"
+                  value={scheduledTime}
+                  onChange={(e) => setScheduledTime(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-theme-bg border border-theme-border text-xs font-black text-theme-text"
+                />
+              </div>
+            </div>
+          )}
         </PremiumCard>
 
         {/* Payment Method Cards */}

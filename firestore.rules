@@ -343,9 +343,23 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
+    match /fraudIncidents/{incidentId} {
+      allow read, write: if isAdmin();
+    }
+    match /adminSettings/{document=**} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+    
     // 31. system Collection (Counters & App Version)
     match /system/{document=**} {
       allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // 32. searchIndex Collection (Read-only for all signed-in users, write locked to Admin)
+    match /searchIndex/{docId} {
+      allow read: if signedIn();
       allow write: if isAdmin();
     }
   }

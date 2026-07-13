@@ -1,3 +1,5 @@
+import { collection, query, where, getDocs, limit, startAt, endAt, orderBy } from 'firebase/firestore';
+import { db } from './firebase';
 import { Product } from '../types/product.types';
 import { Store } from '../types/store.types';
 import { Category } from '../data/categories';
@@ -7,13 +9,72 @@ export interface ScoredResult<T> {
   score: number;
 }
 
+export interface SearchIndexResult {
+  id: string;
+  type: 'product' | 'store' | 'restaurant' | 'pharmacy' | 'driver' | 'category' | 'coupon' | 'order';
+  title: string;
+  subtitle: string;
+  tags: string[];
+  metadata: any;
+}
+
+// Global Search queries ONLY this index (Part 7)
+export const searchIndexCollection = async (searchQuery: string): Promise<SearchIndexResult[]> => {
+  const qStr = searchQuery.trim().toLowerCase();
+  if (!qStr) return [];
+
+  const collRef = collection(db, 'searchIndex');
+  
+  // 1. Query by title prefix
+  const qPrefix = query(
+    collRef,
+    orderBy('title'),
+    startAt(qStr),
+    endAt(qStr + '\uf8ff'),
+    limit(20)
+  );
+
+  const results: SearchIndexResult[] = [];
+  try {
+    const snap = await getDocs(qPrefix);
+    snap.forEach(docSnap => {
+      results.push(docSnap.data() as SearchIndexResult);
+    });
+  } catch (err) {
+    console.error('Search prefix error:', err);
+  }
+
+  // 2. Query by tags array-contains-any
+  try {
+    const words = qStr.split(' ').filter(Boolean).slice(0, 10);
+    if (words.length > 0) {
+      const qTags = query(
+        collRef,
+        where('tags', 'array-contains-any', words),
+        limit(20)
+      );
+      const snapTags = await getDocs(qTags);
+      snapTags.forEach(docSnap => {
+        const data = docSnap.data() as SearchIndexResult;
+        if (!results.find(r => r.id === data.id && r.type === data.type)) {
+          results.push(data);
+        }
+      });
+    }
+  } catch (err) {
+    console.error('Search tags error:', err);
+  }
+
+  return results;
+};
+
 export const searchProductsAndStores = (
-  query: string,
+  queryStr: string,
   products: Product[],
   stores: Store[],
   categories: Category[]
 ) => {
-  const q = (query || '').toLowerCase().trim();
+  const q = (queryStr || '').toLowerCase().trim();
   if (!q) return { shops: [], products: [], categories: [] };
 
   // 1. Search & Score Stores (Store Name Match = 80)
@@ -32,7 +93,7 @@ export const searchProductsAndStores = (
     .filter(s => s.score > 0)
     .sort((a, b) => b.score - a.score);
 
-  // 2. Search & Score Products (Exact Barcode = 110, Exact SKU = 105, Exact Product Match = 100, Brand Match = 70-85, Offer Match = 40)
+  // 2. Search & Score Products
   const scoredProducts: ScoredResult<Product & { shop?: Store }>[] = products
     .map(p => {
       let score = 0;
@@ -68,7 +129,7 @@ export const searchProductsAndStores = (
     .filter(p => p.score > 0)
     .sort((a, b) => b.score - a.score);
 
-  // 3. Search & Score Categories (Category Match = 60)
+  // 3. Search & Score Categories
   const scoredCategories: ScoredResult<Category>[] = categories
     .map(c => {
       let score = 0;
