@@ -1230,19 +1230,48 @@ export const approveDriver = functions.https.onCall(async (data, context) => {
       isApproved: true,
       isActive: true,
       availability: 'offline',
+      agreementAccepted: false,
+      trainingCompleted: false,
+      tier: 'bronze',
+      score: 100,
       updatedAt: new Date().toISOString()
     }, { merge: true });
 
+    // Initialize driverWallet
     const dWalletRef = db.collection('driverWallets').doc(driverId);
-    const dWalletSnap = await transaction.get(dWalletRef);
-    if (!dWalletSnap.exists) {
-      transaction.set(dWalletRef, {
-        balance: 0,
-        pendingBalance: 0,
-        paidBalance: 0,
-        updatedAt: new Date().toISOString()
-      });
-    }
+    transaction.set(dWalletRef, {
+      balance: 0,
+      pendingBalance: 0,
+      paidBalance: 0,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+
+    // Initialize driverLedger
+    const dLedgerRef = db.collection('driverLedgers').doc(driverId);
+    transaction.set(dLedgerRef, {
+      entries: [
+        {
+          id: 'init_' + Date.now(),
+          amount: 0,
+          type: 'credit',
+          description: 'Initial entry upon approval',
+          timestamp: new Date().toISOString()
+        }
+      ]
+    }, { merge: true });
+
+    // Initialize driverStats
+    const dStatsRef = db.collection('driverStats').doc(driverId);
+    transaction.set(dStatsRef, {
+      acceptanceRate: 100,
+      completionRate: 100,
+      averageRating: 5.0,
+      complaints: 0,
+      lateDeliveries: 0,
+      onlineHours: 0,
+      completedOrders: 0,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
 
     await writeAuditLog(transaction, {
       action: 'APPROVE_DRIVER',
@@ -1255,6 +1284,79 @@ export const approveDriver = functions.https.onCall(async (data, context) => {
   });
 
   return { success: true };
+});
+
+export const inviteDriver = functions.https.onCall(async (data, context) => {
+  if (!context.auth || (context.auth.token.role !== 'admin' && context.auth.token.admin !== true)) {
+    throw new functions.https.HttpsError('permission-denied', 'Only administrators can invite drivers.');
+  }
+
+  const { email, name, phone, governorate, city, village, deliveryMethod } = data;
+  if (!email || !name || !phone || !governorate || !city || !village || !deliveryMethod) {
+    throw new functions.https.HttpsError('invalid-argument', 'Missing required driver details.');
+  }
+
+  try {
+    const tempPassword = Math.random().toString(36).slice(-10) + 'A1!';
+    const userRecord = await admin.auth().createUser({
+      email,
+      password: tempPassword,
+      displayName: name,
+    });
+
+    await db.collection('users').doc(userRecord.uid).set({
+      uid: userRecord.uid,
+      name,
+      email,
+      phone,
+      role: 'customer',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+
+    await db.collection('drivers').doc(userRecord.uid).set({
+      uid: userRecord.uid,
+      name,
+      phone,
+      governorate,
+      city,
+      village,
+      deliveryMethod,
+      profilePhotoUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=FF9F00&color=fff&size=128`,
+      nationalIdNumber: '',
+      nationalIdImageUrl: '',
+      drivingLicenseUrl: '',
+      vehicleImageUrl: '',
+      status: 'pending_review',
+      role: 'driver',
+      isApproved: false,
+      isActive: false,
+      rating: 5.0,
+      completedOrders: 0,
+      totalDeliveries: 0,
+      totalEarnings: 0,
+      currentOrderId: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      availability: 'offline',
+      agreementAccepted: false,
+      trainingCompleted: false,
+      tier: 'bronze',
+      score: 100
+    });
+
+    const resetLink = await admin.auth().generatePasswordResetLink(email);
+
+    return { 
+      success: true, 
+      uid: userRecord.uid,
+      resetLink,
+      message: 'Driver invited successfully.' 
+    };
+  } catch (error: any) {
+    console.error('Error inviting driver:', error);
+    throw new functions.https.HttpsError('internal', error.message || 'Error inviting driver.');
+  }
 });
 
 export const requestWalletSettlement = functions.https.onCall(async (data, context) => {

@@ -9,6 +9,14 @@ export class AdminService {
     await approveDriverFn({ driverId, vehicleType });
   }
 
+  async inviteDriver(payload: { email: string; name: string; phone: string; governorate: string; city: string; village: string; deliveryMethod: string }) {
+    const { functions } = await import('../firebase');
+    const { httpsCallable } = await import('firebase/functions');
+    const inviteDriverFn = httpsCallable(functions, 'inviteDriver');
+    const res = await inviteDriverFn(payload);
+    return res.data;
+  }
+
   async processSettlement(req: any, action: 'approved' | 'rejected' | 'paid') {
     const { functions } = await import('../firebase');
     const { httpsCallable } = await import('firebase/functions');

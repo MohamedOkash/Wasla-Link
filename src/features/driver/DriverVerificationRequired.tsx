@@ -84,7 +84,7 @@ export const DriverVerificationRequired: React.FC<{ driver: Driver }> = ({ drive
       <div className="space-y-4 mb-8 flex-1">
         <h3 className="font-black text-theme-text">Requested Documents</h3>
         
-        {reqDocs.map(docReq => {
+        {reqDocs.map((docReq: any) => {
           if (docReq === 'Other') return null;
           const file = files[docReq];
           

@@ -119,7 +119,7 @@ service cloud.firestore {
     match /drivers/{driverId} {
       allow read: if true;
       allow create: if signedIn() && request.auth.uid == driverId;
-      allow update: if isAdmin() || (signedIn() && isOwner(driverId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'isApproved', 'createdAt']));
+      allow update: if isAdmin() || (signedIn() && isOwner(driverId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'isApproved', 'role', 'tier', 'score', 'completedOrders', 'totalDeliveries', 'totalEarnings', 'createdAt']));
       allow delete: if isAdmin();
     }
     

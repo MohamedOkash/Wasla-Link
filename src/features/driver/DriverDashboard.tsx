@@ -10,6 +10,12 @@ import { DriverEarnings } from './DriverEarnings';
 import { geoService, GpsStatus, LocationData } from '../../services/geolocation.service';
 import { driverRepository } from "../../services/driver/repository";
 import { DriverVerificationRequired } from './DriverVerificationRequired';
+import { DriverRegistration } from './DriverRegistration';
+import { DriverAgreement } from './DriverAgreement';
+import { DriverTraining } from './DriverTraining';
+import { auth } from '../../services/firebase';
+import { signOut } from 'firebase/auth';
+import { Award } from 'lucide-react';
 
 export const DriverDashboard: React.FC = () => {
   const { t } = useTranslation();
@@ -28,6 +34,7 @@ export const DriverDashboard: React.FC = () => {
   }, [activeTab, registerBackHandler]);
 
   const [driver, setDriver] = useState<any>(null);
+  const [needsRegistration, setNeedsRegistration] = useState(false);
   const [gpsStatus, setGpsStatus] = useState<GpsStatus>('offline');
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const { orders, updateOrderStatus } = useApp();
@@ -55,7 +62,6 @@ export const DriverDashboard: React.FC = () => {
     return () => unsub();
   }, []);
 
-  // Sync active driver profile from 'drivers' collection in real-time
   useEffect(() => {
     if (!currentUser?.uid) return;
 
@@ -63,17 +69,10 @@ export const DriverDashboard: React.FC = () => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setDriver({ id: docSnap.id, ...data });
+        setNeedsRegistration(false);
         geoService.setTrackingIntervalForStatus(data.availability || 'offline');
       } else {
-        // Fallback profile if drivers document is not created yet
-        setDriver({
-          id: currentUser.uid,
-          name: currentUser.name || 'سائق وصلة لينك',
-          availability: 'offline',
-          completedOrders: 0,
-          rating: 5.0,
-          totalEarnings: 0
-        });
+        setNeedsRegistration(true);
       }
     }, (err) => {
       console.error("Failed to sync driver profile:", err);
@@ -180,6 +179,10 @@ export const DriverDashboard: React.FC = () => {
 
   const toggleAvailability = async () => {
     if (!driver) return;
+    if (driver.status !== 'approved' || !driver.agreementAccepted || !driver.trainingCompleted) {
+      showToast(isRTL ? 'يرجى إكمال الاتفاقية والتدريب أولاً' : 'Please complete agreement and training first', 'warning');
+      return;
+    }
     try {
       const isCurrentlyOnline = driver.availability === 'online' || driver.availability === 'busy';
       const newStatus = isCurrentlyOnline ? 'offline' : 'online';
@@ -215,6 +218,17 @@ export const DriverDashboard: React.FC = () => {
     }
   };
 
+  if (needsRegistration) {
+    return (
+      <DriverRegistration 
+        onBack={async () => {
+          await signOut(auth);
+          window.location.reload();
+        }} 
+      />
+    );
+  }
+
   if (!driver) {
     return <div className="h-screen bg-theme-bg flex items-center justify-center animate-pulse"><Bike size={40} className="text-primary" /></div>;
   }
@@ -225,9 +239,10 @@ export const DriverDashboard: React.FC = () => {
         <div className="w-20 h-20 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mb-6">
           <ClipboardList size={40} />
         </div>
-        <h2 className="text-xl font-black mb-2 text-theme-text">Your Application is Under Review</h2>
-        <p className="text-theme-muted text-sm font-bold">Please wait while our team reviews your documents.</p>
-        <button onClick={() => { goHome(); window.location.reload(); }} className="mt-8 px-6 py-3 bg-theme-card border border-theme-border rounded-xl text-theme-text text-sm font-black">Refresh</button>
+        <h2 className="text-xl font-black mb-2 text-theme-text">{isRTL ? 'طلبك قيد المراجعة' : 'Your Application is Under Review'}</h2>
+        <p className="text-theme-muted text-sm font-bold">{isRTL ? 'الرجاء الانتظار حتى تقوم الإدارة بمراجعة مستنداتك وتفعيل حسابك.' : 'Please wait while our team reviews your documents and activates your account.'}</p>
+        <button onClick={() => { goHome(); window.location.reload(); }} className="mt-8 px-6 py-3 bg-theme-card border border-theme-border rounded-xl text-theme-text text-sm font-black">{isRTL ? 'تحديث' : 'Refresh'}</button>
+        <button onClick={async () => { await signOut(auth); window.location.reload(); }} className="mt-4 text-xs font-black text-red-500 hover:underline">{isRTL ? 'تسجيل الخروج' : 'Log Out'}</button>
       </div>
     );
   }
@@ -238,8 +253,9 @@ export const DriverDashboard: React.FC = () => {
         <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mb-6">
           <AlertTriangle size={40} />
         </div>
-        <h2 className="text-xl font-black mb-2 text-theme-text">Application Rejected</h2>
-        <p className="text-theme-muted text-sm font-bold">Unfortunately, your application was not approved.</p>
+        <h2 className="text-xl font-black mb-2 text-theme-text">{isRTL ? 'تم رفض الطلب' : 'Application Rejected'}</h2>
+        <p className="text-theme-muted text-sm font-bold">{isRTL ? 'للأسف، لم تتم الموافقة على طلب انضمامك كمندوب.' : 'Unfortunately, your application was not approved.'}</p>
+        <button onClick={async () => { await signOut(auth); window.location.reload(); }} className="mt-8 text-xs font-black text-red-500 hover:underline">{isRTL ? 'تسجيل الخروج' : 'Log Out'}</button>
       </div>
     );
   }
@@ -257,14 +273,21 @@ export const DriverDashboard: React.FC = () => {
         <button onClick={() => { goHome(); window.location.reload(); }} className="mt-8 px-6 py-3 bg-theme-card border border-theme-border rounded-xl text-theme-text text-sm font-black">
           {isRTL ? 'تحديث' : 'Refresh'}
         </button>
+        <button onClick={async () => { await signOut(auth); window.location.reload(); }} className="mt-4 text-xs font-black text-red-500 hover:underline">{isRTL ? 'تسجيل الخروج' : 'Log Out'}</button>
       </div>
     );
   }
 
   if (driver.status === 'needs_documents') {
-    // We need a sub-component or state for uploading requested documents.
-    // For now, I'll redirect them to a special state or component.
     return <DriverVerificationRequired driver={driver} />;
+  }
+
+  if (driver.status === 'approved' && !driver.agreementAccepted) {
+    return <DriverAgreement driver={driver} onAccepted={() => window.location.reload()} />;
+  }
+
+  if (driver.status === 'approved' && !driver.trainingCompleted) {
+    return <DriverTraining driver={driver} onCompleted={() => window.location.reload()} />;
   }
 
   // Calculate metrics based on driver object (from Phase 14A driver schema)
@@ -572,6 +595,123 @@ export const DriverDashboard: React.FC = () => {
                 <div className="bg-theme-bg p-2.5 rounded-xl border border-theme-border">
                   <span className="text-[8px] text-theme-muted font-bold block">{isRTL ? 'معدل إكمال الطلبات' : 'Completion Rate'}</span>
                   <span className="text-xs font-black text-primary mt-0.5 block">{completionRate}%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Tier & Score Panel */}
+            <div className="bg-gradient-to-br from-primary to-primary-hover text-white p-5 rounded-[28px] shadow-lg relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+              <div className="flex justify-between items-center">
+                <div>
+                  <span className="text-[10px] uppercase font-black tracking-widest text-white/80">{isRTL ? 'مستوى المندوب' : 'Driver Tier'}</span>
+                  <h4 className="text-lg font-black capitalize mt-0.5 flex items-center gap-1.5">
+                    <Award size={18} />
+                    {driver.tier || 'bronze'}
+                  </h4>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] uppercase font-black tracking-widest text-white/80">{isRTL ? 'تقييم الأداء' : 'Driver Score'}</span>
+                  <h4 className="text-lg font-black mt-0.5">{driver.score || 100} / 100</h4>
+                </div>
+              </div>
+              <div className="h-px bg-white/20 my-3" />
+              <div className="grid grid-cols-2 gap-4 text-[10px] font-bold">
+                <div>
+                  <span className="text-white/70 block">{isRTL ? 'معدل الإكمال:' : 'Completion:'}</span>
+                  <span>{completionRate}%</span>
+                </div>
+                <div>
+                  <span className="text-white/70 block">{isRTL ? 'توصيلات متأخرة:' : 'Late Deliveries:'}</span>
+                  <span>{driver.stats?.lateDeliveries || 0}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Vehicles Management */}
+            <div className="bg-theme-card border border-theme-border p-4.5 rounded-[24px] shadow-sm space-y-3">
+              <h4 className="text-xs font-black text-theme-text border-b border-theme-border/60 pb-2 flex justify-between items-center">
+                <span>{isRTL ? 'المركبات المسجلة' : 'Registered Vehicles'}</span>
+                <span className="text-[10px] font-bold text-primary">{driver.vehicles?.length || 1} {isRTL ? 'مركبة' : 'vehicle'}</span>
+              </h4>
+              <div className="space-y-2">
+                {(driver.vehicles || [{
+                  type: driver.deliveryMethod || 'motorcycle',
+                  brand: isRTL ? 'مركبة أساسية' : 'Primary Vehicle',
+                  model: '',
+                  plateNumber: isRTL ? 'بدون لوحة' : 'N/A',
+                  color: '',
+                  year: '',
+                  isPrimary: true,
+                  status: 'active'
+                }]).map((veh: any, idx: number) => (
+                  <div key={idx} className="bg-theme-bg p-3 rounded-xl border border-theme-border flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-black text-theme-text capitalize">{veh.type} - {veh.brand} {veh.model}</p>
+                      <p className="text-[10px] text-theme-muted font-bold mt-0.5">{isRTL ? 'اللوحة:' : 'Plate:'} {veh.plateNumber} | {veh.color} | {veh.year}</p>
+                    </div>
+                    {veh.isPrimary && (
+                      <span className="text-[9px] font-black text-green-500 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-lg">
+                        {isRTL ? 'أساسية' : 'Primary'}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Availability Settings Panel */}
+            <div className="bg-theme-card border border-theme-border p-4.5 rounded-[24px] shadow-sm space-y-4">
+              <h4 className="text-xs font-black text-theme-text border-b border-theme-border/60 pb-2 flex justify-between items-center">
+                <span>{isRTL ? 'إعدادات الدوام والجاهزية' : 'Availability & Shift Settings'}</span>
+              </h4>
+              
+              <div className="space-y-3 text-xs font-bold text-theme-muted">
+                <div className="flex justify-between items-center">
+                  <span>{isRTL ? 'وضع الإجازة (Vacation Mode)' : 'Vacation Mode'}</span>
+                  <input 
+                    type="checkbox" 
+                    checked={driver.availabilitySettings?.vacationMode || false}
+                    onChange={async (e) => {
+                      try {
+                        await driverRepository.update(driver.id, {
+                          'availabilitySettings.vacationMode': e.target.checked
+                        });
+                        showToast(isRTL ? 'تم تحديث وضع الإجازة' : 'Vacation mode updated');
+                      } catch (err) {
+                        showToast('Error', 'error');
+                      }
+                    }}
+                    className="w-4 h-4 accent-primary"
+                  />
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span>{isRTL ? 'إيقاف طوارئ (Emergency Offline)' : 'Emergency Offline'}</span>
+                  <input 
+                    type="checkbox" 
+                    checked={driver.availabilitySettings?.emergencyOffline || false}
+                    onChange={async (e) => {
+                      try {
+                        await driverRepository.update(driver.id, {
+                          'availabilitySettings.emergencyOffline': e.target.checked
+                        });
+                        showToast(isRTL ? 'تم تحديث إيقاف الطوارئ' : 'Emergency offline updated');
+                      } catch (err) {
+                        showToast('Error', 'error');
+                      }
+                    }}
+                    className="w-4 h-4 accent-primary"
+                  />
+                </div>
+
+                <div className="h-px bg-theme-border/40" />
+
+                <div className="space-y-1.5">
+                  <span className="text-[10px] text-theme-muted block">{isRTL ? 'ساعات العمل المفضلة' : 'Preferred Working Hours'}</span>
+                  <p className="text-theme-text font-black">
+                    {driver.availabilitySettings?.workingHours?.start || '08:00'} - {driver.availabilitySettings?.workingHours?.end || '23:00'}
+                  </p>
                 </div>
               </div>
             </div>

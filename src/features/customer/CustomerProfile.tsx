@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { 
   User as UserIcon, Globe, Settings, HelpCircle, LogOut, ShieldCheck, 
   ChevronLeft, MapPin, Eye, EyeOff, Save, Check, Bell, BookOpen, Trash2, Plus,
-  Heart, ShoppingBag, Coins, UserPlus, Info, ExternalLink, ShieldAlert
+  Heart, ShoppingBag, Coins, UserPlus, Info, ExternalLink, ShieldAlert, Bike
 } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { LoyaltyWallet } from '../../components/loyalty/LoyaltyWallet';
@@ -830,6 +830,14 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ navigate }) =>
                 <div className="flex items-center gap-3">
                   <div className="bg-teal-500/10 p-2 rounded-lg text-teal-500"><ShieldCheck size={16} /></div>
                   <span className="font-black text-xs text-theme-text">{t('str_282')}</span>
+                </div>
+                <ChevronLeft size={16} className={`text-theme-muted ${isRTL ? '' : 'rotate-180'}`} />
+              </button>
+
+              <button onClick={() => setActiveSection('driver_registration')} className="w-full flex items-center justify-between p-4 hover:bg-theme-border/20 transition-colors text-left">
+                <div className="flex items-center gap-3">
+                  <div className="bg-amber-500/10 p-2 rounded-lg text-amber-500"><Bike size={16} /></div>
+                  <span className="font-black text-xs text-theme-text">{isRTL ? 'انضم كمندوب توصيل' : 'Join as Driver'}</span>
                 </div>
                 <ChevronLeft size={16} className={`text-theme-muted ${isRTL ? '' : 'rotate-180'}`} />
               </button>

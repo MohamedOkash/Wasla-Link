@@ -18,7 +18,7 @@ import { storeRepository } from "../../services/vendor/repository";
 import { userRepository } from "../../services/shared/user.repository";
 
 // Dynamic Egypt Regions Data
-const EGYPT_REGIONS: Record<string, { cities: Record<string, string[]> }> = {
+export const EGYPT_REGIONS: Record<string, { cities: Record<string, string[]> }> = {
   'الدقهلية': {
     cities: {
       'السنبلاوين': ['ميت غراب', 'برقين', 'البوها', 'طماي الزهايرة', 'أخرى'],
@@ -51,7 +51,7 @@ const EGYPT_REGIONS: Record<string, { cities: Record<string, string[]> }> = {
 export const AuthScreen: React.FC = () => {
   const { t } = useTranslation();
   const { setRole, setCurrentUser, lang, setLang, theme, toggleTheme, categories, showToast } = useApp();
-  const [view, setView] = useState<'login' | 'register' | 'vendor_register' | 'forgot_password'>('login');
+  const [view, setView] = useState<'login' | 'register' | 'vendor_register' | 'driver_register' | 'forgot_password'>('login');
   
   // Form states
   const [email, setEmail] = useState('');
@@ -62,6 +62,7 @@ export const AuthScreen: React.FC = () => {
   const [storeName, setStoreName] = useState('');
   const [storeCategory, setStoreCategory] = useState('grocery');
   const [loading, setLoading] = useState(false);
+  const [driverVehicleType, setDriverVehicleType] = useState('motorcycle');
 
   // Vendor Onboarding Wizard states
   const [regStep, setRegStep] = useState(1);
@@ -146,6 +147,77 @@ export const AuthScreen: React.FC = () => {
       }
       showToast(errMsg);
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDriverRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password || !name || !phone || !governorate || !city || !village) {
+      showToast(t('str_303') || 'Please fill required fields');
+      return;
+    }
+    setLoading(true);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const uid = userCredential.user.uid;
+
+      await userRepository.create(uid, {
+        uid,
+        name,
+        email,
+        phone,
+        role: 'customer',
+        createdAt: new Date().toISOString()
+      });
+
+      const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+      const { db } = await import('../../services/firebase');
+      await setDoc(doc(db, 'drivers', uid), {
+        uid,
+        name,
+        phone,
+        governorate,
+        city,
+        village,
+        deliveryMethod: driverVehicleType,
+        profilePhotoUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=FF9F00&color=fff&size=128`,
+        nationalIdNumber: '',
+        nationalIdImageUrl: '',
+        drivingLicenseUrl: '',
+        vehicleImageUrl: '',
+        status: 'pending_review',
+        role: 'driver',
+        isApproved: false,
+        isActive: false,
+        rating: 5.0,
+        completedOrders: 0,
+        totalDeliveries: 0,
+        totalEarnings: 0,
+        currentOrderId: null,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        availability: 'offline',
+        agreementAccepted: false,
+        trainingCompleted: false,
+        tier: 'bronze',
+        score: 100
+      });
+
+      showToast(t('str_305') || 'Account created successfully!');
+      setView('login');
+      setRegStep(1);
+    } catch (err: any) {
+      console.error(err);
+      let errMsg = t('str_306') || 'Error creating account';
+      if (err.code === 'auth/email-already-in-use') {
+        errMsg = t('str_307') || 'Email already in use';
+      } else if (err.code === 'auth/weak-password') {
+        errMsg = t('str_308') || 'Password too weak';
+      }
+      showToast(errMsg);
+    } finally {
+      setView('login');
       setLoading(false);
     }
   };
@@ -365,6 +437,12 @@ export const AuthScreen: React.FC = () => {
               onClick={() => { setView('vendor_register'); setEmail(''); setPassword(''); setRegStep(1); }}
             >
               {t('str_321')}
+            </p>
+            <p 
+              className="text-center text-xs font-black text-primary cursor-pointer hover:underline mt-2" 
+              onClick={() => { setView('driver_register'); setEmail(''); setPassword(''); setName(''); setPhone(''); setRegStep(1); }}
+            >
+              {lang === 'ar' ? 'انضم كمندوب توصيل' : 'Join as Driver'}
             </p>
           </form>
         </PremiumCard>
@@ -689,6 +767,172 @@ export const AuthScreen: React.FC = () => {
             onClick={() => { setView('login'); setRegStep(1); }}
           >
             {t('str_343')}
+          </p>
+        </div>
+      )}
+
+      {/* GUEST DRIVER REGISTER VIEW */}
+      {view === 'driver_register' && (
+        <div className="w-full max-w-lg bg-theme-card border border-theme-border/60 rounded-[28px] p-6 shadow-md relative theme-transition">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="font-black text-sm text-primary uppercase tracking-wider">
+              {lang === 'ar' ? 'تسجيل حساب مندوب' : 'Register Driver Account'}
+            </h2>
+            <PremiumBadge variant="primary" pill>
+              Step {regStep} of 2
+            </PremiumBadge>
+          </div>
+
+          {/* Stepper Progress Bar */}
+          <div className="w-full h-1 bg-theme-border/40 rounded-full mb-6 overflow-hidden flex">
+            {[1, 2].map(stepNum => (
+              <div 
+                key={stepNum} 
+                className={`h-full flex-1 transition-all duration-300 ${
+                  stepNum <= regStep ? 'bg-primary' : 'bg-transparent'
+                }`}
+              />
+            ))}
+          </div>
+
+          {regStep === 1 && (
+            <div className="space-y-4">
+              <PremiumInput 
+                type="text" 
+                placeholder={t('name')} 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={loading}
+              />
+              <PremiumInput 
+                type="email" 
+                placeholder={t('email')} 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+              />
+              <PremiumInput 
+                type="text" 
+                placeholder={lang === 'ar' ? 'رقم الهاتف' : 'Phone Number'} 
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                disabled={loading}
+              />
+              <PremiumInput 
+                type="password" 
+                placeholder={t('password')} 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+              />
+              <PremiumButton 
+                onClick={() => {
+                  if (!name || !email || !phone || !password) {
+                    showToast(t('str_303') || 'Please fill required fields');
+                    return;
+                  }
+                  setRegStep(2);
+                }}
+                className="w-full mt-4"
+                rightIcon={<ArrowRight size={14} />}
+              >
+                {lang === 'ar' ? 'التالي' : 'Next'}
+              </PremiumButton>
+            </div>
+          )}
+
+          {regStep === 2 && (
+            <form onSubmit={handleDriverRegister} className="space-y-4">
+              <div>
+                <label className="text-[10px] font-black text-theme-muted block mb-1">{lang === 'ar' ? 'المحافظة' : 'Governorate'}</label>
+                <select
+                  value={governorate}
+                  onChange={(e) => {
+                    setGovernorate(e.target.value);
+                    const firstCity = Object.keys(EGYPT_REGIONS[e.target.value]?.cities || {})[0] || 'أخرى';
+                    setCity(firstCity);
+                    const firstVillage = EGYPT_REGIONS[e.target.value]?.cities[firstCity]?.[0] || 'أخرى';
+                    setVillage(firstVillage);
+                  }}
+                  className="w-full bg-theme-bg border border-theme-border/60 p-4 rounded-xl font-bold outline-none focus:border-primary text-theme-text transition text-xs"
+                >
+                  {Object.keys(EGYPT_REGIONS).map(gov => (
+                    <option key={gov} value={gov}>{gov}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-theme-muted block mb-1">{lang === 'ar' ? 'المركز / المدينة' : 'City / Center'}</label>
+                <select
+                  value={city}
+                  onChange={(e) => {
+                    setCity(e.target.value);
+                    const firstVillage = EGYPT_REGIONS[governorate]?.cities[e.target.value]?.[0] || 'أخرى';
+                    setVillage(firstVillage);
+                  }}
+                  className="w-full bg-theme-bg border border-theme-border/60 p-4 rounded-xl font-bold outline-none focus:border-primary text-theme-text transition text-xs"
+                >
+                  {getAvailableCities().map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-theme-muted block mb-1">{lang === 'ar' ? 'القرية / الحي' : 'Village / District'}</label>
+                <select
+                  value={village}
+                  onChange={(e) => setVillage(e.target.value)}
+                  className="w-full bg-theme-bg border border-theme-border/60 p-4 rounded-xl font-bold outline-none focus:border-primary text-theme-text transition text-xs"
+                >
+                  {getAvailableVillages().map(v => (
+                    <option key={v} value={v}>{v}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-theme-muted block mb-1">{lang === 'ar' ? 'نوع وسيلة التوصيل' : 'Delivery Method'}</label>
+                <select
+                  value={driverVehicleType}
+                  onChange={(e) => setDriverVehicleType(e.target.value)}
+                  className="w-full bg-theme-bg border border-theme-border/60 p-4 rounded-xl font-bold outline-none focus:border-primary text-theme-text transition text-xs"
+                >
+                  <option value="motorcycle">{lang === 'ar' ? 'موتوسيكل' : 'Motorcycle'}</option>
+                  <option value="car">{lang === 'ar' ? 'سيارة' : 'Car'}</option>
+                  <option value="bicycle">{lang === 'ar' ? 'دراجة هوائية' : 'Bicycle'}</option>
+                  <option value="walking">{lang === 'ar' ? 'مشياً' : 'Walking'}</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <PremiumButton 
+                  variant="outline"
+                  type="button"
+                  onClick={() => setRegStep(1)}
+                  className="flex-grow-[1]"
+                  leftIcon={<ArrowLeft size={14} />}
+                >
+                  {lang === 'ar' ? 'السابق' : 'Back'}
+                </PremiumButton>
+                <PremiumButton 
+                  type="submit"
+                  isLoading={loading}
+                  className="flex-grow-[2]"
+                >
+                  {lang === 'ar' ? 'تسجيل' : 'Register'}
+                </PremiumButton>
+              </div>
+            </form>
+          )}
+
+          <p 
+            className="text-center text-xs font-bold text-theme-muted mt-5 cursor-pointer hover:text-primary transition" 
+            onClick={() => { setView('login'); setRegStep(1); }}
+          >
+            {lang === 'ar' ? 'العودة لتسجيل الدخول' : 'Back to Login'}
           </p>
         </div>
       )}
