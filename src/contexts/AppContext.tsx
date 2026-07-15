@@ -453,6 +453,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, []);
 
+  const [hasDriverDoc, setHasDriverDoc] = useState(false);
+
+  useEffect(() => {
+    if (!authUid) {
+      setHasDriverDoc(false);
+      return;
+    }
+    const unsubscribe = onSnapshot(doc(db, 'drivers', authUid), (docSnap) => {
+      setHasDriverDoc(docSnap.exists());
+    }, (err) => {
+      console.error('Error checking driver profile doc:', err);
+    });
+    return unsubscribe;
+  }, [authUid]);
+
   useEffect(() => {
     if (!authUid) {
       setCurrentUser(null);
@@ -463,7 +478,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (docSnap.exists()) {
         const userData = docSnap.data() as User;
         setCurrentUser(userData);
-        setRole(userData.role);
       } else {
         console.warn('User profile document not found in Firestore.');
         setCurrentUser(null);
@@ -473,6 +487,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     return unsubscribe;
   }, [authUid]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    if (hasDriverDoc) {
+      setRole('driver');
+    } else {
+      setRole(currentUser.role);
+    }
+  }, [currentUser, hasDriverDoc]);
 
   // Sync profile-level states
   useEffect(() => {
