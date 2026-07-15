@@ -58,12 +58,12 @@ export class AdminService {
     await batch.commit();
   }
 
-  async inviteDriver(payload: { email: string; name: string; phone: string; governorate: string; city: string; village: string; deliveryMethod: string }) {
+  async inviteDriver(payload: { email: string; name: string; phone: string; governorate: string; city: string; village: string; deliveryMethod: string; password?: string }) {
     const { initializeApp } = await import('firebase/app');
     const { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } = await import('firebase/auth');
     const { firebaseConfig } = await import('../firebase');
     
-    const tempPassword = Math.random().toString(36).substring(2, 10) + 'Aa1!';
+    const tempPassword = payload.password || (Math.random().toString(36).substring(2, 10) + 'Aa1!');
     const tempAppName = `tempApp_${Date.now()}`;
     const tempApp = initializeApp(firebaseConfig, tempAppName);
     const tempAuth = getAuth(tempApp);
@@ -113,14 +113,19 @@ export class AdminService {
       
       await batch.commit();
       
-      await sendPasswordResetEmail(tempAuth, payload.email);
+      if (!payload.password) {
+        await sendPasswordResetEmail(tempAuth, payload.email);
+      }
       
       const { deleteApp } = await import('firebase/app');
       await deleteApp(tempApp);
       
       return {
         success: true,
-        resetLink: `Password reset email sent directly to ${payload.email}`
+        password: tempPassword,
+        resetLink: payload.password 
+          ? `Driver created directly with password: ${tempPassword}`
+          : `Password reset email sent directly to ${payload.email}`
       };
     } catch (err: any) {
       try {

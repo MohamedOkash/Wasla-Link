@@ -15,6 +15,26 @@ export const DriverManagement: React.FC = () => {
   const { t } = useTranslation();
   const { isRTL, showToast, currentUser } = useApp();
   const [activeFilter, setActiveFilter] = useState<any>('pending_review');
+
+  const getTierLabel = (tier: string) => {
+    const map: Record<string, string> = {
+      bronze: isRTL ? 'برونزي' : 'Bronze',
+      silver: isRTL ? 'فضي' : 'Silver',
+      gold: isRTL ? 'ذهبي' : 'Gold',
+      platinum: isRTL ? 'بلاتيني' : 'Platinum'
+    };
+    return map[tier] || tier;
+  };
+
+  const getDeliveryMethodLabel = (method: string) => {
+    const map: Record<string, string> = {
+      motorcycle: isRTL ? 'دراجة نارية' : 'Motorcycle',
+      car: isRTL ? 'سيارة' : 'Car',
+      bicycle: isRTL ? 'دراجة' : 'Bicycle',
+      walking: isRTL ? 'مشياً على الأقدام' : 'Walking'
+    };
+    return map[method] || method;
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [drivers, setDrivers] = useState<any[]>([]);
   const [incidents, setIncidents] = useState<any[]>([]);
@@ -26,6 +46,7 @@ export const DriverManagement: React.FC = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteName, setInviteName] = useState('');
   const [invitePhone, setInvitePhone] = useState('');
+  const [invitePassword, setInvitePassword] = useState('');
   const [inviteGov, setInviteGov] = useState('الدقهلية');
   const [inviteCity, setInviteCity] = useState('السنبلاوين');
   const [inviteVillage, setInviteVillage] = useState('ميت غراب');
@@ -179,7 +200,7 @@ export const DriverManagement: React.FC = () => {
   const handleInviteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteEmail || !inviteName || !invitePhone) {
-      showToast('Please fill email, name and phone', 'warning');
+      showToast(isRTL ? 'يرجى ملء الاسم والبريد الإلكتروني ورقم الهاتف' : 'Please fill email, name and phone', 'warning');
       return;
     }
     setIsInviting(true);
@@ -191,17 +212,18 @@ export const DriverManagement: React.FC = () => {
         governorate: inviteGov,
         city: inviteCity,
         village: inviteVillage,
-        deliveryMethod: inviteMethod
+        deliveryMethod: inviteMethod,
+        password: invitePassword || undefined
       });
       if (res.success) {
         setInviteResetLink(res.resetLink || '');
-        showToast('Driver invited successfully', 'success');
+        showToast(isRTL ? 'تم تسجيل/دعوة السائق بنجاح' : 'Driver registered/invited successfully', 'success');
       } else {
-        showToast('Failed to invite driver', 'error');
+        showToast(isRTL ? 'فشل تسجيل/دعوة السائق' : 'Failed to register/invite driver', 'error');
       }
     } catch (err: any) {
       console.error(err);
-      showToast(err.message || 'Error inviting driver', 'error');
+      showToast(err.message || (isRTL ? 'حدث خطأ أثناء التسجيل' : 'Error inviting driver'), 'error');
     } finally {
       setIsInviting(false);
     }
@@ -358,28 +380,28 @@ export const DriverManagement: React.FC = () => {
         <div className="bg-theme-card p-4 rounded-2xl border border-theme-border shadow-sm flex items-center gap-3">
           <div className="w-10 h-10 bg-primary/10 text-primary flex items-center justify-center rounded-xl"><Users size={20} /></div>
           <div>
-            <p className="text-[10px] text-theme-muted font-bold">Total Approved</p>
+            <p className="text-[10px] text-theme-muted font-bold">{isRTL ? 'إجمالي المقبولين' : 'Total Approved'}</p>
             <p className="font-black text-lg">{stats.total}</p>
           </div>
         </div>
         <div className="bg-theme-card p-4 rounded-2xl border border-theme-border shadow-sm flex items-center gap-3">
           <div className="w-10 h-10 bg-green-500/10 text-green-500 flex items-center justify-center rounded-xl"><Activity size={20} /></div>
           <div>
-            <p className="text-[10px] text-theme-muted font-bold">Online</p>
+            <p className="text-[10px] text-theme-muted font-bold">{isRTL ? 'نشط الآن' : 'Online'}</p>
             <p className="font-black text-lg">{stats.online}</p>
           </div>
         </div>
         <div className="bg-theme-card p-4 rounded-2xl border border-theme-border shadow-sm flex items-center gap-3">
           <div className="w-10 h-10 bg-amber-500/10 text-amber-500 flex items-center justify-center rounded-xl"><Clock size={20} /></div>
           <div>
-            <p className="text-[10px] text-theme-muted font-bold">Pending Review</p>
+            <p className="text-[10px] text-theme-muted font-bold">{isRTL ? 'قيد المراجعة' : 'Pending Review'}</p>
             <p className="font-black text-lg">{stats.pending}</p>
           </div>
         </div>
         <div className="bg-theme-card p-4 rounded-2xl border border-theme-border shadow-sm flex items-center gap-3">
           <div className="w-10 h-10 bg-blue-500/10 text-blue-500 flex items-center justify-center rounded-xl"><AlertCircle size={20} /></div>
           <div>
-            <p className="text-[10px] text-theme-muted font-bold">Needs Docs</p>
+            <p className="text-[10px] text-theme-muted font-bold">{isRTL ? 'نقص مستندات' : 'Needs Docs'}</p>
             <p className="font-black text-lg">{stats.needsDocs}</p>
           </div>
         </div>
@@ -397,28 +419,28 @@ export const DriverManagement: React.FC = () => {
             />
           </div>
           <button 
-            onClick={() => { setShowInviteModal(true); setInviteResetLink(''); }}
+            onClick={() => { setShowInviteModal(true); setInviteResetLink(''); setInvitePassword(''); }}
             className="bg-primary hover:bg-primary-hover text-white text-xs font-black px-5 rounded-2xl transition active:scale-95 flex items-center gap-2 shadow-md shrink-0 h-12"
           >
             <Plus size={16} />
-            <span>{isRTL ? 'دعوة مندوب' : 'Invite Driver'}</span>
+            <span>{isRTL ? 'إضافة سائق' : 'Add Driver'}</span>
           </button>
         </div>
 
         {/* Filter Navigation Tabs */}
         <div className="bg-theme-card p-1 rounded-2xl border border-theme-border shadow-sm flex gap-1 theme-transition overflow-x-auto no-scrollbar">
           {[
-            { id: 'pending_review', label: 'Pending Review', count: stats.pending },
-            { id: 'needs_documents', label: 'Needs Docs', count: stats.needsDocs },
-            { id: 'approved', label: 'Approved', count: stats.total },
-            { id: 'online', label: 'Online Drivers', count: stats.online },
-            { id: 'offline', label: 'Offline Drivers', count: stats.offline },
-            { id: 'suspended', label: 'Suspended', count: stats.suspended },
-            { id: 'blocked', label: 'Blocked', count: stats.blocked },
-            { id: 'rejected', label: 'Rejected', count: stats.rejected },
-            { id: 'monitor', label: 'Live Monitor', count: drivers.filter(d => d.availability && d.availability !== 'offline').length },
-            { id: 'cash', label: 'Cash Reconcile', count: drivers.filter(d => d.status === 'approved').length },
-            { id: 'fraud', label: 'Fraud Incidents', count: incidents.length }
+            { id: 'pending_review', label: isRTL ? 'قيد المراجعة' : 'Pending Review', count: stats.pending },
+            { id: 'needs_documents', label: isRTL ? 'نقص مستندات' : 'Needs Docs', count: stats.needsDocs },
+            { id: 'approved', label: isRTL ? 'مقبول' : 'Approved', count: stats.total },
+            { id: 'online', label: isRTL ? 'نشط الآن' : 'Online Drivers', count: stats.online },
+            { id: 'offline', label: isRTL ? 'غير نشط' : 'Offline Drivers', count: stats.offline },
+            { id: 'suspended', label: isRTL ? 'موقوف مؤقتاً' : 'Suspended', count: stats.suspended },
+            { id: 'blocked', label: isRTL ? 'محظور' : 'Blocked', count: stats.blocked },
+            { id: 'rejected', label: isRTL ? 'مرفوض' : 'Rejected', count: stats.rejected },
+            { id: 'monitor', label: isRTL ? 'مراقبة مباشرة' : 'Live Monitor', count: drivers.filter(d => d.availability && d.availability !== 'offline').length },
+            { id: 'cash', label: isRTL ? 'تسوية نقدية' : 'Cash Reconcile', count: drivers.filter(d => d.status === 'approved').length },
+            { id: 'fraud', label: isRTL ? 'حالات احتيال' : 'Fraud Incidents', count: incidents.length }
           ].map(tab => (
             <button
               key={tab.id}
@@ -463,7 +485,7 @@ export const DriverManagement: React.FC = () => {
         <div className="bg-theme-card rounded-[30px] border border-theme-border p-5 shadow-sm space-y-4 animate-fade-in">
           <h3 className="font-black text-theme-text text-sm flex items-center gap-2 border-b border-theme-border/60 pb-2.5">
             <Activity size={18} className="text-primary" />
-            Active Drivers Live Monitor
+            {isRTL ? 'المراقبة المباشرة للمناديب النشطين' : 'Active Drivers Live Monitor'}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {drivers.filter(d => d.availability && d.availability !== 'offline').map(d => {
@@ -473,13 +495,13 @@ export const DriverManagement: React.FC = () => {
                   <div className="flex justify-between items-center">
                     <h5 className="font-black text-sm text-theme-text">{d.name}</h5>
                     <span className="text-[9px] font-black px-2.5 py-1 rounded-lg uppercase bg-green-500/10 text-green-500 border border-green-500/20">
-                      {d.availability}
+                      {d.availability === 'online' ? (isRTL ? 'نشط' : 'online') : d.availability}
                     </span>
                   </div>
                   <div className="text-xs font-bold text-theme-muted space-y-1.5">
-                    <p>📍 Location: {loc ? `${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)}` : 'No GPS'}</p>
-                    <p>🔋 Battery: {d.batteryLevel ? `${d.batteryLevel}%` : 'N/A'}</p>
-                    <p>⚡ Tier: <span className="capitalize text-primary font-black">{d.tier || 'bronze'}</span> | Score: <span className="text-theme-text font-black">{d.score || 100}</span></p>
+                    <p>{isRTL ? '📍 الموقع: ' : '📍 Location: '}{loc ? `${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)}` : (isRTL ? 'لا يوجد GPS' : 'No GPS')}</p>
+                    <p>{isRTL ? '🔋 البطارية: ' : '🔋 Battery: '}{d.batteryLevel ? `${d.batteryLevel}%` : (isRTL ? 'غير معروف' : 'N/A')}</p>
+                    <p>{isRTL ? '⚡ المستوى: ' : '⚡ Tier: '}<span className="capitalize text-primary font-black">{getTierLabel(d.tier || 'bronze')}</span> | {isRTL ? 'النقاط: ' : 'Score: '}<span className="text-theme-text font-black">{d.score || 100}</span></p>
                   </div>
                   {loc && (
                     <a
@@ -488,14 +510,14 @@ export const DriverManagement: React.FC = () => {
                       rel="noopener noreferrer"
                       className="w-full bg-primary text-white text-[10px] font-black py-2.5 rounded-xl text-center block"
                     >
-                      View on Google Maps
+                      {isRTL ? 'عرض على خرائط جوجل' : 'View on Google Maps'}
                     </a>
                   )}
                 </div>
               );
             })}
             {drivers.filter(d => d.availability && d.availability !== 'offline').length === 0 && (
-              <div className="col-span-full p-6 text-center text-theme-muted font-bold text-xs">No active drivers online</div>
+              <div className="col-span-full p-6 text-center text-theme-muted font-bold text-xs">{isRTL ? 'لا يوجد مناديب نشطين حالياً' : 'No active drivers online'}</div>
             )}
           </div>
         </div>
@@ -558,7 +580,7 @@ export const DriverManagement: React.FC = () => {
                         </h4>
                         <p className="text-[10px] text-theme-muted font-bold mt-1 flex flex-wrap gap-x-2">
                           <span>📞 {driver.phone}</span>
-                          <span>• {driver.deliveryMethod}</span>
+                          <span>• {getDeliveryMethodLabel(driver.deliveryMethod)}</span>
                         </p>
                         <p className="text-[9px] text-theme-muted font-bold mt-0.5">
                           📍 {driver.governorate} / {driver.city} / {driver.village}
@@ -569,63 +591,63 @@ export const DriverManagement: React.FC = () => {
                     {/* Expiry alerts indicators */}
                     {(hasNidAlert || hasLicAlert || hasVehLicAlert) && (
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {hasNidAlert && <span className="bg-red-500/10 text-red-500 text-[8px] font-black px-2 py-0.5 rounded border border-red-500/20">ID Expiring Soon</span>}
-                        {hasLicAlert && <span className="bg-red-500/10 text-red-500 text-[8px] font-black px-2 py-0.5 rounded border border-red-500/20">License Expiring Soon</span>}
-                        {hasVehLicAlert && <span className="bg-red-500/10 text-red-500 text-[8px] font-black px-2 py-0.5 rounded border border-red-500/20">Veh Lic Expiring Soon</span>}
+                        {hasNidAlert && <span className="bg-red-500/10 text-red-500 text-[8px] font-black px-2 py-0.5 rounded border border-red-500/20">{isRTL ? 'الهوية تنتهي قريباً' : 'ID Expiring Soon'}</span>}
+                        {hasLicAlert && <span className="bg-red-500/10 text-red-500 text-[8px] font-black px-2 py-0.5 rounded border border-red-500/20">{isRTL ? 'الرخصة تنتهي قريباً' : 'License Expiring Soon'}</span>}
+                        {hasVehLicAlert && <span className="bg-red-500/10 text-red-500 text-[8px] font-black px-2 py-0.5 rounded border border-red-500/20">{isRTL ? 'رخصة المركبة تنتهي قريباً' : 'Veh Lic Expiring Soon'}</span>}
                       </div>
                     )}
 
                     <div className="flex justify-between items-center text-[10px] font-black bg-theme-bg p-2 rounded-xl border border-theme-border/40">
-                      <span className="text-theme-muted uppercase tracking-wider flex items-center gap-1"><Award size={12} className="text-amber-500 fill-amber-500" /> {driver.tier || 'bronze'}</span>
-                      <span className="text-theme-text">Score: {driver.score || 100}/100</span>
+                      <span className="text-theme-muted uppercase tracking-wider flex items-center gap-1"><Award size={12} className="text-amber-500 fill-amber-500" /> {getTierLabel(driver.tier || 'bronze')}</span>
+                      <span className="text-theme-text">{isRTL ? 'النقاط: ' : 'Score: '}{driver.score || 100}/100</span>
                       <span className="text-amber-500 flex items-center gap-0.5"><Star size={10} className="fill-amber-500 text-amber-500" /> {driver.rating || '5.0'}</span>
                     </div>
 
                     {/* Documents expiry review dates */}
                     <div className="text-[8px] font-bold text-theme-muted space-y-0.5">
-                      <p>National ID Expiry: <span className="font-mono text-theme-text">{driver.nationalIdExpiry || 'N/A'}</span></p>
-                      <p>Driving License Expiry: <span className="font-mono text-theme-text">{driver.licenseExpiry || 'N/A'}</span></p>
-                      <p>Vehicle License Expiry: <span className="font-mono text-theme-text">{driver.vehicleLicenseExpiry || 'N/A'}</span></p>
+                      <p>{isRTL ? 'انتهاء الهوية الوطنية: ' : 'National ID Expiry: '}<span className="font-mono text-theme-text">{driver.nationalIdExpiry || (isRTL ? 'غير متوفر' : 'N/A')}</span></p>
+                      <p>{isRTL ? 'انتهاء رخصة القيادة: ' : 'Driving License Expiry: '}<span className="font-mono text-theme-text">{driver.licenseExpiry || (isRTL ? 'غير متوفر' : 'N/A')}</span></p>
+                      <p>{isRTL ? 'انتهاء رخصة المركبة: ' : 'Vehicle License Expiry: '}<span className="font-mono text-theme-text">{driver.vehicleLicenseExpiry || (isRTL ? 'غير متوفر' : 'N/A')}</span></p>
                     </div>
 
                     {/* Inline Settings Editing Form */}
                     {isEditing ? (
                       <div className="bg-theme-card p-3 rounded-xl border border-theme-border/60 space-y-3 animate-fade-in text-[10px] font-bold">
                         <div>
-                          <label className="text-[8px] text-theme-muted block mb-0.5">Vehicle Class / Method</label>
+                          <label className="text-[8px] text-theme-muted block mb-0.5">{isRTL ? 'فئة المركبة / وسيلة التوصيل' : 'Vehicle Class / Method'}</label>
                           <select value={editVehicleClass} onChange={e=>setEditVehicleClass(e.target.value)} className="w-full bg-theme-bg border border-theme-border rounded px-2 py-1 focus:outline-none">
-                            <option value="motorcycle">Motorcycle</option>
-                            <option value="car">Car</option>
-                            <option value="bicycle">Bicycle</option>
-                            <option value="walking">Walking</option>
+                            <option value="motorcycle">{isRTL ? 'دراجة نارية' : 'Motorcycle'}</option>
+                            <option value="car">{isRTL ? 'سيارة' : 'Car'}</option>
+                            <option value="bicycle">{isRTL ? 'دراجة' : 'Bicycle'}</option>
+                            <option value="walking">{isRTL ? 'مشياً على الأقدام' : 'Walking'}</option>
                           </select>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="text-[8px] text-theme-muted block mb-0.5">Max Distance (km)</label>
+                            <label className="text-[8px] text-theme-muted block mb-0.5">{isRTL ? 'أقصى مسافة (كم)' : 'Max Distance (km)'}</label>
                             <input type="number" value={editMaxDistance} onChange={e=>setEditMaxDistance(parseInt(e.target.value)||15)} className="w-full bg-theme-bg border border-theme-border rounded px-2 py-1 focus:outline-none" />
                           </div>
                           <div>
-                            <label className="text-[8px] text-theme-muted block mb-0.5">Override Tier</label>
+                            <label className="text-[8px] text-theme-muted block mb-0.5">{isRTL ? 'تعديل المستوى' : 'Override Tier'}</label>
                             <select value={editTier} onChange={e=>setEditTier(e.target.value as any)} className="w-full bg-theme-bg border border-theme-border rounded px-2 py-1 focus:outline-none">
-                              <option value="bronze">Bronze</option>
-                              <option value="silver">Silver</option>
-                              <option value="gold">Gold</option>
-                              <option value="platinum">Platinum</option>
+                              <option value="bronze">{isRTL ? 'برونزي' : 'Bronze'}</option>
+                              <option value="silver">{isRTL ? 'فضي' : 'Silver'}</option>
+                              <option value="gold">{isRTL ? 'ذهبي' : 'Gold'}</option>
+                              <option value="platinum">{isRTL ? 'بلاتيني' : 'Platinum'}</option>
                             </select>
                           </div>
                         </div>
                         <div>
-                          <label className="text-[8px] text-theme-muted block mb-0.5">Preferred Areas (Comma split)</label>
-                          <input type="text" value={editPreferredAreas} onChange={e=>setEditPreferredAreas(e.target.value)} className="w-full bg-theme-bg border border-theme-border rounded px-2 py-1 focus:outline-none" placeholder="Village name, area..." />
+                          <label className="text-[8px] text-theme-muted block mb-0.5">{isRTL ? 'المناطق المفضلة (مفصولة بفاصلة)' : 'Preferred Areas (Comma split)'}</label>
+                          <input type="text" value={editPreferredAreas} onChange={e=>setEditPreferredAreas(e.target.value)} className="w-full bg-theme-bg border border-theme-border rounded px-2 py-1 focus:outline-none" placeholder={isRTL ? "أدخل أسماء القرى أو المناطق..." : "Village name, area..."} />
                         </div>
                         <div>
-                          <label className="text-[8px] text-theme-muted block mb-0.5">Admin Review Notes</label>
-                          <input type="text" value={editAdminNotes} onChange={e=>setEditAdminNotes(e.target.value)} className="w-full bg-theme-bg border border-theme-border rounded px-2 py-1 focus:outline-none" placeholder="Notes for verification..." />
+                          <label className="text-[8px] text-theme-muted block mb-0.5">{isRTL ? 'ملاحظات المشرف' : 'Admin Review Notes'}</label>
+                          <input type="text" value={editAdminNotes} onChange={e=>setEditAdminNotes(e.target.value)} className="w-full bg-theme-bg border border-theme-border rounded px-2 py-1 focus:outline-none" placeholder={isRTL ? "ملاحظات التحقق والمراجعة..." : "Notes for verification..."} />
                         </div>
                         <div className="flex gap-2">
-                          <button onClick={() => handleSaveSettings(driver.id)} className="flex-1 bg-primary text-white py-1.5 rounded font-black">Save</button>
-                          <button onClick={() => setEditingDriverId(null)} className="bg-theme-bg border border-theme-border text-theme-text px-2 rounded">Cancel</button>
+                          <button onClick={() => handleSaveSettings(driver.id)} className="flex-1 bg-primary text-white py-1.5 rounded font-black">{isRTL ? 'حفظ' : 'Save'}</button>
+                          <button onClick={() => setEditingDriverId(null)} className="bg-theme-bg border border-theme-border text-theme-text px-2 rounded">{isRTL ? 'إلغاء' : 'Cancel'}</button>
                         </div>
                       </div>
                     ) : (
@@ -635,7 +657,7 @@ export const DriverManagement: React.FC = () => {
                           className="flex-1 bg-theme-card border border-theme-border text-theme-text py-2 rounded-xl text-[10px] font-black flex items-center justify-center gap-1 hover:bg-theme-border/30 transition"
                         >
                           <Edit2 size={12} />
-                          <span>Configure Settings</span>
+                          <span>{isRTL ? 'تهيئة إعدادات العمل' : 'Configure Settings'}</span>
                         </button>
                       </div>
                     )}
@@ -646,21 +668,21 @@ export const DriverManagement: React.FC = () => {
                         onClick={() => {
                           const url = driver.nationalIdImageUrl || driver.nationalIdImage;
                           if (url) window.open(url, '_blank');
-                          else showToast('No ID uploaded', 'warning');
+                          else showToast(isRTL ? 'لم يتم رفع صورة الهوية' : 'No ID uploaded', 'warning');
                         }}
                         className="flex-1 bg-blue-500/10 text-blue-500 border border-blue-500/20 py-2 rounded-xl text-[10px] font-black flex items-center justify-center gap-1 hover:bg-blue-500/20 transition"
                       >
-                        <Eye size={12} /> ID
+                        <Eye size={12} /> {isRTL ? 'صورة الهوية' : 'ID'}
                       </button>
                       <button
                         onClick={() => {
                           const url = driver.drivingLicenseUrl || driver.licenseImage;
                           if (url) window.open(url, '_blank');
-                          else showToast('No License uploaded', 'warning');
+                          else showToast(isRTL ? 'لم يتم رفع صورة الرخصة' : 'No License uploaded', 'warning');
                         }}
                         className="flex-1 bg-blue-500/10 text-blue-500 border border-blue-500/20 py-2 rounded-xl text-[10px] font-black flex items-center justify-center gap-1 hover:bg-blue-500/20 transition"
                       >
-                        <Eye size={12} /> License
+                        <Eye size={12} /> {isRTL ? 'الرخصة' : 'License'}
                       </button>
                     </div>
 
@@ -672,13 +694,13 @@ export const DriverManagement: React.FC = () => {
                             onClick={() => handleApprove(driver)}
                             className="flex-[2] bg-green-600 hover:bg-green-700 text-white py-2 rounded-xl text-xs font-black shadow transition flex items-center justify-center gap-1"
                           >
-                            <Check size={14} /> Approve
+                            <Check size={14} /> {isRTL ? 'قبول وتفعيل' : 'Approve'}
                           </button>
                           <button
                             onClick={() => handleRequestDocs(driver.id)}
                             className="flex-[2] bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-xl text-xs font-black shadow transition flex items-center justify-center gap-1"
                           >
-                            <AlertCircle size={14} /> Request Docs
+                            <AlertCircle size={14} /> {isRTL ? 'نقص مستندات' : 'Request Docs'}
                           </button>
                           <button
                             onClick={() => handleReject(driver.id)}
@@ -695,13 +717,13 @@ export const DriverManagement: React.FC = () => {
                             onClick={() => handleSuspend(driver.id)}
                             className="flex-1 bg-amber-500/10 border border-amber-500/20 text-amber-500 py-2 rounded-xl text-xs font-black hover:bg-amber-500/20 transition"
                           >
-                            Suspend
+                            {isRTL ? 'إيقاف مؤقت' : 'Suspend'}
                           </button>
                           <button
                             onClick={() => handleBlock(driver.id)}
                             className="flex-1 bg-red-500/10 border border-red-500/20 text-red-500 py-2 rounded-xl text-xs font-black hover:bg-red-500/20 transition"
                           >
-                            Block
+                            {isRTL ? 'حظر الحساب' : 'Block'}
                           </button>
                         </div>
                       )}
@@ -711,7 +733,7 @@ export const DriverManagement: React.FC = () => {
                           onClick={() => handleReactivate(driver.id)}
                           className="w-full bg-green-500/10 border border-green-500/20 text-green-500 py-2 rounded-xl text-xs font-black hover:bg-green-500/20 transition flex items-center justify-center gap-1"
                         >
-                          <RefreshCw size={14} /> Reactivate / Approve
+                          <RefreshCw size={14} /> {isRTL ? 'إعادة تفعيل وقبول' : 'Reactivate / Approve'}
                         </button>
                       )}
                     </div>
@@ -732,15 +754,15 @@ export const DriverManagement: React.FC = () => {
             className="bg-theme-card border border-theme-border rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl animate-slide-up theme-transition text-xs"
           >
             <div className="flex justify-between items-center pb-2 border-b border-theme-border/60">
-              <h4 className="font-black text-theme-text text-sm">{isRTL ? 'إرسال دعوة انضمام مندوب' : 'Invite Representative'}</h4>
+              <h4 className="font-black text-theme-text text-sm">{isRTL ? 'إضافة / تسجيل سائق جديد' : 'Add / Register New Driver'}</h4>
               <button type="button" onClick={() => setShowInviteModal(false)} className="text-theme-muted hover:text-theme-text"><X size={20} /></button>
             </div>
 
             {inviteResetLink ? (
               <div className="space-y-4 py-2">
-                <p className="text-green-500 font-black text-xs">{isRTL ? 'تم إنشاء الدعوة بنجاح!' : 'Driver invited successfully!'}</p>
+                <p className="text-green-500 font-black text-xs">{isRTL ? 'تم إنشاء حساب السائق بنجاح!' : 'Driver created successfully!'}</p>
                 <div className="bg-theme-bg p-3 rounded-xl border border-theme-border">
-                  <label className="text-[10px] text-theme-muted font-bold block mb-1">{isRTL ? 'رابط إعادة ضبط كلمة المرور للمندوب' : 'Copy Password Reset Link for Driver'}</label>
+                  <label className="text-[10px] text-theme-muted font-bold block mb-1">{isRTL ? 'بيانات الدخول ورابط التعيين' : 'Login Credentials & Link'}</label>
                   <textarea 
                     readOnly 
                     value={inviteResetLink} 
@@ -748,9 +770,9 @@ export const DriverManagement: React.FC = () => {
                     className="w-full bg-theme-card border border-theme-border rounded p-2 text-[10px] font-mono text-theme-text focus:outline-none" 
                     rows={4}
                   />
-                  <p className="text-[9px] text-theme-muted font-bold mt-1.5">{isRTL ? 'انسخ هذا الرابط وأرسله للمندوب ليكمل تعيين كلمة المرور ويبدأ العمل.' : 'Send this reset link to the driver to complete onboarding set password.'}</p>
+                  <p className="text-[9px] text-theme-muted font-bold mt-1.5">{isRTL ? 'انسخ هذا النص وأرسله للسائق ليتمكن من تسجيل الدخول والبدء مباشرة.' : 'Copy this text and send it to the driver to start immediately.'}</p>
                 </div>
-                <PremiumButton onClick={() => setShowInviteModal(false)} className="w-full">Close</PremiumButton>
+                <PremiumButton onClick={() => setShowInviteModal(false)} className="w-full">{isRTL ? 'إغلاق' : 'Close'}</PremiumButton>
               </div>
             ) : (
               <div className="space-y-3">
@@ -767,6 +789,11 @@ export const DriverManagement: React.FC = () => {
                 <div>
                   <label className="text-[10px] font-black text-theme-muted block mb-1">{isRTL ? 'رقم الهاتف' : 'Phone Number'}</label>
                   <input type="tel" value={invitePhone} onChange={e=>setInvitePhone(e.target.value)} className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs font-bold outline-none focus:border-primary text-theme-text" required />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black text-theme-muted block mb-1">{isRTL ? 'كلمة المرور (اختياري - تُنشأ تلقائياً إذا تركت فارغة)' : 'Password (Optional - auto-generated if blank)'}</label>
+                  <input type="text" value={invitePassword} onChange={e=>setInvitePassword(e.target.value)} className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs font-bold outline-none focus:border-primary text-theme-text" placeholder={isRTL ? "أدخل كلمة مرور السائق..." : "Enter driver's password..."} />
                 </div>
 
                 <div>
@@ -825,16 +852,16 @@ export const DriverManagement: React.FC = () => {
                     onChange={(e) => setInviteMethod(e.target.value)}
                     className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs font-bold outline-none focus:border-primary text-theme-text"
                   >
-                    <option value="motorcycle">Motorcycle</option>
-                    <option value="car">Car</option>
-                    <option value="bicycle">Bicycle</option>
-                    <option value="walking">Walking</option>
+                    <option value="motorcycle">{isRTL ? 'دراجة نارية' : 'Motorcycle'}</option>
+                    <option value="car">{isRTL ? 'سيارة' : 'Car'}</option>
+                    <option value="bicycle">{isRTL ? 'دراجة' : 'Bicycle'}</option>
+                    <option value="walking">{isRTL ? 'مشياً على الأقدام' : 'Walking'}</option>
                   </select>
                 </div>
 
                 <div className="flex gap-3 pt-3">
-                  <PremiumButton type="button" variant="outline" onClick={() => setShowInviteModal(false)} className="flex-1">Cancel</PremiumButton>
-                  <PremiumButton type="submit" isLoading={isInviting} className="flex-[2]">Send Invitation</PremiumButton>
+                  <PremiumButton type="button" variant="outline" onClick={() => setShowInviteModal(false)} className="flex-1">{isRTL ? 'إلغاء' : 'Cancel'}</PremiumButton>
+                  <PremiumButton type="submit" isLoading={isInviting} className="flex-[2]">{isRTL ? 'إضافة السائق' : 'Add Driver'}</PremiumButton>
                 </div>
               </div>
             )}
