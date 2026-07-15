@@ -339,7 +339,17 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     match /driverWallets/{walletId} {
-      allow read: if isAdmin() || (isDriver() && walletId == request.auth.uid);
+      allow read: if isAdmin() || isOwner(walletId);
+      allow write: if isAdmin();
+    }
+    
+    match /driverLedgers/{driverId} {
+      allow read: if isAdmin() || isOwner(driverId);
+      allow write: if isAdmin();
+    }
+    
+    match /driverStats/{driverId} {
+      allow read: if isAdmin() || isOwner(driverId);
       allow write: if isAdmin();
     }
     
