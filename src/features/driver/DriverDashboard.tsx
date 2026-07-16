@@ -742,7 +742,7 @@ export const DriverDashboard: React.FC = () => {
 
         {activeTab === 'orders' && <DriverOrders driver={driver} />}
         {activeTab === 'earnings' && <DriverEarnings driver={driver} />}
-        {activeTab === 'profile' && <DriverProfile />}
+        {activeTab === 'profile' && <DriverProfile driver={driver} />}
         {/* Incoming Order Modal */}
         {incomingOrder && (
           <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">

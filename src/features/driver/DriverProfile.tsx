@@ -2,58 +2,64 @@ import { useTranslation } from '../../hooks/useTranslation';
 import React, { useState } from 'react';
 import { User, Phone, Bike, Star, DollarSign, LogOut, ShieldAlert } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
-import { useReviews } from '../../hooks/useReviews';
+import { driverRepository } from '../../services/driver/repository';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db, auth } from '../../services/firebase';
+import { signOut } from 'firebase/auth';
 
-export const DriverProfile: React.FC = () => {
+interface DriverProfileProps {
+  driver?: any;
+}
+
+export const DriverProfile: React.FC<DriverProfileProps> = ({ driver }) => {
   const { t } = useTranslation();
-  const { currentUser, setCurrentUser, setRole, goHome, orders, lang, isRTL } = useApp();
-  const { reviews } = useReviews();;
-  const [phone, setPhone] = useState(currentUser?.phone || '01022334455');
-  const [vehicle, setVehicle] = useState(currentUser?.vehicleType || 'سكوتر دايون');
+  const { currentUser, setCurrentUser, lang, isRTL } = useApp();
+  
+  const [phone, setPhone] = useState(driver?.phone || currentUser?.phone || '');
+  const [vehicle, setVehicle] = useState(driver?.vehicles?.[0]?.brand || driver?.deliveryMethod || 'سكوتر دايون');
 
-  const driverId = currentUser?.email || 'd1';
+  const driverId = currentUser?.uid || '';
+  const totalEarnings = driver?.totalEarnings || 0;
+  const avgDriverRating = driver?.rating || 5.0;
+  const completedCount = driver?.completedOrders || 0;
 
-  // Calculations
-  const driverOrders = orders.filter(o => o.driverId === driverId && o.status === 'delivered');
-  const totalEarnings = driverOrders.reduce((sum, o) => sum + o.deliveryFee, 0);
-
-  const driverReviews = reviews.filter(r => r.driverId === 'd1' || r.driverId === driverId);
-  const avgDriverRating = driverReviews.length > 0
-    ? (driverReviews.reduce((sum, r) => sum + r.ratingDriver, 0) / driverReviews.length).toFixed(1)
-    : '4.8';
-
-  const handleSave = (e: React.FormEvent) => {
-  const {} = useTranslation();
-
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (currentUser) {
-      setCurrentUser({
-        ...currentUser,
+    if (!phone || !vehicle) return;
+    try {
+      await driverRepository.update(driverId, {
         phone,
-        vehicleType: vehicle
+        deliveryMethod: vehicle
       });
-      alert(t('str_219'));
+      await updateDoc(doc(db, 'users', driverId), {
+        phone
+      });
+      alert(isRTL ? 'تم حفظ التغييرات بنجاح!' : 'Changes saved successfully!');
+    } catch (err) {
+      console.error(err);
+      alert(isRTL ? 'حدث خطأ أثناء الحفظ' : 'Error saving profile');
     }
   };
 
-  const handleLogout = () => {
-    goHome();
+  const handleLogout = async () => {
+    await signOut(auth);
+    window.location.reload();
   };
 
   return (
-    <div className="space-y-6 text-theme-text pb-24">
+    <div className="space-y-6 text-theme-text pb-24 font-sans">
       {/* Driver Badge Card */}
-      <div className="bg-theme-card border border-theme-border rounded-[28px] p-6 shadow-sm flex items-center gap-4 theme-transition animate-card-entrance">
+      <div className="bg-theme-card border border-theme-border rounded-[28px] p-6 shadow-sm flex items-center gap-4 theme-transition">
         <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
           <User size={36} />
         </div>
         <div>
-          <h3 className="font-black text-base text-theme-text">{currentUser?.name || 'كابتن محمود رضا'}</h3>
+          <h3 className="font-black text-base text-theme-text">{driver?.name || currentUser?.name || 'كابتن'}</h3>
           <p className="text-[10px] text-theme-muted font-bold mt-1">ID: {driverId}</p>
           <div className="flex items-center gap-1 mt-2 text-amber-500 font-bold text-xs">
             <Star size={14} fill="currentColor" />
             <span>{avgDriverRating}</span>
-            <span className="text-[10px] text-theme-muted font-bold">({driverOrders.length} {t('str_1125')})</span>
+            <span className="text-[10px] text-theme-muted font-bold">({completedCount} {t('str_1125') || 'Deliveries'})</span>
           </div>
         </div>
       </div>
@@ -61,25 +67,25 @@ export const DriverProfile: React.FC = () => {
       {/* Finance Stats widget */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-theme-card border border-theme-border p-4 rounded-[24px] theme-transition shadow-sm">
-          <span className="text-[10px] text-theme-muted font-black block uppercase tracking-wider">{t('str_1113')}</span>
-          <p className="text-lg font-black text-theme-text mt-2">{totalEarnings} {t('currencyEGP')}</p>
-          <span className="text-[8px] text-green-500 font-bold block mt-1">{t('str_1126')}</span>
+          <span className="text-[10px] text-theme-muted font-black block uppercase tracking-wider">{t('str_1113') || 'Today Earnings'}</span>
+          <p className="text-lg font-black text-theme-text mt-2">{Math.round(totalEarnings * 0.1)} {t('currencyEGP') || 'ج.م'}</p>
+          <span className="text-[8px] text-green-500 font-bold block mt-1">{t('str_1126') || 'Daily Target Reached'}</span>
         </div>
         <div className="bg-theme-card border border-theme-border p-4 rounded-[24px] theme-transition shadow-sm">
-          <span className="text-[10px] text-theme-muted font-black block uppercase tracking-wider">{t('str_1127')}</span>
-          <p className="text-lg font-black text-theme-text mt-2">{totalEarnings + 145} {t('currencyEGP')}</p>
-          <span className="text-[8px] text-primary font-bold block mt-1">{t('str_1128')}</span>
+          <span className="text-[10px] text-theme-muted font-black block uppercase tracking-wider">{t('str_1127') || 'Total Balance'}</span>
+          <p className="text-lg font-black text-theme-text mt-2">{totalEarnings} {t('currencyEGP') || 'ج.م'}</p>
+          <span className="text-[8px] text-primary font-bold block mt-1">{t('str_1128') || 'Total Wallet Cash'}</span>
         </div>
       </div>
 
       {/* Info Form */}
       <div className="bg-theme-card border border-theme-border rounded-[30px] p-5 space-y-4 shadow-sm theme-transition">
         <h4 className="font-black text-theme-text text-sm border-b border-theme-border/60 pb-3">
-          {t('str_1129')}
+          {t('str_1129') || 'Edit Driver Profile'}
         </h4>
         <form onSubmit={handleSave} className="space-y-4">
           <div>
-            <label className="text-[10px] text-theme-muted font-bold block mb-1.5">{t('str_1130')}</label>
+            <label className="text-[10px] text-theme-muted font-bold block mb-1.5">{t('str_1130') || 'Phone'}</label>
             <input 
               type="text" 
               value={phone} 
@@ -88,7 +94,7 @@ export const DriverProfile: React.FC = () => {
             />
           </div>
           <div>
-            <label className="text-[10px] text-theme-muted font-bold block mb-1.5">{t('str_1131')}</label>
+            <label className="text-[10px] text-theme-muted font-bold block mb-1.5">{t('str_1131') || 'Vehicle / Scooter'}</label>
             <input 
               type="text" 
               value={vehicle} 
@@ -100,7 +106,7 @@ export const DriverProfile: React.FC = () => {
             type="submit"
             className="w-full bg-primary hover:bg-primary-hover text-white font-black py-3.5 rounded-xl text-xs shadow-md transition"
           >
-            {t('str_413')}
+            {t('str_413') || 'Save'}
           </button>
         </form>
       </div>
@@ -111,7 +117,7 @@ export const DriverProfile: React.FC = () => {
         className="w-full bg-red-500/10 border border-red-500/20 text-red-500 font-black py-4 rounded-2xl flex items-center justify-center gap-1.5 hover:bg-red-500/15 transition active:scale-95 shadow-sm"
       >
         <LogOut size={16} />
-        <span>{t('str_1132')}</span>
+        <span>{t('str_1132') || 'Log Out'}</span>
       </button>
     </div>
   );

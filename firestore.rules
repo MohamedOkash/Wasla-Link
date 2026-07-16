@@ -16,15 +16,30 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      return signedIn() && (request.auth.token.role == 'admin' || request.auth.token.admin == true);
+      return signedIn() && (
+        request.auth.token.role == 'admin' || 
+        request.auth.token.admin == true ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
     }
     
     function isVendor() {
-      return signedIn() && (request.auth.token.role == 'vendor' || request.auth.token.vendor == true);
+      return signedIn() && (
+        request.auth.token.role == 'vendor' || 
+        request.auth.token.vendor == true ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'vendor')
+      );
     }
     
     function isDriver() {
-      return signedIn() && (request.auth.token.role == 'driver' || request.auth.token.driver == true);
+      return signedIn() && (
+        request.auth.token.role == 'driver' || 
+        request.auth.token.driver == true ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'driver')
+      );
     }
 
     function isVendorOfStore(storeId) {
